@@ -406,50 +406,45 @@ export default function App() {
   });
 
   // Filtreleme (Admin değilse sadece kendi işleri)
-  // Eğer kullanıcı Admin değilse, tasks listesini filtreleyeceğiz
+  // Fail-Safe Logic: Varsayılan olarak BOŞ liste, yetki gelince dolar.
 
-  // *** TEMPORARILY DISABLED FOR DEBUG - EVERYONE SEES EVERYTHING ***
-  let visibleTasks = tasks; // Show all tasks to everyone
-  let visibleRoutineTasks = routineTasks; // Show all routine tasks to everyone
+  let visibleTasks: Task[] = [];
+  let visibleRoutineTasks: RoutineTask[] = [];
 
   // Admin kontrolü (Email listesi)
   const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
-  const isStaff = !isAdmin;
 
-  /* DISABLED FILTERING - UNCOMMENT TO RE-ENABLE
-  if (isStaff && user.email) {
-    // Kullanıcının kayıtlı ismini bul (eğer varsa)
-    const userStaffMember = registeredStaff.find(s => s.email === user.email);
-    const userName = userStaffMember?.name;
-
-    // Sadece bana atananlar (Email veya İsim eşleşmesi)
-    visibleTasks = tasks.filter(t =>
-      t.assigneeEmail === user.email ||
-      (userName && t.assignee === userName)
-    );
+  // 1. Admin ise hepsini gör
+  if (isAdmin) {
+    visibleTasks = tasks;
+    visibleRoutineTasks = routineTasks;
   }
+  // 2. Yetki verisi yoksa BOOOŞ kalsın
+  else if (!userPermissions) {
+    visibleTasks = [];
+    visibleRoutineTasks = [];
+  }
+  // 3. Personel ise filtrele
+  else {
+    const myName = userPermissions.name;
+    const myEmail = userPermissions.email;
+    const canSeePool = userPermissions.canAccessRoutineTasks;
 
-  // Not: routineTasks için de aynısı geçerli.
-  // Kullanıcının hem email'i hem de kayıtlı ismi ile eşleşen görevleri göster
-  if (isStaff && user.email) {
-    // Kullanıcının kayıtlı ismini bul (eğer varsa)
-    const userStaffMember = registeredStaff.find(s => s.email === user.email);
-    const userName = userStaffMember?.name;
+    // Task Filtresi
+    visibleTasks = tasks.filter(t => {
+      const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
+      const nameMatch = myName && t.assignee === myName;
+      return emailMatch || nameMatch;
+    });
 
+    // Rutin İş Filtresi
     visibleRoutineTasks = routineTasks.filter(t => {
-      // 1. E-posta eşleşmesi (varsa)
-      const emailMatch = t.assigneeEmail && user.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
-      // 2. İsim eşleşmesi (varsa - geriye dönük uyumluluk)
-      const nameMatch = userName && t.assignee === userName;
-      // 3. Havuz (Atanmamış)
-      const isUnassigned = !t.assignee || t.assignee.trim() === '';
-      // 4. Yetki kontrolü (Havuz erişimi)
-      const hasPoolAccess = userPermissions?.canAccessRoutineTasks;
-
-      return emailMatch || nameMatch || (isUnassigned && hasPoolAccess);
+      const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
+      const nameMatch = myName && t.assignee === myName;
+      const isUnassigned = (!t.assignee || t.assignee.trim() === '') && !t.assigneeEmail;
+      return emailMatch || nameMatch || (isUnassigned && canSeePool);
     });
   }
-  */
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-white font-sans">
@@ -522,7 +517,7 @@ export default function App() {
       <main className="flex-1 flex overflow-hidden relative">
 
         {/* Sidebar (Pinned Staff) - Staff için her zaman açık, Admin için toggle edilebilir */}
-        {(isStaff || isSidebarOpen) && (
+        {(!isAdmin || isSidebarOpen) && (
           <PinnedStaffSidebar
             pinnedStaff={appSettings.pinnedStaff || []}
             tasks={visibleTasks}
