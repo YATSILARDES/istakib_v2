@@ -15,20 +15,13 @@ interface AdminPanelProps {
     onTasksUpdate: (newTasks: Task[]) => void;
 }
 
-type TabType = 'backup' | 'notifications' | 'permissions';
+type TabType = 'backup' | 'notifications';
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings, initialSettings, users, tasks, onTasksUpdate }) => {
     const [activeTab, setActiveTab] = useState<TabType>('backup');
     const [activeStatus, setActiveStatus] = useState<TaskStatus>(TaskStatus.TO_CHECK);
     const [settings, setSettings] = useState<AppSettings>(initialSettings);
     const [selectedUser, setSelectedUser] = useState('');
-
-    // Permissions State
-    const [permEmail, setPermEmail] = useState('');
-    const [currentPerm, setCurrentPerm] = useState<UserPermission | null>(null);
-    const [loadingPerm, setLoadingPerm] = useState(false);
-    const [allUsers, setAllUsers] = useState<UserPermission[]>([]); // Tüm kayıtlı kullanıcılar
-    const [isCustomEntry, setIsCustomEntry] = useState(false); // Toggle between select and manual input
 
     // UI Messages
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -47,165 +40,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
 
     useEffect(() => {
         setSettings(initialSettings);
-        // Personel yetkileri sekmesi açıldığında kullanıcıları yükle
-        if (isOpen && activeTab === 'permissions') {
-            fetchAllUsers();
-        }
-    }, [initialSettings, isOpen, activeTab]);
+    }, [initialSettings]);
 
-    // Tüm Kayıtlı Kullanıcıları Getir
-    const fetchAllUsers = async () => {
-        try {
-            const querySnapshot = await getDocs(collection(db, 'permissions'));
-            const users: UserPermission[] = [];
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                // Veri güvenliği: Listelerken de eksik verileri tamamla
-                users.push({
-                    email: data.email || doc.id, // doc.id genelde email adresidir
-                    allowedColumns: Array.isArray(data.allowedColumns) ? data.allowedColumns : [],
-                    role: data.role || 'staff',
-                    canAccessRoutineTasks: data.canAccessRoutineTasks || false,
-                    canAccessAssignment: data.canAccessAssignment || false,
-                    canAddCustomers: data.canAddCustomers || false
-                });
-            });
-            setAllUsers(users);
-        } catch (error) {
-            console.error("Kullanıcılar yüklenirken hata:", error);
-            setErrorMsg("Kullanıcı listesi yüklenemedi: " + (error as any).message);
-        }
-    };
-
-    // İzinleri Getir veya Yeni Kullanıcı Oluştur
-    const fetchPermission = async (email: string) => {
-        if (!email) {
-            setErrorMsg("Lütfen geçerli bir e-posta adresi yazın.");
-            return;
-        }
-        setLoadingPerm(true);
-        setErrorMsg(null);
-        setSuccessMsg(null);
-
-        try {
-            const docRef = doc(db, 'permissions', email);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                // Veri güvenliği: Eksik alanları varsayılan değerlerle doldur
-                const safePerm: UserPermission = {
-                    email: data.email || email,
-                    allowedColumns: Array.isArray(data.allowedColumns) ? data.allowedColumns : [],
-                    role: data.role || 'staff',
-                    canAccessRoutineTasks: data.canAccessRoutineTasks || false,
-                    canAccessAssignment: data.canAccessAssignment || false,
-                    canAddCustomers: data.canAddCustomers || false
-                };
-
-                setCurrentPerm(safePerm);
-                setSuccessMsg(`"${email}" bilgileri yüklendi.`);
-            } else {
-                console.log("Yeni kullanıcı oluşturuluyor...", email);
-
-                // 1. Permissions koleksiyonuna ekle
-                const newPerm: UserPermission = {
-                    email: email,
-                    allowedColumns: [],
-                    role: 'staff',
-                    canAccessRoutineTasks: false,
-                    canAccessAssignment: false,
-                    canAddCustomers: false
-                };
-                await setDoc(docRef, newPerm);
-
-                // 2. Staff List'e de ekle (Eğer yoksa)
-                const currentStaffList = settings.staffList || [];
-                const staffExists = currentStaffList.some(s => s.email === email);
-
-                if (!staffExists) {
-                    const generatedName = email.split('@')[0];
-                    const newStaffList = [...currentStaffList, { name: generatedName, email: email }];
-                    console.log("Staff listesine ekleniyor:", generatedName);
-                    onSaveSettings({ ...settings, staffList: newStaffList });
-                }
-
-                setCurrentPerm(newPerm);
-                setAllUsers(prev => [...prev, newPerm]);
-                setSuccessMsg(`"${email}" başarıyla oluşturuldu!`);
-            }
-        } catch (error: any) {
-            console.error("Kullanıcı işlem hatası:", error);
-            setErrorMsg("Hata: " + (error.message || "Bilinmeyen hata"));
-        } finally {
-            setLoadingPerm(false);
-        }
-    };
-
-    // İzin Kaydet
-    const savePermission = async () => {
-        const targetEmail = currentPerm?.email || permEmail;
-
-        if (!currentPerm || !targetEmail) {
-            setErrorMsg("Kaydedilecek kullanıcı belirsiz!");
-            return;
-        }
-
-        setLoadingPerm(true);
-        setErrorMsg(null);
-        try {
-            // currentPerm içindeki veriyi targetEmail dökümanına yaz
-            // ensure email field is set in content too
-            const dataToSave = { ...currentPerm, email: targetEmail };
-
-            await setDoc(doc(db, 'permissions', targetEmail), dataToSave);
-            await fetchAllUsers();
-            setSuccessMsg("Kullanıcı izinleri kaydedildi!");
-        } catch (error: any) {
-            console.error("İzin kaydetme hatası:", error);
-            setErrorMsg("Kaydetme hatası: " + error.message);
-        } finally {
-            setLoadingPerm(false);
-        }
-    };
-
-    // İzin Sil
-    const deletePermission = async (email: string) => {
-        if (!email) return;
-        if (!confirm(`"${email}" kullanıcısını ve tüm yetkilerini silmek istediğinize emin misiniz?`)) return;
-
-        try {
-            await deleteDoc(doc(db, 'permissions', email));
-
-            // Staff List'ten de sil
-            const currentStaffList = settings.staffList || [];
-            if (currentStaffList.some(s => s.email === email)) {
-                const newStaffList = currentStaffList.filter(s => s.email !== email);
-                onSaveSettings({ ...settings, staffList: newStaffList });
-            }
-
-            // Listeden kaldır
-            setAllUsers(prev => prev.filter(u => u.email !== email));
-            // Eğer silinen kullanıcı şu an seçiliyse, seçimi temizle
-            if (currentPerm?.email === email) {
-                setCurrentPerm(null);
-                setPermEmail('');
-            }
-            setSuccessMsg(`"${email}" silindi.`);
-        } catch (error: any) {
-            console.error("İzin silme hatası:", error);
-            setErrorMsg("Silme hatası: " + error.message);
-        }
-    };
-
-    const toggleColumnPermission = (status: TaskStatus) => {
-        if (!currentPerm) return;
-        const newAllowed = currentPerm.allowedColumns.includes(status)
-            ? currentPerm.allowedColumns.filter(s => s !== status)
-            : [...currentPerm.allowedColumns, status];
-
-        setCurrentPerm({ ...currentPerm, allowedColumns: newAllowed });
-    };
 
     if (!isOpen) return null;
 

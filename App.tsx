@@ -29,7 +29,6 @@ export default function App() {
   const [connected, setConnected] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [routineTasks, setRoutineTasks] = useState<RoutineTask[]>([]); // Rutin İşler
-  const [userPermissions, setUserPermissions] = useState<UserPermission | null>(null); // Kullanıcı İzinleri
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -173,29 +172,9 @@ export default function App() {
       setRoutineTasks(fetchedRoutine);
     });
 
-    // Permissions (Eğer Admin değilse)
-    let unsubPerm = () => { };
-    const userEmail = user?.email; // Email'i al
-
-    if (user && userEmail && !ADMIN_EMAILS.includes(userEmail)) {
-      unsubPerm = onSnapshot(doc(db, 'permissions', userEmail), (doc) => {
-        if (doc.exists()) {
-          setUserPermissions(doc.data() as UserPermission);
-        } else {
-          // Varsayılan: Hiçbir şey göremez
-          setUserPermissions({ email: userEmail, allowedColumns: [], role: 'staff' });
-        }
-      });
-    } else if (user) {
-      // Admin ise veya email yoksa (admin varsayalım veya kısıtlayalım? Şimdilik admin bloğunda)
-      // Eğer email yoksa 'unknown' diyelim
-      setUserPermissions({ email: userEmail || 'unknown', allowedColumns: Object.values(TaskStatus), role: 'admin' });
-    }
-
     return () => {
       unsubTasks();
       unsubRoutine();
-      unsubPerm();
     };
   }, [user]);
 
