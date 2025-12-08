@@ -285,6 +285,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                     {Array.from(new Set([...users, ...allPermissions.map(p => p.name).filter(n => n)])).map(user => (
                                         <label
                                             key={user}
+                                            onClick={(e) => e.stopPropagation()}
                                             className={`flex items-center p-4 rounded-xl cursor-pointer transition-all border ${(settings.notifications[activeStatus] || []).includes(user)
                                                 ? 'bg-yellow-900/20 border-yellow-500/50'
                                                 : 'bg-slate-900/50 border-transparent hover:bg-slate-700'
