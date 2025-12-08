@@ -1,7 +1,7 @@
 {
   "name": "workflow-ai-voice-assistant",
   "private": true,
-  "version": "0.0.26",
+  "version": "0.0.27",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -40,8 +40,9 @@
     "wait-on": "^8.0.1"
   },
   "build": {
-    "appId": "com.onaymuhendislik.istakip",
-    "productName": "Onay Mühendislik İş Takip Programı",
+    "appId": "com.onay.v2",
+    "productName": "Onay V2",
+    "artifactName": "${productName} Setup ${version}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -56,7 +57,7 @@
       {
         "provider": "github",
         "owner": "YATSILARDES",
-        "repo": "i-takip-v2"
+        "repo": "istakib_v2"
       }
     ]
   }
