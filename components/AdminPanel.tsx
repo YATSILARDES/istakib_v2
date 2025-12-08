@@ -28,6 +28,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
     const [currentPerm, setCurrentPerm] = useState<UserPermission | null>(null);
     const [loadingPerm, setLoadingPerm] = useState(false);
     const [allUsers, setAllUsers] = useState<UserPermission[]>([]); // Tüm kayıtlı kullanıcılar
+    const [isCustomEntry, setIsCustomEntry] = useState(false); // Toggle between select and manual input
 
     // UI Messages
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -493,64 +494,59 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                 <span className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-400">{allUsers.length}</span>
                                             </div>
 
+
                                             {/* Yeni Kullanıcı Ekle Input */}
                                             <div className="flex gap-2 mb-4">
-    // State for toggling between dropdown and manual input
-                                                const [isCustomEntry, setIsCustomEntry] = useState(false);
-
-                                                // ... (rest of code)
-
-                                                <div className="flex gap-2 mb-4">
-                                                    <div className="flex-1 flex gap-2">
-                                                        {!isCustomEntry ? (
-                                                            <select
-                                                                value={users.includes(permEmail) ? permEmail : ''}
-                                                                onChange={(e) => {
-                                                                    if (e.target.value === 'custom') {
-                                                                        setIsCustomEntry(true);
-                                                                        setPermEmail(''); // Clear for new entry
-                                                                    } else {
-                                                                        setPermEmail(e.target.value);
-                                                                    }
-                                                                }}
-                                                                className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm outline-none flex-1"
+                                                <div className="flex-1 flex gap-2">
+                                                    {!isCustomEntry ? (
+                                                        <select
+                                                            value={users.includes(permEmail) ? permEmail : ''}
+                                                            onChange={(e) => {
+                                                                if (e.target.value === 'custom') {
+                                                                    setIsCustomEntry(true);
+                                                                    setPermEmail(''); // Clear for new entry
+                                                                } else {
+                                                                    setPermEmail(e.target.value);
+                                                                }
+                                                            }}
+                                                            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm outline-none flex-1"
+                                                        >
+                                                            <option value="">Kayıtlı Kullanıcı Seçin...</option>
+                                                            {users.map(email => (
+                                                                <option key={email} value={email}>{email}</option>
+                                                            ))}
+                                                            <option value="custom" className="font-bold text-blue-400">➕ Yeni / Farklı E-posta Gir</option>
+                                                        </select>
+                                                    ) : (
+                                                        <div className="flex-1 flex gap-2 animate-fadeIn">
+                                                            <input
+                                                                type="email"
+                                                                placeholder="Yeni E-posta yazın..."
+                                                                value={permEmail}
+                                                                onChange={(e) => setPermEmail(e.target.value)}
+                                                                className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm flex-1"
+                                                                autoFocus
+                                                            />
+                                                            <button
+                                                                onClick={() => { setIsCustomEntry(false); setPermEmail(''); }}
+                                                                className="text-slate-400 hover:text-white px-2"
+                                                                title="Listeye Dön"
                                                             >
-                                                                <option value="">Kayıtlı Kullanıcı Seçin...</option>
-                                                                {users.map(email => (
-                                                                    <option key={email} value={email}>{email}</option>
-                                                                ))}
-                                                                <option value="custom" className="font-bold text-blue-400">➕ Yeni / Farklı E-posta Gir</option>
-                                                            </select>
-                                                        ) : (
-                                                            <div className="flex-1 flex gap-2 animate-fadeIn">
-                                                                <input
-                                                                    type="email"
-                                                                    placeholder="Yeni E-posta yazın..."
-                                                                    value={permEmail}
-                                                                    onChange={(e) => setPermEmail(e.target.value)}
-                                                                    className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm flex-1"
-                                                                    autoFocus
-                                                                />
-                                                                <button
-                                                                    onClick={() => { setIsCustomEntry(false); setPermEmail(''); }}
-                                                                    className="text-slate-400 hover:text-white px-2"
-                                                                    title="Listeye Dön"
-                                                                >
-                                                                    <X className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <button
-                                                        onClick={() => fetchPermission(permEmail)}
-                                                        disabled={loadingPerm || !permEmail}
-                                                        className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm disabled:opacity-50 transition-colors"
-                                                        title="Kullanıcı Ekle / Getir"
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                    </button>
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
+                                                <button
+                                                    onClick={() => fetchPermission(permEmail)}
+                                                    disabled={loadingPerm || !permEmail}
+                                                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm disabled:opacity-50 transition-colors"
+                                                    title="Kullanıcı Ekle / Getir"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
                                             </div>
+
 
                                             {/* Kullanıcı Listesi */}
                                             <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar">
