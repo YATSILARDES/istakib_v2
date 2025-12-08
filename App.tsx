@@ -590,7 +590,7 @@ export default function App() {
         onClose={() => setIsAdminPanelOpen(false)}
         onSaveSettings={handleSaveSettings}
         initialSettings={appSettings}
-        users={ADMIN_EMAILS}
+        users={allStaff.map(s => s.email).filter(Boolean) as string[]}
         tasks={tasks}
         onTasksUpdate={(newTasks) => setTasks(newTasks)}
       />

@@ -501,7 +501,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                     value={permEmail}
                                                     onChange={(e) => setPermEmail(e.target.value)}
                                                     className="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm"
+                                                    list="permission-users-list"
                                                 />
+                                                <datalist id="permission-users-list">
+                                                    {users.map(email => (
+                                                        <option key={email} value={email} />
+                                                    ))}
+                                                </datalist>
                                                 <button
                                                     onClick={() => fetchPermission(permEmail)}
                                                     disabled={loadingPerm}
