@@ -3,7 +3,7 @@ import { db } from '@/src/firebase';
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { UserPermission, AppSettings, Task, TaskStatus, StatusLabels } from '../types';
 import * as XLSX from 'xlsx';
-import { User, Database, Bell, Download, Upload, Check, Plus, Trash2, Shield, Lock, Eye, AlertCircle, Save, X } from 'lucide-react';
+import { User, Database, Bell, Download, Upload, Check, Plus, Trash2, Shield, Lock, Eye, AlertCircle, Save, X, Users } from 'lucide-react';
 
 interface AdminPanelProps {
     isOpen: boolean;
@@ -260,8 +260,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                         key={status}
                                         onClick={() => setActiveStatus(status)}
                                         className={`px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${activeStatus === status
-                                                ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-900/20'
-                                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                            ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-900/20'
+                                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                                             }`}
                                     >
                                         {StatusLabels[status]}
@@ -285,13 +285,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                         <label
                                             key={user}
                                             className={`flex items-center p-4 rounded-xl cursor-pointer transition-all border ${(settings.notifications[activeStatus] || []).includes(user)
-                                                    ? 'bg-yellow-900/20 border-yellow-500/50'
-                                                    : 'bg-slate-900/50 border-transparent hover:bg-slate-700'
+                                                ? 'bg-yellow-900/20 border-yellow-500/50'
+                                                : 'bg-slate-900/50 border-transparent hover:bg-slate-700'
                                                 }`}
                                         >
                                             <div className={`w-6 h-6 rounded-lg border flex items-center justify-center mr-4 transition-colors ${(settings.notifications[activeStatus] || []).includes(user)
-                                                    ? 'bg-yellow-600 border-yellow-600'
-                                                    : 'border-slate-600'
+                                                ? 'bg-yellow-600 border-yellow-600'
+                                                : 'border-slate-600'
                                                 }`}>
                                                 {(settings.notifications[activeStatus] || []).includes(user) && (
                                                     <Check className="w-4 h-4 text-white" />
@@ -304,8 +304,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                 onChange={() => handleNotificationToggle(user)}
                                             />
                                             <span className={`text-sm select-none ${(settings.notifications[activeStatus] || []).includes(user)
-                                                    ? 'text-yellow-100 font-medium'
-                                                    : 'text-slate-300'
+                                                ? 'text-yellow-100 font-medium'
+                                                : 'text-slate-300'
                                                 }`}>
                                                 {user}
                                             </span>
@@ -363,8 +363,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                             key={perm.email}
                                             onClick={() => setSelectedPerm(perm)}
                                             className={`w-full text-left p-3 rounded-xl flex items-center justify-between group cursor-pointer transition-all border ${selectedPerm?.email === perm.email
-                                                    ? 'bg-purple-600/10 border-purple-500/50 text-white'
-                                                    : 'border-transparent hover:bg-slate-800 text-slate-300'
+                                                ? 'bg-purple-600/10 border-purple-500/50 text-white'
+                                                : 'border-transparent hover:bg-slate-800 text-slate-300'
                                                 }`}
                                         >
                                             <div className="min-w-0">
