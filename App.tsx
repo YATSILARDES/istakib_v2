@@ -569,7 +569,7 @@ export default function App() {
           <KanbanBoard
             tasks={tasks}
             onTaskClick={handleTaskClick}
-            visibleColumns={userPermissions?.allowedColumns}
+            visibleColumns={undefined} // DEBUG: Show all columns to everyone
           />
         </div>
       </main>
