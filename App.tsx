@@ -525,43 +525,37 @@ export default function App() {
             <h2 className="text-xl font-semibold text-slate-200">Günlük Operasyon</h2>
 
             <div className="flex items-center gap-3">
-              {/* Eksikler Havuzu - Admin veya canAccessRoutineTasks */}
-              {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
-                <button
-                  onClick={() => setIsRoutineModalOpen(true)}
-                  className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
-                >
-                  <Bell className="w-4 h-4" />
-                  Eksikler Havuzu
-                  {routineTasks.filter(t => !t.isCompleted).length > 0 && (
-                    <span className="bg-purple-600 text-white text-[10px] px-1.5 rounded-full">
-                      {routineTasks.filter(t => !t.isCompleted).length}
-                    </span>
-                  )}
-                </button>
-              )}
+              {/* Eksikler Havuzu - DEBUG: Always visible */}
+              <button
+                onClick={() => setIsRoutineModalOpen(true)}
+                className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
+              >
+                <Bell className="w-4 h-4" />
+                Eksikler Havuzu
+                {routineTasks.filter(t => !t.isCompleted).length > 0 && (
+                  <span className="bg-purple-600 text-white text-[10px] px-1.5 rounded-full">
+                    {routineTasks.filter(t => !t.isCompleted).length}
+                  </span>
+                )}
+              </button>
 
-              {/* Görev Dağıtımı - Admin veya canAccessAssignment */}
-              {(isAdmin || userPermissions?.canAccessAssignment) && (
-                <button
-                  onClick={() => setIsAssignmentModalOpen(true)}
-                  className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
-                >
-                  <Users className="w-4 h-4" />
-                  Görev Dağıtımı
-                </button>
-              )}
+              {/* Görev Dağıtımı - DEBUG: Always visible */}
+              <button
+                onClick={() => setIsAssignmentModalOpen(true)}
+                className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
+              >
+                <Users className="w-4 h-4" />
+                Görev Dağıtımı
+              </button>
 
-              {/* Müşteri Ekle - Admin veya canAddCustomers */}
-              {(isAdmin || userPermissions?.canAddCustomers) && (
-                <button
-                  onClick={handleAddTaskClick}
-                  className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-green-500/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  Müşteri Ekle
-                </button>
-              )}
+              {/* Müşteri Ekle - DEBUG: Always visible */}
+              <button
+                onClick={handleAddTaskClick}
+                className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-green-500/20"
+              >
+                <Plus className="w-4 h-4" />
+                Müşteri Ekle
+              </button>
             </div>
           </div>
 
