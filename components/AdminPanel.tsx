@@ -281,7 +281,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                     </span>
                                 </div>
                                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {users.map(user => (
+                                    {/* Merge explicit users prop with fetched permission names to show everyone */}
+                                    {Array.from(new Set([...users, ...allPermissions.map(p => p.name).filter(n => n)])).map(user => (
                                         <label
                                             key={user}
                                             className={`flex items-center p-4 rounded-xl cursor-pointer transition-all border ${(settings.notifications[activeStatus] || []).includes(user)
