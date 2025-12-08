@@ -416,11 +416,18 @@ export default function App() {
     const userStaffMember = registeredStaff.find(s => s.email === user.email);
     const userName = userStaffMember?.name;
 
-    visibleRoutineTasks = routineTasks.filter(t =>
-      (t.assigneeEmail && t.assigneeEmail === user.email) ||
-      (userName && t.assignee === userName) ||
-      (!t.assignee && userPermissions?.canAccessRoutineTasks) // Havuzdaki (sahipsiz) işleri de göster
-    );
+    visibleRoutineTasks = routineTasks.filter(t => {
+      // 1. E-posta eşleşmesi (varsa)
+      const emailMatch = t.assigneeEmail && user.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
+      // 2. İsim eşleşmesi (varsa - geriye dönük uyumluluk)
+      const nameMatch = userName && t.assignee === userName;
+      // 3. Havuz (Atanmamış)
+      const isUnassigned = !t.assignee || t.assignee.trim() === '';
+      // 4. Yetki kontrolü (Havuz erişimi)
+      const hasPoolAccess = userPermissions?.canAccessRoutineTasks;
+
+      return emailMatch || nameMatch || (isUnassigned && hasPoolAccess);
+    });
   }
 
   return (
