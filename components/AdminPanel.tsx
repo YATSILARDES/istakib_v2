@@ -495,24 +495,40 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
 
                                             {/* Yeni Kullanıcı Ekle Input */}
                                             <div className="flex gap-2 mb-4">
-                                                <input
-                                                    type="email"
-                                                    placeholder="E-posta..."
-                                                    value={permEmail}
-                                                    onChange={(e) => setPermEmail(e.target.value)}
-                                                    className="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm"
-                                                    list="permission-users-list"
-                                                />
-                                                <datalist id="permission-users-list">
-                                                    {users.map(email => (
-                                                        <option key={email} value={email} />
-                                                    ))}
-                                                </datalist>
+                                                <div className="flex-1 flex gap-2">
+                                                    <select
+                                                        value={users.includes(permEmail) ? permEmail : (permEmail ? 'custom' : '')}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === 'custom') {
+                                                                setPermEmail('');
+                                                            } else {
+                                                                setPermEmail(e.target.value);
+                                                            }
+                                                        }}
+                                                        className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm outline-none flex-1"
+                                                    >
+                                                        <option value="">Kayıtlı Kullanıcı Seçin...</option>
+                                                        {users.map(email => (
+                                                            <option key={email} value={email}>{email}</option>
+                                                        ))}
+                                                        <option value="custom">➕ Yeni / Farklı E-posta Gir</option>
+                                                    </select>
+                                                    {(!users.includes(permEmail) && (permEmail || !users.length)) && (
+                                                        <input
+                                                            type="email"
+                                                            placeholder="Yeni E-posta yazın..."
+                                                            value={permEmail}
+                                                            onChange={(e) => setPermEmail(e.target.value)}
+                                                            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm flex-1 animate-fadeIn"
+                                                            autoFocus
+                                                        />
+                                                    )}
+                                                </div>
                                                 <button
                                                     onClick={() => fetchPermission(permEmail)}
-                                                    disabled={loadingPerm}
-                                                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
-                                                    title="Yeni Kullanıcı Ekle / Düzenle"
+                                                    disabled={loadingPerm || !permEmail}
+                                                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm disabled:opacity-50 transition-colors"
+                                                    title="Kullanıcı Ekle / Getir"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                 </button>

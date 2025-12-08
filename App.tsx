@@ -417,7 +417,7 @@ export default function App() {
     const userName = userStaffMember?.name;
 
     visibleRoutineTasks = routineTasks.filter(t =>
-      t.assigneeEmail === user.email ||
+      (t.assigneeEmail && t.assigneeEmail === user.email) ||
       (userName && t.assignee === userName) ||
       (!t.assignee && userPermissions?.canAccessRoutineTasks) // Havuzdaki (sahipsiz) işleri de göster
     );
