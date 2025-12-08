@@ -539,7 +539,9 @@ export default function App() {
         <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800">
           {/* Toolbar */}
           <div className="px-6 py-4 flex items-center justify-between border-b border-slate-800/50">
-            <h2 className="text-xl font-semibold text-slate-200">Günlük Operasyon</h2>
+            <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+              Günlük Operasyon <span className="text-xs text-red-500 font-bold border border-red-500 px-1 rounded">(V2.5 YENİ)</span>
+            </h2>
 
             <div className="flex items-center gap-3">
               {/* Eksikler Havuzu - Admin veya Yetkili */}
