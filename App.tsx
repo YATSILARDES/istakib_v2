@@ -429,15 +429,15 @@ export default function App() {
     const myName = userPermissions.name;
     const myEmail = userPermissions.email;
     const canSeePool = userPermissions.canAccessRoutineTasks;
+    const allowedColumns = userPermissions.allowedColumns || [];
 
-    // Task Filtresi
+    // KANBAN TASK FİLTRESİ: Yetkili olunan sütundaki TÜM görevleri göster
     visibleTasks = tasks.filter(t => {
-      const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
-      const nameMatch = myName && t.assignee === myName;
-      return emailMatch || nameMatch;
+      // Görevin bulunduğu sütun, kullanıcının görebileceği sütunlar arasında mı?
+      return allowedColumns.includes(t.status);
     });
 
-    // Rutin İş Filtresi
+    // EKSİK LİSTESİ (RUTİN İŞLER) FİLTRESİ: Sadece kendine atananları göster
     visibleRoutineTasks = routineTasks.filter(t => {
       const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
       const nameMatch = myName && t.assignee === myName;
