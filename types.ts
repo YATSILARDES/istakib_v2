@@ -71,13 +71,13 @@ export interface AppSettings {
 }
 
 export interface UserPermission {
-  email: string;
-  displayName?: string;
+  email: string;      // Login Email ve Benzersiz ID
+  name: string;       // Personel Adı (Görev filtreleme için)
   allowedColumns: TaskStatus[];
   role: 'admin' | 'staff';
   canAccessRoutineTasks?: boolean; // Eksikler Havuzu
   canAccessAssignment?: boolean;   // Görev Dağıtımı
-  canAddCustomers?: boolean;        // Müşteri Ekle
+  canAddCustomers?: boolean;       // Müşteri Ekle
 }
 
 export interface RoutineTask {
