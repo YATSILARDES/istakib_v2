@@ -390,12 +390,16 @@ export default function App() {
 
   // Filtreleme (Admin değilse sadece kendi işleri)
   // Eğer kullanıcı Admin değilse, tasks listesini filtreleyeceğiz
-  let visibleTasks = tasks;
+
+  // *** TEMPORARILY DISABLED FOR DEBUG - EVERYONE SEES EVERYTHING ***
+  let visibleTasks = tasks; // Show all tasks to everyone
+  let visibleRoutineTasks = routineTasks; // Show all routine tasks to everyone
 
   // Admin kontrolü (Email listesi)
   const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
   const isStaff = !isAdmin;
 
+  /* DISABLED FILTERING - UNCOMMENT TO RE-ENABLE
   if (isStaff && user.email) {
     // Kullanıcının kayıtlı ismini bul (eğer varsa)
     const userStaffMember = registeredStaff.find(s => s.email === user.email);
@@ -410,7 +414,6 @@ export default function App() {
 
   // Not: routineTasks için de aynısı geçerli.
   // Kullanıcının hem email'i hem de kayıtlı ismi ile eşleşen görevleri göster
-  let visibleRoutineTasks = routineTasks;
   if (isStaff && user.email) {
     // Kullanıcının kayıtlı ismini bul (eğer varsa)
     const userStaffMember = registeredStaff.find(s => s.email === user.email);
@@ -429,6 +432,7 @@ export default function App() {
       return emailMatch || nameMatch || (isUnassigned && hasPoolAccess);
     });
   }
+  */
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-white font-sans">
