@@ -1,8 +1,6 @@
 /// <reference types="vite/client" />
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { GoogleGenAI, FunctionDeclaration, Type, LiveServerMessage, Modality } from '@google/genai';
-import * as XLSX from 'xlsx';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -17,7 +15,7 @@ import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/au
 import { NOTIFICATION_SOUND } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
 
 // Yöneticiler Listesi
 const ADMIN_EMAILS = ['caner192@hotmail.com'];
