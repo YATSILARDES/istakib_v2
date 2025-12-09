@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, FunctionDeclaration, Type, LiveServerMessage, Modality } from '@google/genai';
 import * as XLSX from 'xlsx';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -33,6 +33,9 @@ export default function App() {
   const [userPermissions, setUserPermissions] = useState<UserPermission | null>(null); // Permission Logic
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Admin Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
