@@ -11,7 +11,7 @@ import AssignmentModal from './components/AssignmentModal';
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
-import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
+
 import { NOTIFICATION_SOUND } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
@@ -148,15 +148,7 @@ export default function App() {
   };
 
   // Audio Refs & Gemini
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const inputAudioContextRef = useRef<AudioContext | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const nextStartTimeRef = useRef<number>(0);
-  const sessionPromiseRef = useRef<Promise<any> | null>(null);
-  const tasksRef = useRef(tasks);
-  useEffect(() => { tasksRef.current = tasks; }, [tasks]);
+
 
   // Auth Listener
   useEffect(() => {
