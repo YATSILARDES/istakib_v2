@@ -376,13 +376,23 @@ export default function App() {
     await handleSaveSettings({ ...appSettings, pinnedStaff: newPinned, staffList: newStaffList });
   };
 
-  const handleRemoveStaff = (name: string) => {
-    // Pinned listesinden çıkar
-    if (appSettings.pinnedStaff?.includes(name)) {
-      handleTogglePinStaff(name);
-    }
-    // NOT: StaffList'ten tamamen silmiyoruz (veri kaybolmasın diye), sadece Pinned'dan düşürüyoruz.
-    // İleride tam silme eklenebilir.
+  const handleRemoveStaff = async (name: string) => {
+    if (!confirm(`${name} isimli personeli silmek istediğinize emin misiniz?`)) return;
+
+    // 1. Pinned listesinden çıkar
+    const currentPinned = appSettings.pinnedStaff || [];
+    const newPinned = currentPinned.filter(p => p !== name);
+
+    // 2. StaffList'ten çıkar
+    const currentStaffList = appSettings.staffList || [];
+    const newStaffList = currentStaffList.filter(s => s.name !== name);
+
+    // 3. Ayarları kaydet
+    await handleSaveSettings({
+      ...appSettings,
+      pinnedStaff: newPinned,
+      staffList: newStaffList
+    });
   };
 
   const handleTogglePinStaff = async (name: string) => {
