@@ -539,193 +539,214 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex overflow-hidden relative">
+  // Admin Sidebar State
+      const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-        {/* Sidebar (Pinned Staff) - SADECE ADMIN İÇİN (ESKİ DÜZEN) */}
-        {isAdmin && (
-          <PinnedStaffSidebar
-            pinnedStaff={appSettings.pinnedStaff || []}
-            tasks={visibleTasks}
-            routineTasks={routineTasks} // Admin tümünü görür (visibleRoutineTasks ile aynı ama net olsun)
-            onTaskClick={handleTaskClick}
-            onToggleRoutineTask={handleToggleRoutineTask}
-            onToggleTaskVerification={handleToggleTaskVerification}
-            onUnpin={(name) => handleTogglePinStaff(name)}
-            isAdmin={isAdmin}
-          />
-        )}
+      // ... (previous logic)
 
-        {/* Board Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800">
-          {/* Toolbar */}
-          <div className="px-6 py-4 flex items-center justify-between border-b border-slate-800/50">
-            <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
-              Günlük Operasyon
-              <span className="text-xs text-red-500 font-bold border border-red-500 px-1 rounded">(V3.0 YENİ)</span>
-              {userPermissions && (
-                <span className="text-[10px] text-slate-500 px-1 border border-slate-700 rounded">
-                  {userPermissions.role === 'admin' ? 'ADMIN' : `STAFF: ${userPermissions.name}`}
-                </span>
-              )}
-            </h2>
+      return (
+      <div className="flex flex-col h-screen bg-slate-900 text-slate-200 font-inter overflow-hidden selection:bg-purple-500/30">
 
-            <div className="flex items-center gap-3">
-              {/* Eksikler Havuzu - Admin veya Yetkili */}
-              {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
-                <button
-                  onClick={() => setIsRoutineModalOpen(true)}
-                  className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
-                >
-                  <Bell className="w-4 h-4" />
-                  Eksikler Havuzu ({(isAdmin || userPermissions?.canAccessRoutineTasks)
-                    ? routineTasks.filter(t => !t.isCompleted).length
-                    : visibleRoutineTasks.filter(t => !t.isCompleted).length})
-                  {/* Badge mantığı: Admin/Havuz yetkilisi tümünü görür, diğerleri sadece kendisininkini */}
-                </button>
-              )}
+        {/* ... (Header) ... */}
 
-              {/* Görev Dağıtımı - Admin veya Yetkili */}
-              {(isAdmin || userPermissions?.canAccessAssignment) && (
-                <button
-                  onClick={() => setIsAssignmentModalOpen(true)}
-                  className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
-                >
-                  <Users className="w-4 h-4" />
-                  Görev Dağıtımı
-                </button>
-              )}
+        {/* Main Content Area */}
+        <main className="flex-1 flex overflow-hidden relative">
 
-              {/* Müşteri Ekle - Admin veya Yetkili */}
-              {(isAdmin || userPermissions?.canAddCustomers) && (
-                <button
-                  onClick={handleAddTaskClick}
-                  className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-green-500/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  Müşteri Ekle
-                </button>
-              )}
+          {/* Sidebar (Pinned Staff) - SADECE ADMIN İÇİN */}
+          {isAdmin && isSidebarOpen && (
+            <PinnedStaffSidebar
+              pinnedStaff={appSettings.pinnedStaff || []}
+              tasks={visibleTasks}
+              routineTasks={routineTasks}
+              onTaskClick={handleTaskClick}
+              onToggleRoutineTask={handleToggleRoutineTask}
+              onToggleTaskVerification={handleToggleTaskVerification}
+              onUnpin={(name) => handleTogglePinStaff(name)}
+              isAdmin={isAdmin}
+            />
+          )}
+
+          {/* Sidebar Toggle Button for Admin */}
+          {isAdmin && (
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="absolute top-1/2 -translate-y-1/2 z-30 bg-slate-800 border-y border-r border-slate-700/50 rounded-r-lg p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition-all shadow-lg"
+              style={{ left: isSidebarOpen ? '320px' : '0' }} // 80 (width) * 4 = 320px
+            >
+              {isSidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+          )}
+
+          {/* Board Area */}
+          <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800">
+            {/* Toolbar */}
+            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-800/50">
+              <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+                Günlük Operasyon
+                <span className="text-xs text-red-500 font-bold border border-red-500 px-1 rounded">(V3.0 YENİ)</span>
+                {userPermissions && (
+                  <span className="text-[10px] text-slate-500 px-1 border border-slate-700 rounded">
+                    {userPermissions.role === 'admin' ? 'ADMIN' : `STAFF: ${userPermissions.name}`}
+                  </span>
+                )}
+              </h2>
+
+              <div className="flex items-center gap-3">
+                {/* Eksikler Havuzu - Admin veya Yetkili */}
+                {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
+                  <button
+                    onClick={() => setIsRoutineModalOpen(true)}
+                    className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
+                  >
+                    <Bell className="w-4 h-4" />
+                    Eksikler Havuzu ({(isAdmin || userPermissions?.canAccessRoutineTasks)
+                      ? routineTasks.filter(t => !t.isCompleted).length
+                      : visibleRoutineTasks.filter(t => !t.isCompleted).length})
+                    {/* Badge mantığı: Admin/Havuz yetkilisi tümünü görür, diğerleri sadece kendisininkini */}
+                  </button>
+                )}
+
+                {/* Görev Dağıtımı - Admin veya Yetkili */}
+                {(isAdmin || userPermissions?.canAccessAssignment) && (
+                  <button
+                    onClick={() => setIsAssignmentModalOpen(true)}
+                    className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
+                  >
+                    <Users className="w-4 h-4" />
+                    Görev Dağıtımı
+                  </button>
+                )}
+
+                {/* Müşteri Ekle - Admin veya Yetkili */}
+                {(isAdmin || userPermissions?.canAddCustomers) && (
+                  <button
+                    onClick={handleAddTaskClick}
+                    className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-green-500/20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Müşteri Ekle
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Kanban Board */}
+            <KanbanBoard
+              tasks={visibleTasks} // Filtrelenmiş görevler (Board Sütunları için)
+              routineTasks={visibleRoutineTasks} // Personel Eksik Listesi (Staff için)
+              myTasks={!isAdmin && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []} // Personel Kendi Standart İşleri
+              onTaskClick={handleTaskClick}
+              onToggleRoutineTask={handleToggleRoutineTask}
+              visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü
+              showRoutineColumn={!isAdmin} // Admin ise Sütun Gizli, Staff ise Sütun Açık
+              staffName={userPermissions?.name} // [NEW] Sütun başlığı için isim
+            />
           </div>
+        </main>
 
-          {/* Kanban Board */}
-          <KanbanBoard
-            tasks={visibleTasks} // Filtrelenmiş görevler (Board Sütunları için)
-            routineTasks={visibleRoutineTasks} // Personel Eksik Listesi (Staff için)
-            myTasks={!isAdmin && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []} // Personel Kendi Standart İşleri
-            onTaskClick={handleTaskClick}
-            onToggleRoutineTask={handleToggleRoutineTask}
-            visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü
-            showRoutineColumn={!isAdmin} // Admin ise Sütun Gizli, Staff ise Sütun Açık
-            staffName={userPermissions?.name} // [NEW] Sütun başlığı için isim
-          />
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="h-8 bg-slate-950 border-t border-slate-800 flex items-center justify-between px-4 text-xs text-slate-500 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-          <span>Sistem Aktif</span>
-        </div>
-        <div>
-          Toplam İş: {tasks.length}
-        </div>
-      </footer>
-
-      {/* Modals */}
-      <TaskModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveTask}
-        onDelete={handleDeleteTask}
-        task={selectedTask}
-        nextOrderNumber={nextOrderNumber}
-        isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
-      />
-
-      <AdminPanel
-        isOpen={isAdminPanelOpen}
-        onClose={() => setIsAdminPanelOpen(false)}
-        onSaveSettings={handleSaveSettings}
-        initialSettings={appSettings}
-        users={allStaff.map(s => s.email).filter(Boolean) as string[]}
-        tasks={tasks}
-        onTasksUpdate={async (newTasks) => {
-          // Batch write to Firestore
-          try {
-            const batch = writeBatch(db);
-
-            // Limit checks: Batch allows max 500 ops.
-            // For now, we assume reasonable file size or slice it. 
-            // Better: loop in chunks of 500.
-
-            const chunks = [];
-            for (let i = 0; i < newTasks.length; i += 400) {
-              chunks.push(newTasks.slice(i, i + 400));
-            }
-
-            for (const chunk of chunks) {
-              const chunkBatch = writeBatch(db);
-              chunk.forEach(task => {
-                // Use existing ID or create new reference
-                const taskRef = doc(db, 'tasks', task.id);
-                chunkBatch.set(taskRef, {
-                  ...task,
-                  orderNumber: Number(task.orderNumber), // Ensure number
-                  createdAt: task.createdAt || serverTimestamp(),
-                  lastUpdatedBy: user?.email
-                }, { merge: true });
-              });
-              await chunkBatch.commit();
-            }
-            // Local state will update via snapshot listener automatically
-          } catch (e) {
-            console.error("Batch import error:", e);
-            setError("İçe aktarma sırasında hata oluştu.");
-          }
-        }}
-      />
-
-      <RoutineTasksModal
-        isOpen={isRoutineModalOpen}
-        onClose={() => setIsRoutineModalOpen(false)}
-        tasks={visibleRoutineTasks}
-        onAddTask={handleAddRoutineTask}
-        onToggleTask={handleToggleRoutineTask}
-        onDeleteTask={handleDeleteRoutineTask}
-      />
-
-      <AssignmentModal
-        isOpen={isAssignmentModalOpen}
-        onClose={() => setIsAssignmentModalOpen(false)}
-        tasks={tasks}
-        routineTasks={routineTasks}
-        onAssignTask={handleAssignTask}
-        onAssignRoutineTask={handleAssignRoutineTask}
-        staffList={allStaff}
-        pinnedStaff={appSettings.pinnedStaff || []}
-        onAddStaff={handleAddStaff}
-        onRemoveStaff={handleRemoveStaff}
-        onTogglePinStaff={handleTogglePinStaff}
-      />
-
-      {/* Toast Notification */}
-      {toast.visible && (
-        <div className="fixed bottom-4 right-4 bg-slate-800 border border-blue-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-slideIn z-50">
-          <div className="bg-blue-500/20 p-2 rounded-full">
-            <Bell className="w-6 h-6 text-blue-400" />
+        {/* Footer */}
+        <footer className="h-8 bg-slate-950 border-t border-slate-800 flex items-center justify-between px-4 text-xs text-slate-500 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <span>Sistem Aktif</span>
           </div>
           <div>
-            <h4 className="font-bold text-sm text-blue-400">Yeni Bildirim</h4>
-            <p className="text-sm text-slate-200">{toast.message}</p>
+            Toplam İş: {tasks.length}
           </div>
-          <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-    </div>
-  );
+        </footer>
+
+        {/* Modals */}
+        <TaskModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveTask}
+          onDelete={handleDeleteTask}
+          task={selectedTask}
+          nextOrderNumber={nextOrderNumber}
+          isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
+        />
+
+        <AdminPanel
+          isOpen={isAdminPanelOpen}
+          onClose={() => setIsAdminPanelOpen(false)}
+          onSaveSettings={handleSaveSettings}
+          initialSettings={appSettings}
+          users={allStaff.map(s => s.email).filter(Boolean) as string[]}
+          tasks={tasks}
+          onTasksUpdate={async (newTasks) => {
+            // Batch write to Firestore
+            try {
+              const batch = writeBatch(db);
+
+              // Limit checks: Batch allows max 500 ops.
+              // For now, we assume reasonable file size or slice it. 
+              // Better: loop in chunks of 500.
+
+              const chunks = [];
+              for (let i = 0; i < newTasks.length; i += 400) {
+                chunks.push(newTasks.slice(i, i + 400));
+              }
+
+              for (const chunk of chunks) {
+                const chunkBatch = writeBatch(db);
+                chunk.forEach(task => {
+                  // Use existing ID or create new reference
+                  const taskRef = doc(db, 'tasks', task.id);
+                  chunkBatch.set(taskRef, {
+                    ...task,
+                    orderNumber: Number(task.orderNumber), // Ensure number
+                    createdAt: task.createdAt || serverTimestamp(),
+                    lastUpdatedBy: user?.email
+                  }, { merge: true });
+                });
+                await chunkBatch.commit();
+              }
+              // Local state will update via snapshot listener automatically
+            } catch (e) {
+              console.error("Batch import error:", e);
+              setError("İçe aktarma sırasında hata oluştu.");
+            }
+          }}
+        />
+
+        <RoutineTasksModal
+          isOpen={isRoutineModalOpen}
+          onClose={() => setIsRoutineModalOpen(false)}
+          tasks={visibleRoutineTasks}
+          onAddTask={handleAddRoutineTask}
+          onToggleTask={handleToggleRoutineTask}
+          onDeleteTask={handleDeleteRoutineTask}
+        />
+
+        <AssignmentModal
+          isOpen={isAssignmentModalOpen}
+          onClose={() => setIsAssignmentModalOpen(false)}
+          tasks={tasks}
+          routineTasks={routineTasks}
+          onAssignTask={handleAssignTask}
+          onAssignRoutineTask={handleAssignRoutineTask}
+          staffList={allStaff}
+          pinnedStaff={appSettings.pinnedStaff || []}
+          onAddStaff={handleAddStaff}
+          onRemoveStaff={handleRemoveStaff}
+          onTogglePinStaff={handleTogglePinStaff}
+        />
+
+        {/* Toast Notification */}
+        {toast.visible && (
+          <div className="fixed bottom-4 right-4 bg-slate-800 border border-blue-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-slideIn z-50">
+            <div className="bg-blue-500/20 p-2 rounded-full">
+              <Bell className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-blue-400">Yeni Bildirim</h4>
+              <p className="text-sm text-slate-200">{toast.message}</p>
+            </div>
+            <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+      );
 }
