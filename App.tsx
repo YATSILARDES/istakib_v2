@@ -631,7 +631,9 @@ export default function App() {
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveTask}
           onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
-          staffList={registeredStaff.map(s => s.name)} // Sadece kayıtlı personeli göster
+          isOpen={isModalOpen}
+          nextOrderNumber={tasks.length + 1}
+          isAdmin={isAdmin}
         />
       )}
 
