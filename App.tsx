@@ -70,10 +70,18 @@ export default function App() {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'modified') {
           const task = change.doc.data() as Task;
-          const targetEmails = appSettings.notifications?.[task.status] || [];
+          // FIX: Include both configured notification emails AND the assigned staff email
+          const configuredEmails = appSettings.notifications?.[task.status] || [];
+          const assigneeEmail = task.assigneeEmail;
 
-          if (targetEmails.length > 0) {
-            console.log(`Bildirim gönderiliyor: ${targetEmails.join(', ')} -> ${task.title} - ${task.status}`);
+          // Combine and deduplicate
+          const allTargetEmails = [...configuredEmails];
+          if (assigneeEmail && !allTargetEmails.includes(assigneeEmail)) {
+            allTargetEmails.push(assigneeEmail);
+          }
+
+          if (allTargetEmails.length > 0) {
+            console.log(`Bildirim gönderiliyor (Config + Assignee): ${allTargetEmails.join(', ')} -> ${task.title} - ${task.status}`);
 
             // Toast Bildirim
             setToast({
@@ -84,9 +92,8 @@ export default function App() {
             setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
 
             // Eğer bu durum için bir bildirim ayarlanmışsa ve hedef bizsek
-            // FIX: Case-insensitive email check
             const currentUserEmail = user.email?.toLowerCase() || '';
-            const normalizedTargetEmails = targetEmails.map(e => e.toLowerCase());
+            const normalizedTargetEmails = allTargetEmails.map(e => e.toLowerCase());
 
             if (normalizedTargetEmails.includes(currentUserEmail)) {
               const message = `${task.title} - ${StatusLabels[task.status]} aşamasına geldi.`;
