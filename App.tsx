@@ -52,7 +52,8 @@ export default function App() {
         const data = doc.data() as AppSettings;
         setAppSettings({
           notifications: data.notifications || {},
-          pinnedStaff: data.pinnedStaff || []
+          pinnedStaff: data.pinnedStaff || [],
+          staffList: data.staffList || [] // Include staffList!
         });
       }
     });
