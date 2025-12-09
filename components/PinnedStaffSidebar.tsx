@@ -87,9 +87,10 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
           const totalCount = pendingRoutineCount + pendingStandardCount;
 
           const isOpen = openStaff[staffName] ?? true; // Default open
+          const staffColorClass = getStaffColor(staffName);
 
           return (
-            <div key={staffName} className="bg-slate-800/30 border border-slate-700/50 rounded-lg overflow-hidden transition-all">
+            <div key={staffName} className={`${staffColorClass} border rounded-lg overflow-hidden transition-all`}>
               {/* Header */}
               <div
                 className={`flex items-center justify-between p-3 cursor-pointer hover:bg-slate-700/50 transition-colors ${isOpen ? 'bg-slate-800' : ''}`}
