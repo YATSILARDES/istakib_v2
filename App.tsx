@@ -639,14 +639,10 @@ export default function App() {
         <RoutineTasksModal
           isOpen={isRoutineModalOpen}
           onClose={() => setIsRoutineModalOpen(false)}
-          routineTasks={routineTasks}
-          onAddRoutineTask={handleAddRoutineTask}
-          onToggleRoutineTask={handleToggleRoutineTask}
-          onDeleteRoutineTask={handleDeleteRoutineTask}
-          onAssignTask={handleAssignRoutineTask}
-          staffList={registeredStaff} // Obje listesi (name, email)
-          isAdmin={isAdmin}
-          userProjectEmail={user?.email || ''} // Havuza almak için (assignee='null', email='null')
+          tasks={routineTasks}
+          onAddTask={handleAddRoutineTask}
+          onToggleTask={handleToggleRoutineTask}
+          onDeleteTask={handleDeleteRoutineTask}
         />
       )}
 
@@ -655,31 +651,27 @@ export default function App() {
           isOpen={isAssignmentModalOpen}
           onClose={() => setIsAssignmentModalOpen(false)}
           tasks={tasks}
-          staffList={registeredStaff} // {name, email}
+          routineTasks={routineTasks}
           onAssignTask={handleAssignTask}
+          onAssignRoutineTask={handleAssignRoutineTask}
+          staffList={registeredStaff}
+          pinnedStaff={appSettings.pinnedStaff || []}
+          onAddStaff={handleAddStaff}
+          onRemoveStaff={handleRemoveStaff}
+          onTogglePinStaff={handleTogglePinStaff}
         />
       )}
 
       {/* Admin Panel Modal */}
-      {isAdminPanelOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-slate-900 w-full max-w-6xl h-[90vh] rounded-2xl shadow-2xl border border-slate-700 overflow-hidden relative flex flex-col">
-            <button
-              onClick={() => setIsAdminPanelOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white z-10"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <AdminPanel
-              appSettings={appSettings}
-              onSaveSettings={handleSaveSettings}
-              onAddStaff={handleAddStaff}
-              onRemoveStaff={handleRemoveStaff}
-              onTogglePinStaff={handleTogglePinStaff}
-            />
-          </div>
-        </div>
-      )}
+      <AdminPanel
+        isOpen={isAdminPanelOpen}
+        onClose={() => setIsAdminPanelOpen(false)}
+        initialSettings={appSettings}
+        onSaveSettings={handleSaveSettings}
+        users={registeredStaff.map(s => s.email).filter(Boolean)}
+        tasks={tasks}
+        onTasksUpdate={setTasks}
+      />
 
       {/* Toast Notification */}
       {toast.visible && (
