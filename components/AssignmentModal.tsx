@@ -67,9 +67,17 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
   const staffRoutineTasks = useMemo(() =>
     routineTasks.filter(t => t.assignee === selectedStaffName && !t.isCompleted)
       .sort((a, b) => {
-        // createdAt'e göre sırala (eski önce, yeni sonda)
-        const aTime = a.createdAt?.toMillis?.() || a.createdAt || 0;
-        const bTime = b.createdAt?.toMillis?.() || b.createdAt || 0;
+        // assignedAt'e göre sırala (Eskiden Yeniye -> İlk eklenen üstte)
+        const aTime = a.assignedAt?.toMillis?.() || a.assignedAt || 0;
+        const bTime = b.assignedAt?.toMillis?.() || b.assignedAt || 0;
+
+        // Eğer assignedAt yoksa (eski kayıtlar), createdAt'e göre sırala
+        if (aTime === 0 && bTime === 0) {
+          const aCreate = a.createdAt?.toMillis?.() || a.createdAt || 0;
+          const bCreate = b.createdAt?.toMillis?.() || b.createdAt || 0;
+          return aCreate - bCreate;
+        }
+
         return aTime - bTime;
       }),
     [routineTasks, selectedStaffName]);

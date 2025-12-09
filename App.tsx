@@ -336,7 +336,13 @@ export default function App() {
   const handleAssignRoutineTask = async (taskId: string, assignee: string, assigneeEmail?: string) => {
     try {
       const taskRef = doc(db, 'routine_tasks', taskId);
-      await updateDoc(taskRef, { assignee, assigneeEmail: assigneeEmail || null });
+      // Eğer atama yapılıyorsa (assignee doluysa) zaman damgası ekle, yoksa (havuza dönüyorsa) null yap
+      const assignedAt = assignee ? serverTimestamp() : null;
+      await updateDoc(taskRef, {
+        assignee,
+        assigneeEmail: assigneeEmail || null,
+        assignedAt
+      });
     } catch (e) {
       console.error("Assign routine error:", e);
     }

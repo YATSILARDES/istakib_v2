@@ -91,4 +91,5 @@ export interface RoutineTask {
   customerName?: string; // Müşteri Adı Soyadı
   phoneNumber?: string; // Telefon Numarası
   address?: string; // Adres
+  assignedAt?: any; // Atanma Zamanı (Sıralama için)
 }
