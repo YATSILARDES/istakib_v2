@@ -52,11 +52,11 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
   // Verileri Filtrele
   const unassignedTasks = useMemo(() =>
-    tasks.filter(t => t.status === TaskStatus.TO_CHECK && (!t.assignee || t.assignee.trim() === '')),
+    tasks.filter(t => t.status === TaskStatus.TO_CHECK && (!t.assignee || t.assignee.trim() === '' || t.assignee === 'Atanmadı')),
     [tasks]);
 
   const unassignedRoutineTasks = useMemo(() =>
-    routineTasks.filter(t => !t.isCompleted && (!t.assignee || t.assignee.trim() === '')),
+    routineTasks.filter(t => !t.isCompleted && (!t.assignee || t.assignee.trim() === '' || t.assignee === 'Atanmadı')),
     [routineTasks]);
 
   const staffTasks = useMemo(() =>
