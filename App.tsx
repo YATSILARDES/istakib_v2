@@ -558,22 +558,14 @@ export default function App() {
                 onToggleRoutineTask={handleToggleRoutineTask}
                 onToggleTaskVerification={handleToggleTaskVerification}
                 onUnpin={(name) => handleTogglePinStaff(name)}
+                onClose={() => setIsSidebarOpen(false)}
                 isAdmin={isAdmin}
               />
             </div>
           </div>
         )}
 
-        {/* Sidebar Toggle Button for Admin */}
-        {isAdmin && (
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="absolute top-1/2 -translate-y-1/2 z-30 bg-slate-800 border-y border-r border-slate-700/50 rounded-r-lg p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition-all duration-300 ease-in-out shadow-lg"
-            style={{ left: isSidebarOpen ? '320px' : '0' }} // Layout transition ile senkron
-          >
-            {isSidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
-        )}
+
 
         {/* Board Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800 transition-all duration-300">

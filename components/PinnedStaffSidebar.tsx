@@ -10,6 +10,7 @@ interface PinnedStaffSidebarProps {
   onToggleRoutineTask: (taskId: string) => void;
   onToggleTaskVerification: (taskId: string) => void;
   onUnpin: (staffName: string) => void;
+  onClose: () => void;
   isAdmin: boolean;
 }
 
@@ -20,6 +21,7 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
   onTaskClick,
   onToggleRoutineTask,
   onUnpin,
+  onClose,
   isAdmin
 }) => {
   // Hangi personelin listesi açık? (Accordian state)
@@ -71,12 +73,22 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
 
   return (
     <div className="w-80 bg-slate-900 border-r border-slate-700 flex flex-col h-full overflow-hidden shadow-2xl z-20">
-      <div className="p-4 border-b border-slate-700 bg-slate-800/50">
-        <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-          <UserCircle className="w-4 h-4" />
-          Sahadaki Personel
-        </h3>
-        <p className="text-[10px] text-slate-500 mt-1">Sabitlenen listeler burada görünür.</p>
+      <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex items-center justify-between">
+        <div>
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+            <UserCircle className="w-4 h-4" />
+            Sahadaki Personel
+          </h3>
+          <p className="text-[10px] text-slate-500 mt-1">Sabitlenen listeler burada görünür.</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1.5"
+          title="Paneli Gizle"
+        >
+          <span className="text-[10px] font-medium hidden sm:inline">GİZLE</span>
+          <ChevronRight className="w-4 h-4 rotate-180" />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
