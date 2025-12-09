@@ -611,8 +611,9 @@ export default function App() {
 
           {/* Kanban Board */}
           <KanbanBoard
-            tasks={visibleTasks} // Filtrelenmiş görevler
+            tasks={visibleTasks} // Filtrelenmiş görevler (Board Sütunları için)
             routineTasks={visibleRoutineTasks} // Personel Eksik Listesi (Staff için)
+            myTasks={!isAdmin && userPermissions ? tasks.filter(t => t.assignee === userPermissions.name && t.status !== TaskStatus.CHECK_COMPLETED) : []} // Personel Kendi Standart İşleri (Yeni Özellik)
             onTaskClick={handleTaskClick}
             onToggleRoutineTask={handleToggleRoutineTask}
             visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü

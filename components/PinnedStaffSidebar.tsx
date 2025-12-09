@@ -29,18 +29,20 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
     setOpenStaff(prev => ({ ...prev, [name]: !prev[name] }));
   };
 
-  // Staff'a göre görevleri filtrele
-  const getStaffRoutineTasks = (name: string) => {
-    return routineTasks.filter(t => t.assignee === name)
-      .sort((a, b) => {
-        if (a.isCompleted === b.isCompleted) {
-          // Create At check
-          const aTime = a.createdAt?.toMillis?.() || 0;
-          const bTime = b.createdAt?.toMillis?.() || 0;
-          return aTime - bTime;
-        }
-        return a.isCompleted ? 1 : -1;
-      });
+  // Staff'a göre görevleri filtrele ve birleştir
+  const getStaffCombinedTasks = (name: string) => {
+    // 1. Rutin İşler
+    const staffRoutineTasks = routineTasks.filter(t => t.assignee === name);
+
+    // 2. Normal Görevler (Standart İşler)
+    const staffStandardTasks = tasks.filter(t => t.assignee === name && t.status !== TaskStatus.CHECK_COMPLETED); // Tamamlananlar hariç mi? Genelde "Yapılacaklar" listesi burası. İsteğe göre değişir.
+    // Kullanıcı "kontrol yapılacak işler görünmüyor" dediği için tüm aktif işleri gösterelim.
+
+    // Tipleri birleştirip tek liste yapıyoruz (render aşamasında ayıracağız)
+    return {
+      routine: staffRoutineTasks,
+      standard: staffStandardTasks
+    };
   };
 
   if (pinnedStaff.length === 0) return null;
@@ -57,8 +59,11 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
         {pinnedStaff.map(staffName => {
-          const staffTasks = getStaffRoutineTasks(staffName);
-          const pendingCount = staffTasks.filter(t => !t.isCompleted).length;
+          const { routine, standard } = getStaffCombinedTasks(staffName);
+          const pendingRoutineCount = routine.filter(t => !t.isCompleted).length;
+          const pendingStandardCount = standard.length; // Hepsi aktif kabul edelim
+          const totalCount = pendingRoutineCount + pendingStandardCount;
+
           const isOpen = openStaff[staffName] ?? true; // Default open
 
           return (
@@ -75,9 +80,9 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
                   <span className="font-medium text-slate-200 truncate text-sm">{staffName}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {pendingCount > 0 && (
+                  {totalCount > 0 && (
                     <span className="bg-red-500/20 text-red-400 text-xs font-bold px-2 py-0.5 rounded-full border border-red-500/30">
-                      {pendingCount}
+                      {totalCount}
                     </span>
                   )}
                   {isAdmin && (
@@ -95,44 +100,78 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
               {/* Content */}
               {isOpen && (
                 <div className="p-2 space-y-2 bg-slate-900/30 border-t border-slate-700/50">
-                  {staffTasks.length === 0 ? (
+                  {/* STANDARD TASKS SECTION (IF ANY) */}
+                  {standard.length > 0 && (
+                    <div className="space-y-1 mb-2">
+                      <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest pl-1">Saha Görevleri</div>
+                      {standard.map(t => (
+                        <div
+                          key={t.id}
+                          onClick={() => onTaskClick(t)}
+                          className="p-2.5 rounded border border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40 transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs text-blue-100 font-medium leading-snug">{t.title}</div>
+                              {t.address && (
+                                <div className="flex items-center gap-1 mt-1 text-[10px] text-blue-300/70 truncate">
+                                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                                  {t.address}
+                                </div>
+                              )}
+                              <div className="mt-1 text-[10px] text-slate-500 font-mono">#{t.orderNumber} - {t.status}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ROUTINE TASKS SECTION */}
+                  {routine.length > 0 && (
+                    <div className="space-y-1">
+                      {standard.length > 0 && <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest pl-1 mt-3">Eksikler / Notlar</div>}
+                      {routine.map(t => (
+                        <div key={t.id} className={`p-2.5 rounded border transition-all ${t.isCompleted ? 'bg-slate-800/40 border-slate-700 opacity-60' : 'bg-slate-800 border-slate-600 hover:border-blue-500/50'}`}>
+                          <div className="flex items-start gap-2.5">
+                            <button
+                              onClick={() => onToggleRoutineTask(t.id)}
+                              className={`mt-0.5 flex-shrink-0 ${t.isCompleted ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-400'}`}
+                            >
+                              {t.isCompleted ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                            </button>
+
+                            <div className="flex-1 min-w-0">
+                              {/* Badges */}
+                              {(t.customerName || t.phoneNumber) && (
+                                <div className="flex flex-wrap gap-1 mb-1">
+                                  {t.customerName && <span className="text-[10px] px-1 bg-blue-900/40 text-blue-300 rounded border border-blue-500/20 truncate max-w-full">{t.customerName}</span>}
+                                  {t.phoneNumber && <span className="text-[10px] px-1 bg-emerald-900/40 text-emerald-300 rounded border border-emerald-500/20">{t.phoneNumber}</span>}
+                                </div>
+                              )}
+
+                              <div className={`text-xs leading-relaxed break-words whitespace-pre-wrap ${t.isCompleted ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
+                                {t.content}
+                              </div>
+
+                              {t.address && (
+                                <div className="mt-1.5 flex items-start gap-1 text-[10px] text-slate-500">
+                                  <MapPin className="w-3 h-3 flex-shrink-0 mt-px" />
+                                  <span className="truncate">{t.address}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {routine.length === 0 && standard.length === 0 && (
                     <div className="text-center py-4 text-slate-500 text-xs italic">
                       Görev yok.
                     </div>
-                  ) : (
-                    staffTasks.map(t => (
-                      <div key={t.id} className={`p-2.5 rounded border transition-all ${t.isCompleted ? 'bg-slate-800/40 border-slate-700 opacity-60' : 'bg-slate-800 border-slate-600 hover:border-blue-500/50'}`}>
-                        <div className="flex items-start gap-2.5">
-                          <button
-                            onClick={() => onToggleRoutineTask(t.id)}
-                            className={`mt-0.5 flex-shrink-0 ${t.isCompleted ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-400'}`}
-                          >
-                            {t.isCompleted ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                          </button>
-
-                          <div className="flex-1 min-w-0">
-                            {/* Badges */}
-                            {(t.customerName || t.phoneNumber) && (
-                              <div className="flex flex-wrap gap-1 mb-1">
-                                {t.customerName && <span className="text-[10px] px-1 bg-blue-900/40 text-blue-300 rounded border border-blue-500/20 truncate max-w-full">{t.customerName}</span>}
-                                {t.phoneNumber && <span className="text-[10px] px-1 bg-emerald-900/40 text-emerald-300 rounded border border-emerald-500/20">{t.phoneNumber}</span>}
-                              </div>
-                            )}
-
-                            <div className={`text-xs leading-relaxed break-words whitespace-pre-wrap ${t.isCompleted ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
-                              {t.content}
-                            </div>
-
-                            {t.address && (
-                              <div className="mt-1.5 flex items-start gap-1 text-[10px] text-slate-500">
-                                <MapPin className="w-3 h-3 flex-shrink-0 mt-px" />
-                                <span className="truncate">{t.address}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
                   )}
                 </div>
               )}
