@@ -542,24 +542,53 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex overflow-hidden relative">
 
-        {/* Sidebar (Pinned Staff) - Staff için her zaman açık, Admin için toggle edilebilir */}
+        {/* Mobile Sidebar Toggle Button */}
+        {(!isAdmin || appSettings.pinnedStaff?.length > 0) && (
+          <button
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className={`md:hidden absolute top-4 left-0 z-50 bg-slate-800 border border-slate-700 p-2 rounded-r-lg shadow-xl text-white transition-transform duration-300 ${isMobileSidebarOpen ? 'translate-x-64' : 'translate-x-0'}`}
+          >
+            {isMobileSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+          </button>
+        )}
+
+        {/* Sidebar (Pinned Staff) */}
+        {/* Mobile: Absolute positioned, slide-in. Desktop: Static flex item. */}
         {(!isAdmin || isSidebarOpen) && (
-          <PinnedStaffSidebar
-            pinnedStaff={appSettings.pinnedStaff || []}
-            tasks={visibleTasks}
-            routineTasks={visibleRoutineTasks}
-            onTaskClick={handleTaskClick}
-            onToggleRoutineTask={handleToggleRoutineTask}
-            onToggleTaskVerification={handleToggleTaskVerification}
-            onUnpin={(name) => handleTogglePinStaff(name)}
-            isAdmin={isAdmin}
-          />
+          <div className={`
+            fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 border-r border-slate-700 shadow-2xl transform transition-transform duration-300 ease-in-out
+            md:relative md:translate-x-0 md:shadow-none md:w-80 md:border-r-0 md:border-l lg:border-l
+            ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            ${/* If Admin and Sidebar closed globally (desktop), hide it entirely */ !isSidebarOpen && isAdmin ? 'hidden' : ''}
+          `}>
+            {/* Mobile Overlay to close on click outside */}
+            {isMobileSidebarOpen && (
+              <div
+                className="absolute inset-0 -z-10 bg-black/50 md:hidden"
+                onClick={() => setIsMobileSidebarOpen(false)}
+              />
+            )}
+
+            <PinnedStaffSidebar
+              pinnedStaff={appSettings.pinnedStaff || []}
+              tasks={visibleTasks}
+              routineTasks={visibleRoutineTasks}
+              onTaskClick={(t) => {
+                handleTaskClick(t);
+                setIsMobileSidebarOpen(false); // Close on selection (mobile)
+              }}
+              onToggleRoutineTask={handleToggleRoutineTask}
+              onToggleTaskVerification={handleToggleTaskVerification}
+              onUnpin={(name) => handleTogglePinStaff(name)}
+              isAdmin={isAdmin}
+            />
+          </div>
         )}
 
         {/* Board Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800">
           {/* Toolbar */}
-          <div className="px-6 py-4 flex items-center justify-between border-b border-slate-800/50">
+          <div className="px-6 py-4 flex items-center justify-between border-b border-slate-800/50 pl-14 md:pl-6">
             <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
               Günlük Operasyon
               <span className="text-xs text-red-500 font-bold border border-red-500 px-1 rounded">(V3.0 YENİ)</span>
