@@ -9,7 +9,8 @@ interface KanbanBoardProps {
   onToggleRoutineTask: (taskId: string) => void;
   visibleColumns?: TaskStatus[];
   showRoutineColumn?: boolean;
-  myTasks?: Task[]; // [NEW] Assigned Standard Tasks for the viewer
+  myTasks?: Task[]; // Assigned Standard Tasks for the viewer
+  staffName?: string; // Staff name for column header
 }
 
 const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
@@ -30,7 +31,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onTaskClick,
   onToggleRoutineTask,
   visibleColumns,
-  showRoutineColumn = true // Default true
+  showRoutineColumn = true,
+  myTasks = [], // Destructure NEW prop
+  staffName // Destructure NEW prop
 }) => {
   // State to track search queries for each column
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
@@ -72,11 +75,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     });
   };
 
-  const getFilteredRoutineTasks = () => {
+  // REWRITTEN: Returns { routine, standard } object
+  const getFilteredPersonalTasks = () => {
     const term = (searchTerms['ROUTINE'] || '').toLocaleLowerCase('tr').trim();
+    const matchesTerm = (text: string) => text.toLocaleLowerCase('tr').includes(term);
 
-    // Sort logic from Sidebar: Incomplete first, then by date
-    const sorted = [...routineTasks].sort((a, b) => {
+    // Sort Routine Tasks: Incomplete first, then by date
+    const sortedRoutine = [...routineTasks].sort((a, b) => {
       if (a.isCompleted === b.isCompleted) {
         const aTime = a.createdAt?.toMillis?.() || a.createdAt || 0;
         const bTime = b.createdAt?.toMillis?.() || b.createdAt || 0;
@@ -85,139 +90,149 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       return a.isCompleted ? 1 : -1;
     });
 
-    if (!term) return sorted;
-
-    return sorted.filter(t =>
-      t.content.toLocaleLowerCase('tr').includes(term) ||
-      (t.customerName && t.customerName.toLocaleLowerCase('tr').includes(term)) ||
-      (t.address && t.address.toLocaleLowerCase('tr').includes(term)) ||
-      (t.phoneNumber && t.phoneNumber.includes(term))
+    const filteredRoutine = !term ? sortedRoutine : sortedRoutine.filter(t =>
+      matchesTerm(t.content) ||
+      (t.customerName && matchesTerm(t.customerName)) ||
+      (t.address && matchesTerm(t.address)) ||
+      (t.phoneNumber && matchesTerm(t.phoneNumber))
     );
+
+    // Filter Standard Tasks (myTasks)
+    const filteredStandard = !term ? myTasks : myTasks.filter(t =>
+      matchesTerm(t.title) ||
+      matchesTerm(t.address || '') ||
+      t.orderNumber.toString().includes(term)
+    );
+
+    return { routine: filteredRoutine, standard: filteredStandard };
   };
+
+  // Destructure filtered results
+  const { routine: filteredRoutine, standard: filteredStandard } = getFilteredPersonalTasks();
 
   return (
     <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
       <div className="flex gap-6 h-full min-w-[1500px]">
-        {/* --- 1. ROUTINE TASKS COLUMN (NEW) --- */}
-        <div className="flex-1 flex flex-col min-w-[280px] bg-slate-800/50 rounded-xl border border-slate-700/50 backdrop-blur-sm">
-          {/* Header */}
-          <div className="p-4 border-b border-purple-500/20 bg-purple-900/10 flex items-center justify-between rounded-t-xl">
-            <div className="flex items-center gap-2 font-semibold text-purple-100">
-              <StatusIcon status="ROUTINE" />
-              <span className="truncate">Personel Eksik Listesi</span>
-              <span className="ml-2 px-2 py-0.5 text-xs bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-200">
-                {routineTasks.filter(t => !t.isCompleted).length}
-              </span>
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="px-3 py-2 border-b border-slate-700/30 bg-slate-800/30">
-            <div className="relative group">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 group-focus-within:text-purple-400 transition-colors" />
-              <input
-                type="text"
-                placeholder="Ara (İçerik, Müşteri...)"
-                value={searchTerms['ROUTINE'] || ''}
-                onChange={(e) => handleSearchChange('ROUTINE', e.target.value)}
-                className="w-full bg-slate-900/50 border border-slate-700/50 rounded-md py-1.5 pl-8 pr-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Tasks List */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
-            {/* STANDARD TASKS SECTION */}
-            {filteredStandard.length > 0 && (
-              <div className="mb-4 space-y-2">
-                <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest pl-1">Saha Görevleri ({filteredStandard.length})</div>
-                {filteredStandard.map(t => (
-                  <div
-                    key={t.id}
-                    onClick={() => onTaskClick(t)}
-                    className="p-3 rounded-lg border border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40 transition-all cursor-pointer group shadow-sm"
-                  >
-                    <div className="flex items-start gap-2">
-                      <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-blue-100 font-medium leading-snug">{t.title}</div>
-                        {t.address && (
-                          <div className="flex items-center gap-1.5 mt-1.5 text-xs text-blue-300/70 truncate">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                            {t.address}
-                          </div>
-                        )}
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400 font-mono bg-slate-800/50 px-1.5 py-0.5 rounded">#{t.orderNumber}</span>
-                          <span className="text-[10px] text-blue-300">{StatusLabels[t.status]}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* ROUTINE TASKS SECTION */}
-            {filteredRoutine.length > 0 && (
-              <div className="space-y-2">
-                {filteredStandard.length > 0 && <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest pl-1 pt-2 border-t border-slate-700/50">Eksikler / Notlar ({filteredRoutine.length})</div>}
-                {filteredRoutine.map(t => (
-                  <div key={t.id} className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${t.isCompleted
-                    ? 'bg-slate-800/30 border-slate-700/30 opacity-60'
-                    : 'bg-indigo-900/20 border-indigo-500/30 hover:border-indigo-400/50 shadow-sm'
-                    }`}>
-                    <div className="flex items-start gap-3">
-                      <button
-                        onClick={() => onToggleRoutineTask(t.id)}
-                        className={`mt-0.5 flex-shrink-0 transition-colors ${t.isCompleted ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-500'}`}
-                      >
-                        {t.isCompleted ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-                      </button>
-
-                      <div className="flex-1 min-w-0">
-                        {/* Customer Info Badges */}
-                        {(t.customerName || t.phoneNumber || t.address) && (
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
-                            {t.customerName && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-300 border border-blue-500/20">
-                                <UserCircle className="w-3 h-3" /> {t.customerName}
-                              </span>
-                            )}
-                            {t.phoneNumber && (
-                              <a href={`tel:${t.phoneNumber}`} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20">
-                                <Phone className="w-3 h-3" /> {t.phoneNumber}
-                              </a>
-                            )}
-                          </div>
-                        )}
-
-                        <div className={`text-sm break-words leading-relaxed whitespace-pre-wrap ${t.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
-                          {t.content}
-                        </div>
-
-                        {t.address && (
-                          <div className="mt-2 pt-2 border-t border-slate-700/30 flex items-start gap-1.5 text-xs text-slate-400">
-                            <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-500" />
-                            <span className="truncate">{t.address}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {filteredRoutine.length === 0 && filteredStandard.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-slate-700/50 rounded-lg text-slate-500">
-                <span className="text-xs opacity-70">
-                  {searchTerms['ROUTINE'] ? 'Sonuç bulunamadı' : 'Eksik iş yok'}
+        {showRoutineColumn && (
+          <div className="flex-1 flex flex-col min-w-[280px] bg-slate-800/50 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+            {/* Header */}
+            <div className="p-4 border-b border-purple-500/20 bg-purple-900/10 flex items-center justify-between rounded-t-xl">
+              <div className="flex items-center gap-2 font-semibold text-purple-100">
+                <StatusIcon status="ROUTINE" />
+                <span className="truncate">{staffName ? `${staffName} Eksik Listesi` : 'Personel Eksik Listesi'}</span>
+                <span className="ml-2 px-2 py-0.5 text-xs bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-200">
+                  {filteredRoutine.filter(t => !t.isCompleted).length + filteredStandard.length}
                 </span>
               </div>
-            )}
+            </div>
+
+            {/* Search Bar */}
+            <div className="px-3 py-2 border-b border-slate-700/30 bg-slate-800/30">
+              <div className="relative group">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 group-focus-within:text-purple-400 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Ara (İçerik, Müşteri...)"
+                  value={searchTerms['ROUTINE'] || ''}
+                  onChange={(e) => handleSearchChange('ROUTINE', e.target.value)}
+                  className="w-full bg-slate-900/50 border border-slate-700/50 rounded-md py-1.5 pl-8 pr-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Tasks List */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
+              {/* STANDARD TASKS SECTION */}
+              {filteredStandard.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest pl-1">Saha Görevleri ({filteredStandard.length})</div>
+                  {filteredStandard.map(t => (
+                    <div
+                      key={t.id}
+                      onClick={() => onTaskClick(t)}
+                      className="p-3 rounded-lg border border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40 transition-all cursor-pointer group shadow-sm"
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-blue-100 font-medium leading-snug">{t.title}</div>
+                          {t.address && (
+                            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-blue-300/70 truncate">
+                              <MapPin className="w-3 h-3 flex-shrink-0" />
+                              {t.address}
+                            </div>
+                          )}
+                          <div className="mt-2 flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400 font-mono bg-slate-800/50 px-1.5 py-0.5 rounded">#{t.orderNumber}</span>
+                            <span className="text-[10px] text-blue-300">{StatusLabels[t.status]}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ROUTINE TASKS SECTION */}
+              {filteredRoutine.length > 0 && (
+                <div className="space-y-2">
+                  {filteredStandard.length > 0 && <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest pl-1 pt-2 border-t border-slate-700/50">Eksikler / Notlar ({filteredRoutine.length})</div>}
+                  {filteredRoutine.map(t => (
+                    <div key={t.id} className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${t.isCompleted
+                      ? 'bg-slate-800/30 border-slate-700/30 opacity-60'
+                      : 'bg-indigo-900/20 border-indigo-500/30 hover:border-indigo-400/50 shadow-sm'
+                      }`}>
+                      <div className="flex items-start gap-3">
+                        <button
+                          onClick={() => onToggleRoutineTask(t.id)}
+                          className={`mt-0.5 flex-shrink-0 transition-colors ${t.isCompleted ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-500'}`}
+                        >
+                          {t.isCompleted ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                        </button>
+
+                        <div className="flex-1 min-w-0">
+                          {/* Customer Info Badges */}
+                          {(t.customerName || t.phoneNumber || t.address) && (
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
+                              {t.customerName && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                                  <UserCircle className="w-3 h-3" /> {t.customerName}
+                                </span>
+                              )}
+                              {t.phoneNumber && (
+                                <a href={`tel:${t.phoneNumber}`} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20">
+                                  <Phone className="w-3 h-3" /> {t.phoneNumber}
+                                </a>
+                              )}
+                            </div>
+                          )}
+
+                          <div className={`text-sm break-words leading-relaxed whitespace-pre-wrap ${t.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                            {t.content}
+                          </div>
+
+                          {t.address && (
+                            <div className="mt-2 pt-2 border-t border-slate-700/30 flex items-start gap-1.5 text-xs text-slate-400">
+                              <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-500" />
+                              <span className="truncate">{t.address}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {filteredRoutine.length === 0 && filteredStandard.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-slate-700/50 rounded-lg text-slate-500">
+                  <span className="text-xs opacity-70">
+                    {searchTerms['ROUTINE'] ? 'Sonuç bulunamadı' : 'Eksik iş yok'}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
         {/* --- EXISTING KANBAN COLUMNS --- */}
         {columns.map((status) => {
