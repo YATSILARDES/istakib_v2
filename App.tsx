@@ -543,17 +543,22 @@ export default function App() {
       <main className="flex-1 flex overflow-hidden relative">
 
         {/* Sidebar (Pinned Staff) - SADECE ADMIN İÇİN */}
-        {isAdmin && isSidebarOpen && (
-          <PinnedStaffSidebar
-            pinnedStaff={appSettings.pinnedStaff || []}
-            tasks={visibleTasks}
-            routineTasks={routineTasks}
-            onTaskClick={handleTaskClick}
-            onToggleRoutineTask={handleToggleRoutineTask}
-            onToggleTaskVerification={handleToggleTaskVerification}
-            onUnpin={(name) => handleTogglePinStaff(name)}
-            isAdmin={isAdmin}
-          />
+        {isAdmin && (
+          <div
+            className={`transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            style={{ width: '320px' }}
+          >
+            <PinnedStaffSidebar
+              pinnedStaff={appSettings.pinnedStaff || []}
+              tasks={visibleTasks}
+              routineTasks={routineTasks}
+              onTaskClick={handleTaskClick}
+              onToggleRoutineTask={handleToggleRoutineTask}
+              onToggleTaskVerification={handleToggleTaskVerification}
+              onUnpin={(name) => handleTogglePinStaff(name)}
+              isAdmin={isAdmin}
+            />
+          </div>
         )}
 
         {/* Sidebar Toggle Button for Admin */}
