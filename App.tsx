@@ -542,6 +542,20 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex overflow-hidden relative">
 
+        {/* Sidebar (Pinned Staff) - SADECE ADMIN İÇİN (ESKİ DÜZEN) */}
+        {isAdmin && (
+          <PinnedStaffSidebar
+            pinnedStaff={appSettings.pinnedStaff || []}
+            tasks={visibleTasks}
+            routineTasks={routineTasks} // Admin tümünü görür (visibleRoutineTasks ile aynı ama net olsun)
+            onTaskClick={handleTaskClick}
+            onToggleRoutineTask={handleToggleRoutineTask}
+            onToggleTaskVerification={handleToggleTaskVerification}
+            onUnpin={(name) => handleTogglePinStaff(name)}
+            isAdmin={isAdmin}
+          />
+        )}
+
         {/* Board Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800">
           {/* Toolbar */}
@@ -598,10 +612,11 @@ export default function App() {
           {/* Kanban Board */}
           <KanbanBoard
             tasks={visibleTasks} // Filtrelenmiş görevler
-            routineTasks={visibleRoutineTasks} // Personel Eksik Listesi
+            routineTasks={visibleRoutineTasks} // Personel Eksik Listesi (Staff için)
             onTaskClick={handleTaskClick}
             onToggleRoutineTask={handleToggleRoutineTask}
             visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü
+            showRoutineColumn={!isAdmin} // Admin ise Sütun Gizli, Staff ise Sütun Açık
           />
         </div>
       </main>

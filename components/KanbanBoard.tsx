@@ -4,10 +4,11 @@ import { MoreVertical, ClipboardList, ClipboardCheck, Banknote, Flame, Wrench, C
 
 interface KanbanBoardProps {
   tasks: Task[];
-  routineTasks: RoutineTask[]; // New Prop
+  routineTasks: RoutineTask[];
   onTaskClick: (task: Task) => void;
-  onToggleRoutineTask: (taskId: string) => void; // New Prop
+  onToggleRoutineTask: (taskId: string) => void;
   visibleColumns?: TaskStatus[];
+  showRoutineColumn?: boolean; // New Prop
 }
 
 const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
@@ -22,7 +23,14 @@ const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
   }
 };
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, routineTasks, onTaskClick, onToggleRoutineTask, visibleColumns }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({
+  tasks,
+  routineTasks,
+  onTaskClick,
+  onToggleRoutineTask,
+  visibleColumns,
+  showRoutineColumn = true // Default true
+}) => {
   // State to track search queries for each column
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
 
@@ -120,8 +128,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, routineTasks, onTaskCl
           <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
             {getFilteredRoutineTasks().map(t => (
               <div key={t.id} className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${t.isCompleted
-                  ? 'bg-slate-800/30 border-slate-700/30 opacity-60'
-                  : 'bg-indigo-900/20 border-indigo-500/30 hover:border-indigo-400/50 shadow-sm'
+                ? 'bg-slate-800/30 border-slate-700/30 opacity-60'
+                : 'bg-indigo-900/20 border-indigo-500/30 hover:border-indigo-400/50 shadow-sm'
                 }`}>
                 <div className="flex items-start gap-3">
                   <button
