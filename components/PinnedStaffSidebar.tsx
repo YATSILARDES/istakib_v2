@@ -83,10 +83,10 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1.5"
+          className="p-2 hover:bg-slate-700 text-red-400 hover:text-red-300 rounded-lg transition-colors flex items-center gap-2 border border-red-500/20 bg-red-500/10"
           title="Paneli Gizle"
         >
-          <span className="text-[10px] font-medium hidden sm:inline">GİZLE</span>
+          <span className="text-[10px] font-bold">GİZLE</span>
           <ChevronRight className="w-4 h-4 rotate-180" />
         </button>
       </div>
