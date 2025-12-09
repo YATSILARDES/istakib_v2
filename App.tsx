@@ -545,7 +545,8 @@ export default function App() {
         {/* Sidebar (Pinned Staff) - SADECE ADMIN İÇİN */}
         {isAdmin && (
           <div
-            className={`flex-shrink-0 transition-all duration-300 ease-in-out border-r border-slate-700 bg-slate-900 relative z-20 overflow-hidden ${isSidebarOpen ? 'w-[320px] opacity-100 border-opacity-100' : 'w-0 opacity-0 border-opacity-0 border-r-0'}`}
+            className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-slate-900 relative z-20 overflow-hidden ${isSidebarOpen ? 'w-[320px] border-r border-slate-700 opacity-100' : 'w-0 opacity-0'
+              }`}
           >
             {/* Fixed width inner container to prevent squashing during transition */}
             <div className="w-[320px] h-full absolute top-0 left-0">
@@ -567,7 +568,7 @@ export default function App() {
         {isAdmin && (
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="absolute top-1/2 -translate-y-1/2 z-30 bg-slate-800 border-y border-r border-slate-700/50 rounded-r-lg p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition-all shadow-lg"
+            className="absolute top-1/2 -translate-y-1/2 z-30 bg-slate-800 border-y border-r border-slate-700/50 rounded-r-lg p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition-all duration-300 ease-in-out shadow-lg"
             style={{ left: isSidebarOpen ? '320px' : '0' }} // Layout transition ile senkron
           >
             {isSidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
