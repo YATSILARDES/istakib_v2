@@ -47,9 +47,6 @@ export default function App() {
   const [appSettings, setAppSettings] = useState<AppSettings>({ notifications: {}, pinnedStaff: [] });
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
 
-  // Sidebar Toggle (Mobil için)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
   // Settings Listener
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'settings', 'general'), (doc) => {
