@@ -16,7 +16,7 @@ import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermissio
 import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 
 // Yöneticiler Listesi
 const ADMIN_EMAILS = ['caner192@hotmail.com'];
@@ -627,7 +627,40 @@ export default function App() {
         initialSettings={appSettings}
         users={allStaff.map(s => s.email).filter(Boolean) as string[]}
         tasks={tasks}
-        onTasksUpdate={(newTasks) => setTasks(newTasks)}
+        onTasksUpdate={async (newTasks) => {
+          // Batch write to Firestore
+          try {
+            const batch = writeBatch(db);
+
+            // Limit checks: Batch allows max 500 ops.
+            // For now, we assume reasonable file size or slice it. 
+            // Better: loop in chunks of 500.
+
+            const chunks = [];
+            for (let i = 0; i < newTasks.length; i += 400) {
+              chunks.push(newTasks.slice(i, i + 400));
+            }
+
+            for (const chunk of chunks) {
+              const chunkBatch = writeBatch(db);
+              chunk.forEach(task => {
+                // Use existing ID or create new reference
+                const taskRef = doc(db, 'tasks', task.id);
+                chunkBatch.set(taskRef, {
+                  ...task,
+                  orderNumber: Number(task.orderNumber), // Ensure number
+                  createdAt: task.createdAt || serverTimestamp(),
+                  lastUpdatedBy: user?.email
+                }, { merge: true });
+              });
+              await chunkBatch.commit();
+            }
+            // Local state will update via snapshot listener automatically
+          } catch (e) {
+            console.error("Batch import error:", e);
+            setError("İçe aktarma sırasında hata oluştu.");
+          }
+        }}
       />
 
       <RoutineTasksModal
