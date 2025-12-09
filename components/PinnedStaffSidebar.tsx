@@ -29,6 +29,28 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
     setOpenStaff(prev => ({ ...prev, [name]: !prev[name] }));
   };
 
+  // Generate unique consistent color for each staff member
+  const getStaffColor = (name: string) => {
+    const colors = [
+      'bg-blue-900/20 border-blue-700/40',
+      'bg-purple-900/20 border-purple-700/40',
+      'bg-emerald-900/20 border-emerald-700/40',
+      'bg-amber-900/20 border-amber-700/40',
+      'bg-rose-900/20 border-rose-700/40',
+      'bg-cyan-900/20 border-cyan-700/40',
+      'bg-pink-900/20 border-pink-700/40',
+      'bg-indigo-900/20 border-indigo-700/40'
+    ];
+
+    // Simple hash to assign consistent color per name
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = ((hash << 5) - hash) + name.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   // Staff'a göre görevleri filtrele ve birleştir
   const getStaffCombinedTasks = (name: string) => {
     // 1. Rutin İşler

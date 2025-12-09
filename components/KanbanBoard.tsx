@@ -204,19 +204,17 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                   <Phone className="w-3 h-3" /> {t.phoneNumber}
                                 </a>
                               )}
+                              {t.address && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                  <MapPin className="w-3 h-3" /> {t.address}
+                                </span>
+                              )}
                             </div>
                           )}
 
                           <div className={`text-sm break-words leading-relaxed whitespace-pre-wrap ${t.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
                             {t.content}
                           </div>
-
-                          {t.address && (
-                            <div className="mt-2 pt-2 border-t border-slate-700/30 flex items-start gap-1.5 text-xs text-slate-400">
-                              <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-500" />
-                              <span className="truncate">{t.address}</span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
