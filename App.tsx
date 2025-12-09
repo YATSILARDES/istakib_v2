@@ -83,39 +83,46 @@ export default function App() {
           if (allTargetEmails.length > 0) {
             console.log(`Bildirim gönderiliyor (Config + Assignee): ${allTargetEmails.join(', ')} -> ${task.title} - ${task.status}`);
 
-            // Toast Bildirim
-            setToast({
-              message: `${task.title} işi "${StatusLabels[task.status]}" aşamasına geldi.`,
-              visible: true
-            });
+            // HERKES (veya admin) için genel bildirim yerine, SADECE ilgili kişiye bildirim gönderelim.
+            // Önceki kodda herkese toast mesajı gösteriliyordu, bu yüzden admin de görüyordu.
 
-            setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
-
-            // Eğer bu durum için bir bildirim ayarlanmışsa ve hedef bizsek
             const currentUserEmail = user.email?.toLowerCase() || '';
             const normalizedTargetEmails = allTargetEmails.map(e => e.toLowerCase());
 
             if (normalizedTargetEmails.includes(currentUserEmail)) {
-              const message = `${task.title} - ${StatusLabels[task.status]} aşamasına geldi.`;
+              const message = `🔔 ${task.title}: ${StatusLabels[task.status]} aşamasına geldi.`;
+
+              // 1. Masaüstü Bildirimi (Tarayıcı izni varsa)
               try {
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('İş Durumu Güncellendi', {
                     body: message,
                     icon: '/icon.png'
                   });
+                } else if ('Notification' in window && Notification.permission !== 'denied') {
+                  Notification.requestPermission();
                 }
               } catch (e) {
                 console.log('Notification API not supported');
               }
+
+              // 2. Uygulama İçi Bildirim (Toast)
               setToast({ message, visible: true });
               setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
+
+              // 3. Sesli Bildirim
               try {
-                // Use local base64 sound
                 const audio = new Audio(NOTIFICATION_SOUND);
                 audio.play().catch(e => console.log('Audio play failed', e));
               } catch (e) {
                 console.log('Audio API error', e);
               }
+            } else {
+              // Hedef kişi DEĞİLSEK ama yöneticiysek yine de görelim mi? 
+              // Kullanıcı isteğine göre: "Admin olarak bana hep geliyor" -> İstenen bu mu? 
+              // Hayır, "atadığım kişiye gelmiyor" diyor. Demek ki asıl sorun diğer kişi.
+              // Ama admin paneli açık olduğu için admin tüm değişiklikleri dinliyor.
+              console.log('Bu bildirim benim için değil:', currentUserEmail);
             }
           }
         }
