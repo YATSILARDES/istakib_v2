@@ -139,11 +139,51 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
 
     // --- EXCEL & NOTIFICATIONS LOGIC ---
     const handleDownloadExcel = () => {
-        const worksheet = XLSX.utils.json_to_sheet(tasks);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks");
-        XLSX.writeFile(workbook, "Is_Takip_Yedek.xlsx");
-        setMsg({ type: 'success', text: 'Excel indirildi.' });
+        try {
+            // Veriyi Excel için uygun formata getir
+            const excelData = tasks.map(t => {
+                // Tarih formatlama (Firestore Timestamp veya String kontrolü)
+                let formattedDate = '';
+                if (t.createdAt?.seconds) {
+                    formattedDate = new Date(t.createdAt.seconds * 1000).toLocaleString('tr-TR');
+                } else if (t.createdAt) {
+                    formattedDate = new Date(t.createdAt).toLocaleString('tr-TR');
+                }
+
+                return {
+                    'Sıra No': t.orderNumber,
+                    'Durum': StatusLabels[t.status] || t.status,
+                    'Müşteri Adı / Başlık': t.title,
+                    'İş Tanımı': t.jobDescription || '',
+                    'Adres': t.address || '',
+                    'Telefon': t.phone || '',
+                    'Atanan Personel': t.assignee || 'Atanmadı',
+                    'Personel Email': t.assigneeEmail || '',
+                    'Oluşturulma Tarihi': formattedDate,
+                    'Randevu Tarihi': t.date || '',
+                    'Genel Not': t.generalNote || '',
+                    'Ekip Notu': t.teamNote || '',
+                    'Gaz Açım Tarihi': t.gasOpeningDate || '',
+                    'Gaz Notu': t.gasNote || '',
+                    'Servis Seri No': t.serviceSerialNumber || '',
+                    'Servis Notu': t.serviceNote || '',
+                    'Oluşturan': t.createdBy || ''
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "İş Listesi");
+
+            // Dosya ismine tarih ekle
+            const dateStr = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
+            XLSX.writeFile(workbook, `Is_Takip_Yedek_${dateStr}.xlsx`);
+
+            setMsg({ type: 'success', text: 'Excel başarıyla indirildi.' });
+        } catch (e: any) {
+            console.error("Excel indirme hatası:", e);
+            setMsg({ type: 'error', text: 'İndirme sırasında hata oluştu: ' + e.message });
+        }
     };
 
     const handleUploadExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,13 +191,58 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (evt) => {
-            const bstr = evt.target?.result;
-            const wb = XLSX.read(bstr, { type: 'binary' });
-            const wsname = wb.SheetNames[0];
-            const ws = wb.Sheets[wsname];
-            const data = XLSX.utils.sheet_to_json(ws) as Task[];
-            onTasksUpdate(data);
-            setMsg({ type: 'success', text: 'Veriler yüklendi.' });
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const rawData = XLSX.utils.sheet_to_json(ws) as any[];
+
+                // Reverse Map for Status Labels
+                const statusReverseMap: Record<string, TaskStatus> = Object.entries(StatusLabels).reduce((acc, [key, value]) => {
+                    acc[value] = key as TaskStatus;
+                    return acc;
+                }, {} as Record<string, TaskStatus>);
+
+                const mappedData: Task[] = rawData.map(row => {
+                    // Try to map status label back to enum
+                    const statusLabel = row['Durum'] || row['status'];
+                    const mappedStatus = statusReverseMap[statusLabel] || statusLabel || TaskStatus.TO_CHECK;
+
+                    return {
+                        id: row['id'] || Math.random().toString(36).substr(2, 9), // Generate ID if missing
+                        orderNumber: Number(row['Sıra No']) || Number(row['orderNumber']) || 0,
+                        title: row['Müşteri Adı / Başlık'] || row['title'] || 'İsimsiz',
+                        jobDescription: row['İş Tanımı'] || row['jobDescription'] || '',
+                        status: mappedStatus,
+                        assignee: row['Atanan Personel'] === 'Atanmadı' ? '' : (row['Atanan Personel'] || row['assignee'] || ''),
+                        assigneeEmail: row['Personel Email'] || row['assigneeEmail'] || '',
+                        address: row['Adres'] || row['address'] || '',
+                        phone: row['Telefon'] || row['phone'] || '',
+                        date: row['Randevu Tarihi'] || row['date'] || '',
+                        generalNote: row['Genel Not'] || row['generalNote'] || '',
+                        teamNote: row['Ekip Notu'] || row['teamNote'] || '',
+                        gasOpeningDate: row['Gaz Açım Tarihi'] || row['gasOpeningDate'] || '',
+                        gasNote: row['Gaz Notu'] || row['gasNote'] || '',
+                        serviceSerialNumber: row['Servis Seri No'] || row['serviceSerialNumber'] || '',
+                        serviceNote: row['Servis Notu'] || row['serviceNote'] || '',
+                        createdBy: row['Oluşturan'] || row['createdBy'] || '',
+                        // Date string handling - avoiding complex parsing for now, assuming display string is fine or handled elsewhere
+                        createdAt: row['Oluşturulma Tarihi'] || row['createdAt'] || new Date().toISOString()
+                    };
+                });
+
+                if (mappedData.length > 0) {
+                    onTasksUpdate(mappedData);
+                    setMsg({ type: 'success', text: `${mappedData.length} iş başarıyla yüklendi.` });
+                } else {
+                    setMsg({ type: 'error', text: 'Dosyada uygun veri bulunamadı.' });
+                }
+
+            } catch (err: any) {
+                console.error("Import error:", err);
+                setMsg({ type: 'error', text: 'Yükleme hatası: ' + err.message });
+            }
         };
         reader.readAsBinaryString(file);
     };
