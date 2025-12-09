@@ -85,7 +85,7 @@ function createWindow() {
         win.webContents.openDevTools();
     } else {
         // Production
-        win.loadURL('https://istakib-v2-bcll79icg-caner-celiks-projects.vercel.app');
+        win.loadURL('https://istakib-v2.vercel.app');
 
         // Initialize updater only after window creation in prod
         setupAutoUpdater();

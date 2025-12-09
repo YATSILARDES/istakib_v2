@@ -14,6 +14,7 @@ import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
 import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
+import { NOTIFICATION_SOUND } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, writeBatch } from 'firebase/firestore';
@@ -83,7 +84,11 @@ export default function App() {
             setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
 
             // Eğer bu durum için bir bildirim ayarlanmışsa ve hedef bizsek
-            if (targetEmails.includes(user.email || '')) {
+            // FIX: Case-insensitive email check
+            const currentUserEmail = user.email?.toLowerCase() || '';
+            const normalizedTargetEmails = targetEmails.map(e => e.toLowerCase());
+
+            if (normalizedTargetEmails.includes(currentUserEmail)) {
               const message = `${task.title} - ${StatusLabels[task.status]} aşamasına geldi.`;
               try {
                 if ('Notification' in window && Notification.permission === 'granted') {
@@ -98,7 +103,8 @@ export default function App() {
               setToast({ message, visible: true });
               setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
               try {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                // Use local base64 sound
+                const audio = new Audio(NOTIFICATION_SOUND);
                 audio.play().catch(e => console.log('Audio play failed', e));
               } catch (e) {
                 console.log('Audio API error', e);
