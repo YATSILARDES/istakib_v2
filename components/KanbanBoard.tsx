@@ -233,6 +233,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               )}
             </div>
           </div>
+        )}
 
         {/* --- EXISTING KANBAN COLUMNS --- */}
         {columns.map((status) => {
