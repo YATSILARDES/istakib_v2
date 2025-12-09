@@ -366,38 +366,59 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                     </span>
                                 </div>
                                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {/* Merge explicit users prop with fetched permission names to show everyone */}
-                                    {Array.from(new Set([...users, ...allPermissions.map(p => p.name).filter(n => n)])).map(user => (
-                                        <label
-                                            key={user}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className={`flex items-center p-4 rounded-xl cursor-pointer transition-all border ${(settings.notifications[activeStatus] || []).includes(user)
-                                                ? 'bg-yellow-900/20 border-yellow-500/50'
-                                                : 'bg-slate-900/50 border-transparent hover:bg-slate-700'
-                                                }`}
-                                        >
-                                            <div className={`w-6 h-6 rounded-lg border flex items-center justify-center mr-4 transition-colors ${(settings.notifications[activeStatus] || []).includes(user)
-                                                ? 'bg-yellow-600 border-yellow-600'
-                                                : 'border-slate-600'
-                                                }`}>
-                                                {(settings.notifications[activeStatus] || []).includes(user) && (
-                                                    <Check className="w-4 h-4 text-white" />
-                                                )}
-                                            </div>
-                                            <input
-                                                type="checkbox"
-                                                className="hidden"
-                                                checked={(settings.notifications[activeStatus] || []).includes(user)}
-                                                onChange={() => handleNotificationToggle(user)}
-                                            />
-                                            <span className={`text-sm select-none ${(settings.notifications[activeStatus] || []).includes(user)
-                                                ? 'text-yellow-100 font-medium'
-                                                : 'text-slate-300'
-                                                }`}>
-                                                {user}
-                                            </span>
-                                        </label>
-                                    ))}
+                                    {/* FIX: Merge users (emails) and permissions (email+name) to ensure we save EMAILS not NAMES */}
+                                    {(() => {
+                                        const uniqueUsersMap = new Map<string, string>();
+
+                                        // 1. Add from Permission Names (Priority)
+                                        allPermissions.forEach(p => {
+                                            if (p.email) uniqueUsersMap.set(p.email, p.name || p.email);
+                                        });
+
+                                        // 2. Add from raw users list (Legacy/Fallback)
+                                        users.forEach(email => {
+                                            if (!uniqueUsersMap.has(email)) {
+                                                uniqueUsersMap.set(email, email); // Name fallback to email
+                                            }
+                                        });
+
+                                        return Array.from(uniqueUsersMap.entries()).map(([email, name]) => (
+                                            <label
+                                                key={email}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className={`flex items-center p-4 rounded-xl cursor-pointer transition-all border ${(settings.notifications[activeStatus] || []).includes(email)
+                                                    ? 'bg-yellow-900/20 border-yellow-500/50'
+                                                    : 'bg-slate-900/50 border-transparent hover:bg-slate-700'
+                                                    }`}
+                                            >
+                                                <div className={`w-6 h-6 rounded-lg border flex items-center justify-center mr-4 transition-colors ${(settings.notifications[activeStatus] || []).includes(email)
+                                                    ? 'bg-yellow-600 border-yellow-600'
+                                                    : 'border-slate-600'
+                                                    }`}>
+                                                    {(settings.notifications[activeStatus] || []).includes(email) && (
+                                                        <Check className="w-4 h-4 text-white" />
+                                                    )}
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    className="hidden"
+                                                    checked={(settings.notifications[activeStatus] || []).includes(email)}
+                                                    onChange={() => handleNotificationToggle(email)}
+                                                />
+                                                <div className="flex flex-col overflow-hidden">
+                                                    <span className={`text-sm select-none truncate font-bold ${(settings.notifications[activeStatus] || []).includes(email)
+                                                        ? 'text-yellow-100'
+                                                        : 'text-slate-300'
+                                                        }`}>
+                                                        {name}
+                                                    </span>
+                                                    {name !== email && (
+                                                        <span className="text-xs text-slate-500 truncate">{email}</span>
+                                                    )}
+                                                </div>
+                                            </label>
+                                        ));
+                                    })()}
                                 </div>
                             </div>
                         </div>
