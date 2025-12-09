@@ -127,52 +127,89 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
           {/* Tasks List */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
-            {getFilteredRoutineTasks().map(t => (
-              <div key={t.id} className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${t.isCompleted
-                ? 'bg-slate-800/30 border-slate-700/30 opacity-60'
-                : 'bg-indigo-900/20 border-indigo-500/30 hover:border-indigo-400/50 shadow-sm'
-                }`}>
-                <div className="flex items-start gap-3">
-                  <button
-                    onClick={() => onToggleRoutineTask(t.id)}
-                    className={`mt-0.5 flex-shrink-0 transition-colors ${t.isCompleted ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-500'}`}
+            {/* STANDARD TASKS SECTION */}
+            {filteredStandard.length > 0 && (
+              <div className="mb-4 space-y-2">
+                <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest pl-1">Saha Görevleri ({filteredStandard.length})</div>
+                {filteredStandard.map(t => (
+                  <div
+                    key={t.id}
+                    onClick={() => onTaskClick(t)}
+                    className="p-3 rounded-lg border border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40 transition-all cursor-pointer group shadow-sm"
                   >
-                    {t.isCompleted ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-                  </button>
-
-                  <div className="flex-1 min-w-0">
-                    {/* Customer Info Badges */}
-                    {(t.customerName || t.phoneNumber || t.address) && (
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
-                        {t.customerName && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-300 border border-blue-500/20">
-                            <UserCircle className="w-3 h-3" /> {t.customerName}
-                          </span>
+                    <div className="flex items-start gap-2">
+                      <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-blue-100 font-medium leading-snug">{t.title}</div>
+                        {t.address && (
+                          <div className="flex items-center gap-1.5 mt-1.5 text-xs text-blue-300/70 truncate">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            {t.address}
+                          </div>
                         )}
-                        {t.phoneNumber && (
-                          <a href={`tel:${t.phoneNumber}`} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20">
-                            <Phone className="w-3 h-3" /> {t.phoneNumber}
-                          </a>
-                        )}
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-[10px] text-slate-400 font-mono bg-slate-800/50 px-1.5 py-0.5 rounded">#{t.orderNumber}</span>
+                          <span className="text-[10px] text-blue-300">{StatusLabels[t.status]}</span>
+                        </div>
                       </div>
-                    )}
-
-                    <div className={`text-sm break-words leading-relaxed whitespace-pre-wrap ${t.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
-                      {t.content}
                     </div>
-
-                    {t.address && (
-                      <div className="mt-2 pt-2 border-t border-slate-700/30 flex items-start gap-1.5 text-xs text-slate-400">
-                        <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-500" />
-                        <span className="truncate">{t.address}</span>
-                      </div>
-                    )}
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
 
-            {getFilteredRoutineTasks().length === 0 && (
+            {/* ROUTINE TASKS SECTION */}
+            {filteredRoutine.length > 0 && (
+              <div className="space-y-2">
+                {filteredStandard.length > 0 && <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest pl-1 pt-2 border-t border-slate-700/50">Eksikler / Notlar ({filteredRoutine.length})</div>}
+                {filteredRoutine.map(t => (
+                  <div key={t.id} className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${t.isCompleted
+                    ? 'bg-slate-800/30 border-slate-700/30 opacity-60'
+                    : 'bg-indigo-900/20 border-indigo-500/30 hover:border-indigo-400/50 shadow-sm'
+                    }`}>
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => onToggleRoutineTask(t.id)}
+                        className={`mt-0.5 flex-shrink-0 transition-colors ${t.isCompleted ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-500'}`}
+                      >
+                        {t.isCompleted ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                      </button>
+
+                      <div className="flex-1 min-w-0">
+                        {/* Customer Info Badges */}
+                        {(t.customerName || t.phoneNumber || t.address) && (
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
+                            {t.customerName && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                                <UserCircle className="w-3 h-3" /> {t.customerName}
+                              </span>
+                            )}
+                            {t.phoneNumber && (
+                              <a href={`tel:${t.phoneNumber}`} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20">
+                                <Phone className="w-3 h-3" /> {t.phoneNumber}
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        <div className={`text-sm break-words leading-relaxed whitespace-pre-wrap ${t.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                          {t.content}
+                        </div>
+
+                        {t.address && (
+                          <div className="mt-2 pt-2 border-t border-slate-700/30 flex items-start gap-1.5 text-xs text-slate-400">
+                            <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-500" />
+                            <span className="truncate">{t.address}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {filteredRoutine.length === 0 && filteredStandard.length === 0 && (
               <div className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-slate-700/50 rounded-lg text-slate-500">
                 <span className="text-xs opacity-70">
                   {searchTerms['ROUTINE'] ? 'Sonuç bulunamadı' : 'Eksik iş yok'}
