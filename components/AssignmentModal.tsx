@@ -51,10 +51,8 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
   const selectedStaffEmail = selectedStaffMember?.email;
 
   // Verileri Filtrele
-  // Verileri Filtrele
-  // FIX: Sadece TO_CHECK değil, ataması olmayan TÜM işleri havuzda göster.
   const unassignedTasks = useMemo(() =>
-    tasks.filter(t => (!t.assignee || t.assignee.trim() === '')),
+    tasks.filter(t => t.status === TaskStatus.TO_CHECK && (!t.assignee || t.assignee.trim() === '')),
     [tasks]);
 
   const unassignedRoutineTasks = useMemo(() =>
