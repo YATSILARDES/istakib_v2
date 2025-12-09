@@ -67,7 +67,7 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
     };
   };
 
-  if (pinnedStaff.length === 0) return null;
+
 
   return (
     <div className="w-80 bg-slate-900 border-r border-slate-700 flex flex-col h-full overflow-hidden shadow-2xl z-20">
@@ -80,6 +80,14 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+        {pinnedStaff.length === 0 && (
+          <div className="flex flex-col items-center justify-center p-8 text-center opacity-50 mt-10">
+            <UserCircle className="w-12 h-12 mb-3 text-slate-600" />
+            <p className="text-sm text-slate-400">Henüz personel eklenmedi.</p>
+            <p className="text-xs text-slate-600 mt-1">Yönetici panelinden personel sabitleyebilirsiniz.</p>
+          </div>
+        )}
+
         {pinnedStaff.map(staffName => {
           const { routine, standard } = getStaffCombinedTasks(staffName);
           const pendingRoutineCount = routine.filter(t => !t.isCompleted).length;
