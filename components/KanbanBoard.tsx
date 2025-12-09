@@ -8,7 +8,8 @@ interface KanbanBoardProps {
   onTaskClick: (task: Task) => void;
   onToggleRoutineTask: (taskId: string) => void;
   visibleColumns?: TaskStatus[];
-  showRoutineColumn?: boolean; // New Prop
+  showRoutineColumn?: boolean;
+  myTasks?: Task[]; // [NEW] Assigned Standard Tasks for the viewer
 }
 
 const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
