@@ -230,7 +230,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
         <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-700">
 
           {/* SOL SÜTUN: Havuz (Atanmamış) */}
-          <div className="flex flex-col bg-slate-900/50">
+          <div className="flex flex-col bg-slate-900/50 min-h-0">
             <div className="p-3 bg-slate-800/50 border-b border-slate-700 font-medium text-slate-300 flex justify-between">
               <span>Havuz (Atanmamış İşler)</span>
               <span className="text-xs bg-slate-700 px-2 py-0.5 rounded text-slate-400">
@@ -319,7 +319,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
           </div>
 
           {/* SAĞ SÜTUN: Personel Listesi (Atanmış) */}
-          <div className="flex flex-col bg-slate-800/20">
+          <div className="flex flex-col bg-slate-800/20 min-h-0">
             <div className="p-3 bg-blue-900/20 border-b border-slate-700 font-medium text-blue-200 flex justify-between">
               <span className="flex items-center gap-2">
                 <User className="w-4 h-4" /> {selectedStaffName || 'Personel Seçiniz'} - İş Listesi
