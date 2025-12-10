@@ -160,7 +160,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     <div
                       key={t.id}
                       onClick={() => onTaskClick(t)}
-                      className="p-3 rounded-lg border border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40 transition-all cursor-pointer group shadow-sm"
+                      className={`
+                        p-3 rounded-lg border transition-all cursor-pointer group shadow-sm
+                        ${t.checkStatus === 'missing'
+                          ? 'bg-orange-900/40 border-orange-500/50 hover:border-orange-400 shadow-orange-900/10'
+                          : t.checkStatus === 'clean'
+                            ? 'bg-emerald-900/40 border-emerald-500/50 hover:border-emerald-400 shadow-emerald-900/10'
+                            : 'border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40'
+                        }
+                      `}
                     >
                       <div className="flex items-start gap-2">
                         <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
