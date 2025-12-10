@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock } from 'lucide-react';
+import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2 } from 'lucide-react';
 import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -13,6 +13,7 @@ interface MobileLayoutProps {
     onSignOut: () => void;
     onTaskClick: (task: Task) => void;
     onAddTask: () => void;
+    onToggleRoutineTask: (taskId: string) => void;
 }
 
 export default function MobileLayout({
@@ -22,7 +23,8 @@ export default function MobileLayout({
     routineTasks,
     onSignOut,
     onTaskClick,
-    onAddTask
+    onAddTask,
+    onToggleRoutineTask
 }: MobileLayoutProps) {
     const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile'>('home');
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
@@ -177,11 +179,33 @@ export default function MobileLayout({
                                     <span className="bg-purple-500/20 text-purple-300 text-[10px] px-2 py-0.5 rounded-full">{displayedRoutineTasks.length}</span>
                                 </div>
                                 {displayedRoutineTasks.map(task => (
-                                    <div key={task.id} className="bg-slate-800/80 border border-purple-500/30 rounded-xl p-4 relative overflow-hidden shadow-sm">
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>
-                                        <h4 className="text-white font-medium text-sm mb-2">{task.content}</h4>
+                                    <div key={task.id} className={`bg-slate-800/80 border ${task.isCompleted ? 'border-green-500/30' : 'border-purple-500/30'} rounded-xl p-4 relative overflow-hidden shadow-sm transition-all`}>
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${task.isCompleted ? 'bg-green-500' : 'bg-purple-500'}`}></div>
 
-                                        <div className="space-y-1.5 mb-2">
+                                        {/* Header: Alert Icon + Content + Check Button */}
+                                        <div className="flex justify-between items-start gap-3 mb-2">
+                                            <div className="flex items-start gap-2 flex-1">
+                                                {/* Exclamation Icon for emphasis */}
+                                                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5 animate-pulse" />
+                                                <h4 className={`font-medium text-sm ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>{task.content}</h4>
+                                            </div>
+
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onToggleRoutineTask(task.id);
+                                                }}
+                                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${task.isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10'}`}
+                                            >
+                                                {task.isCompleted ? (
+                                                    <Check className="w-5 h-5" />
+                                                ) : (
+                                                    <CheckCircle2 className="w-5 h-5 opacity-50" />
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        <div className="space-y-1.5 mb-2 pl-7"> {/* Indented to align with text */}
                                             {task.customerName && (
                                                 <div className="flex items-center gap-2 text-sky-400 text-xs">
                                                     <User className="w-3 h-3 text-sky-500/70" /> {task.customerName}
@@ -201,12 +225,14 @@ export default function MobileLayout({
                                             )}
                                         </div>
 
-                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 border-t border-white/5 pt-2">
+                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 border-t border-white/5 pt-2 ml-7">
                                             <span className="flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
                                                 {new Date(task.createdAt?.seconds * 1000).toLocaleDateString('tr-TR')}
                                             </span>
-                                            <span className="text-purple-400 font-medium">Tamamlanmadı</span>
+                                            <span className={task.isCompleted ? 'text-green-400 font-bold' : 'text-purple-400 font-medium'}>
+                                                {task.isCompleted ? 'Tamamlandı' : 'Tamamlanmadı'}
+                                            </span>
                                         </div>
                                     </div>
                                 ))}

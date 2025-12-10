@@ -510,11 +510,12 @@ export default function App() {
         <MobileLayout
           user={user}
           userPermissions={userPermissions}
-          tasks={tasks}
+          tasks={orderedTasks}
           routineTasks={routineTasks}
           onSignOut={handleSignOut}
           onTaskClick={handleTaskClick}
           onAddTask={handleAddTaskClick}
+          onToggleRoutineTask={handleToggleRoutineTask}
         />
         {/* Modals for Mobile */}
         {isModalOpen && (
