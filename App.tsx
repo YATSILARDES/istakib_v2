@@ -548,7 +548,6 @@ export default function App() {
 
   // RETURN RENDER
   // Pre-calculate users for Admin Panels (Mobile & Desktop)
-  const registeredStaff = appSettings.staffList || [];
   const uniqueUsers = (() => {
     const allEmails = new Set<string>();
     registeredStaff.forEach(s => s.email && allEmails.add(s.email));
