@@ -55,8 +55,26 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
 
   // Staff'a göre görevleri filtrele ve birleştir
   const getStaffCombinedTasks = (name: string) => {
-    // 1. Rutin İşler
-    const staffRoutineTasks = routineTasks.filter(t => t.assignee === name);
+    // 1. Rutin İşler (SIRALI: Atanma > Oluşturulma)
+    const staffRoutineTasks = routineTasks.filter(t => t.assignee === name).sort((a, b) => {
+      // 1. Tamamlanma durumu (Tamamlananlar en altta)
+      if (a.isCompleted !== b.isCompleted) {
+        return a.isCompleted ? 1 : -1;
+      }
+
+      // 2. Atanma Zamanı
+      const aAssign = a.assignedAt?.toMillis?.() || a.assignedAt || 0;
+      const bAssign = b.assignedAt?.toMillis?.() || b.assignedAt || 0;
+
+      if (aAssign !== bAssign) {
+        return aAssign - bAssign;
+      }
+
+      // 3. Oluşturulma Zamanı
+      const aCreate = a.createdAt?.toMillis?.() || a.createdAt || 0;
+      const bCreate = b.createdAt?.toMillis?.() || b.createdAt || 0;
+      return aCreate - bCreate;
+    });
 
     // 2. Normal Görevler (Standart İşler)
     const staffStandardTasks = tasks.filter(t => t.assignee === name && t.status !== TaskStatus.CHECK_COMPLETED); // Tamamlananlar hariç mi? Genelde "Yapılacaklar" listesi burası. İsteğe göre değişir.

@@ -80,14 +80,24 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const term = (searchTerms['ROUTINE'] || '').toLocaleLowerCase('tr').trim();
     const matchesTerm = (text: string) => text.toLocaleLowerCase('tr').includes(term);
 
-    // Sort Routine Tasks: Incomplete first, then by date
+    // Sort Routine Tasks: Incomplete first, then by ASSIGNMENT TIME (User Request: "Sıralama yaparak atama"), then by creation
     const sortedRoutine = [...routineTasks].sort((a, b) => {
-      if (a.isCompleted === b.isCompleted) {
-        const aTime = a.createdAt?.toMillis?.() || a.createdAt || 0;
-        const bTime = b.createdAt?.toMillis?.() || b.createdAt || 0;
-        return aTime - bTime;
+      if (a.isCompleted !== b.isCompleted) {
+        return a.isCompleted ? 1 : -1;
       }
-      return a.isCompleted ? 1 : -1;
+
+      // 1. Sıralama Önceliği: Atanma Zamanı (Eğer atanmışsa)
+      const aAssign = a.assignedAt?.toMillis?.() || a.assignedAt || 0;
+      const bAssign = b.assignedAt?.toMillis?.() || b.assignedAt || 0;
+
+      if (aAssign !== bAssign) {
+        return aAssign - bAssign; // Eskiden yeniye (İlk atanan üstte)
+      }
+
+      // 2. Sıralama Önceliği: Oluşturulma Zamanı (Fallback)
+      const aCreate = a.createdAt?.toMillis?.() || a.createdAt || 0;
+      const bCreate = b.createdAt?.toMillis?.() || b.createdAt || 0;
+      return aCreate - bCreate;
     });
 
     const filteredRoutine = !term ? sortedRoutine : sortedRoutine.filter(t =>
