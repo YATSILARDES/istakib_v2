@@ -10,6 +10,7 @@ import AssignmentModal from './components/AssignmentModal';
 
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
+import MobileLayoutDemo from './components/MobileLayoutDemo';
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
 
 import { playNotificationSound } from './utils/notification_sound';
@@ -42,6 +43,7 @@ export default function App() {
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
 
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isMobileDemoOpen, setIsMobileDemoOpen] = useState(false); // MOBILE DEMO STATE
   const [appSettings, setAppSettings] = useState<AppSettings>({ notifications: {}, pinnedStaff: [] });
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
 
@@ -569,6 +571,16 @@ export default function App() {
             </button>
           )}
 
+          {/* MOBILE DEMO BUTTON */}
+          <button
+            onClick={() => setIsMobileDemoOpen(true)}
+            className="hidden md:flex items-center gap-2 bg-slate-700 hover:bg-blue-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+            title="Mobil Görünüm Önizleme"
+          >
+            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+            Mobil Önizle
+          </button>
+
           <button
             onClick={handleSignOut}
             className="p-2 hover:bg-slate-700 rounded-full transition-colors text-slate-400 hover:text-white"
@@ -745,6 +757,16 @@ export default function App() {
             <X className="w-4 h-4" />
           </button>
         </div>
+      )}
+
+      {/* MOBILE DEMO PREVIEW */}
+      {isMobileDemoOpen && (
+        <MobileLayoutDemo
+          tasks={tasks}
+          routineTasks={routineTasks}
+          onClose={() => setIsMobileDemoOpen(false)}
+          userEmail={user?.email || ''}
+        />
       )}
     </div>
   );
