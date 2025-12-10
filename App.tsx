@@ -766,8 +766,10 @@ export default function App() {
           routineTasks={routineTasks}
           onClose={() => setIsMobileDemoOpen(false)}
           userEmail={user?.email || ''}
+          onTaskClick={handleTaskClick}
         />
       )}
     </div>
   );
 }
+```
