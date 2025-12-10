@@ -120,7 +120,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
     };
 
     return (
-        <div className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center overflow-hidden">
+        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center overflow-hidden">
             {/* Header */}
             <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-20">
                 <h3 className="text-white font-medium drop-shadow-md">Seri No Tara</h3>

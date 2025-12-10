@@ -56,7 +56,7 @@ const LocationPreviewModal: React.FC<LocationPreviewModalProps> = ({ isOpen, onC
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div
                 className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}

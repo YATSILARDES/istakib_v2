@@ -62,7 +62,7 @@ const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
     }, [onScanSuccess]);
 
     return (
-        <div className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center">
+        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center">
             <div className="w-full max-w-md relative bg-black">
                 <button
                     onClick={onClose}
