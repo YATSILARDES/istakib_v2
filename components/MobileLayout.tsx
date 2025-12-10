@@ -14,6 +14,7 @@ interface MobileLayoutProps {
     onTaskClick: (task: Task) => void;
     onAddTask: () => void;
     onToggleRoutineTask: (taskId: string) => void;
+    onOpenAdmin: () => void;
 }
 
 export default function MobileLayout({
@@ -343,6 +344,19 @@ export default function MobileLayout({
                         {/* Actions */}
                         <div className="space-y-3">
                             <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider px-2">Hesap İşlemleri</h3>
+
+                            {userPermissions?.role === 'admin' && (
+                                <button
+                                    onClick={onOpenAdmin}
+                                    className="w-full bg-slate-800 hover:bg-slate-700 p-4 rounded-xl flex items-center gap-3 text-purple-400 transition-colors border border-slate-700"
+                                >
+                                    <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-400">
+                                        <Shield className="w-4 h-4" />
+                                    </div>
+                                    <span className="font-medium text-sm flex-1 text-left">Yönetim Paneli</span>
+                                    <ChevronRight className="w-4 h-4 text-slate-600" />
+                                </button>
+                            )}
 
                             <button
                                 onClick={handlePasswordReset}

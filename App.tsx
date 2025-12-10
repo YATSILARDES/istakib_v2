@@ -11,6 +11,8 @@ import AssignmentModal from './components/AssignmentModal';
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import MobileLayout from './components/MobileLayout';
+import MobileAdminPanel from './components/MobileAdminPanel';
+
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
 
 import { playNotificationSound } from './utils/notification_sound';
@@ -557,7 +559,22 @@ export default function App() {
           onTaskClick={handleTaskClick}
           onAddTask={handleAddTaskClick}
           onToggleRoutineTask={handleToggleRoutineTask}
+          onOpenAdmin={() => setIsAdminPanelOpen(true)}
         />
+
+        {/* Mobile Admin Panel */}
+        {isAdminPanelOpen && (
+          <MobileAdminPanel
+            isOpen={isAdminPanelOpen}
+            onClose={() => setIsAdminPanelOpen(false)}
+            initialSettings={appSettings}
+            onSaveSettings={handleSaveSettings}
+            users={uniqueUsers}
+            tasks={tasks}
+            onTasksUpdate={setTasks}
+          />
+        )}
+
         {/* Modals for Mobile */}
         {isModalOpen && (
           <TaskModal
