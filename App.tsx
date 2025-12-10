@@ -50,6 +50,7 @@ export default function App() {
     const unsubscribe = onSnapshot(doc(db, 'settings', 'general'), (doc) => {
       if (doc.exists()) {
         const data = doc.data() as AppSettings;
+        console.log("Loaded App Settings:", data);
         setAppSettings({
           notifications: data.notifications || {},
           pinnedStaff: data.pinnedStaff || [],
@@ -720,7 +721,15 @@ export default function App() {
         onClose={() => setIsAdminPanelOpen(false)}
         initialSettings={appSettings}
         onSaveSettings={handleSaveSettings}
-        users={registeredStaff.map(s => s.email).filter(Boolean)}
+        users={(() => {
+          const allEmails = new Set<string>();
+          registeredStaff.forEach(s => s.email && allEmails.add(s.email));
+          tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+          routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+          const uniqueUsers = Array.from(allEmails).filter(Boolean);
+          console.log("AdminPanel Users List:", uniqueUsers);
+          return uniqueUsers;
+        })()}
         tasks={tasks}
         onTasksUpdate={setTasks}
       />
