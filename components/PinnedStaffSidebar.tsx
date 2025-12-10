@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { RoutineTask, Task, TaskStatus } from '../types';
 import { ChevronRight, ChevronDown, CheckSquare, Square, UserCircle, Phone, MapPin, PinOff, AlertCircle } from 'lucide-react';
-import AddressLink from './AddressLink';
 
 interface PinnedStaffSidebarProps {
   pinnedStaff: string[];
@@ -178,7 +177,8 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
                               <div className="text-xs text-blue-100 font-medium leading-snug">{t.title}</div>
                               {t.address && (
                                 <div className="flex items-center gap-1 mt-1 text-[10px] text-blue-300/70 truncate">
-                                  <AddressLink address={t.address} showIcon={true} className="text-blue-300/70 hover:text-white" />
+                                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                                  {t.address}
                                 </div>
                               )}
                               <div className="mt-1 text-[10px] text-slate-500 font-mono">#{t.orderNumber} - {t.status}</div>
@@ -218,7 +218,8 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
 
                               {t.address && (
                                 <div className="mt-1.5 flex items-start gap-1 text-[10px] text-slate-500">
-                                  <AddressLink address={t.address} showIcon={true} className="text-slate-500 hover:text-slate-300 truncate" />
+                                  <MapPin className="w-3 h-3 flex-shrink-0 mt-px" />
+                                  <span className="truncate">{t.address}</span>
                                 </div>
                               )}
                             </div>

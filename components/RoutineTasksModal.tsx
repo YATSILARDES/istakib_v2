@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RoutineTask, TaskStatus, StatusLabels } from '../types';
 import { X, Plus, User, Trash2, CalendarCheck, CheckSquare, Square, Phone, MapPin, UserCircle, ArrowRightCircle, Check } from 'lucide-react';
-import AddressLink from './AddressLink';
+import LocationPreviewModal from './LocationPreviewModal';
 
 interface RoutineTasksModalProps {
   isOpen: boolean;
@@ -26,6 +26,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   const [newTaskContent, setNewTaskContent] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Conversion State
   const [convertingTaskId, setConvertingTaskId] = useState<string | null>(null);
@@ -116,8 +117,16 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                   placeholder="Adres"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-10 pr-4 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-10 pr-9 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowLocationModal(true)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-400 transition-colors p-1"
+                  title="Konum Ekle"
+                >
+                  <MapPin className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Üçüncü Satır: Eksik + Ekle Butonu */}
@@ -180,7 +189,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                             )}
                             {task.address && (
                               <span className="text-amber-400 flex items-center gap-1">
-                                <AddressLink address={task.address} showIcon={true} className="text-amber-400 hover:text-amber-200" />
+                                <MapPin className="w-3 h-3" /> {task.address}
                               </span>
                             )}
                           </div>
@@ -244,7 +253,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                               )}
                               {task.address && (
                                 <span className="text-slate-400 flex items-center gap-1">
-                                  <AddressLink address={task.address} showIcon={true} className="text-slate-400 hover:text-slate-200" />
+                                  <MapPin className="w-3 h-3" /> {task.address}
                                 </span>
                               )}
                             </div>
@@ -313,6 +322,14 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
 
         </div>
       </div>
+      <LocationPreviewModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onConfirm={(url) => {
+          setAddress(prev => prev ? `${prev} ${url}` : url);
+          setShowLocationModal(false);
+        }}
+      />
     </div>
   );
 };

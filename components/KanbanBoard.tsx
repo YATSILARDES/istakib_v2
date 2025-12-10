@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels, RoutineTask } from '../types';
 import { MoreVertical, ClipboardList, ClipboardCheck, Banknote, Flame, Wrench, Circle, Phone, MapPin, CheckCircle2, Search, CheckSquare, Square, UserCircle } from 'lucide-react';
-import AddressLink from './AddressLink';
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -217,7 +216,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                               )}
                               {t.address && (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                                  <AddressLink address={t.address} showIcon={true} className="text-amber-300 hover:text-white" />
+                                  <MapPin className="w-3 h-3" /> {t.address}
                                 </span>
                               )}
                             </div>

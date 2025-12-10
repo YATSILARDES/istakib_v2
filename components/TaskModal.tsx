@@ -3,7 +3,7 @@ import { Task, TaskStatus, StatusLabels } from '../types';
 import { X, Save, Calendar, MapPin, Phone, FileText, User, Trash2, AlertTriangle, CheckCircle2, PhoneCall, Share2, Flame, Wrench, ClipboardCheck, ScanBarcode, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
 import Scanner from './Scanner';
 import CameraCapture from './CameraCapture';
-import AddressLink from './AddressLink';
+import LocationPreviewModal from './LocationPreviewModal';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -42,6 +42,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
   const [showCamera, setShowCamera] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
 
   useEffect(() => {
@@ -323,13 +324,18 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-400">Adres</label>
-                      <input type="text" value={formData.address || ''} onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
-                      {formData.address && (
-                        <div className="text-xs text-blue-400 mt-1 flex justify-end">
-                          <AddressLink address={formData.address} showIcon={true} className="hover:text-blue-300" />
-                        </div>
-                      )}
+                      <div className="relative">
+                        <input type="text" value={formData.address || ''} onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-4 pr-10 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <button
+                          type="button"
+                          onClick={() => setShowLocationModal(true)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-400 transition-colors p-1"
+                          title="Konum Ekle"
+                        >
+                          <MapPin className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -564,6 +570,14 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
           </div>
         </div>
       </div>
+      <LocationPreviewModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onConfirm={(url) => {
+          setFormData(prev => ({ ...prev, address: prev.address ? `${prev.address} ${url}` : url }));
+          setShowLocationModal(false);
+        }}
+      />
     </>
   );
 };
