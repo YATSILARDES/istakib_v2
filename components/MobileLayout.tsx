@@ -48,17 +48,27 @@ export default function MobileLayout({
     // 2. Filter Helper Function (Search)
     const applySearch = (items: any[]) => {
         if (!searchQuery.trim()) return items;
-        const lowerQ = searchQuery.toLowerCase();
+        const lowerQ = searchQuery.toLocaleLowerCase('tr'); // Turkish sensitive lowercasing
         return items.filter(item => {
-            const title = (item.title || item.content || '').toLowerCase();
-            const address = (item.address || '').toLowerCase();
-            const phone = (item.phone || item.phoneNumber || '').toLowerCase();
-            const customer = (item.customerName || '').toLowerCase();
+            const title = (item.title || item.content || '').toLocaleLowerCase('tr');
+            const address = (item.address || '').toLocaleLowerCase('tr');
+            const phone = (item.phone || item.phoneNumber || '').toLocaleLowerCase('tr');
+            const customer = (item.customerName || '').toLocaleLowerCase('tr');
             return title.includes(lowerQ) || address.includes(lowerQ) || phone.includes(lowerQ) || customer.includes(lowerQ);
         });
     };
 
-    // 3. Tab Specific Logic
+    // 3. Columns Logic (Based on Permissions)
+    const availableStatusList = Object.values(TaskStatus).filter(status => {
+        // If admin, show all
+        if (userPermissions?.role === 'admin') return true;
+        // If no explicit permissions, show all (safe fallback) or none? Desktop shows none usually if blocked.
+        if (!userPermissions?.allowedColumns) return true;
+        // Filter based on allowed columns
+        return userPermissions.allowedColumns.includes(status);
+    });
+
+    // 4. Tab Specific Logic
     let displayedTasks: Task[] = [];
     let displayedRoutineTasks: RoutineTask[] = [];
 
@@ -152,7 +162,7 @@ export default function MobileLayout({
                                 >
                                     Tümü
                                 </button>
-                                {Object.values(TaskStatus).map(status => (
+                                {availableStatusList.map(status => (
                                     <button
                                         key={status}
                                         onClick={() => setFilterStatus(status)}
