@@ -314,11 +314,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       <div className={`flex items-center gap-1.5 text-xs ${task.checkStatus === 'missing' ? 'text-orange-200/70' :
                         task.checkStatus === 'clean' ? 'text-emerald-200/70' : 'text-slate-400'
                         }`}>
-                        <AddressLink
-                          address={task.address}
-                          className="truncate max-w-[200px] text-inherit hover:text-white"
-                          showIcon={true}
-                        />
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate max-w-[200px] text-inherit">{task.address}</span>
                       </div>
                     )}
                   </div>
