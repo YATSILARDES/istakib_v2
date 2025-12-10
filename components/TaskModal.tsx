@@ -105,7 +105,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
   const handleShare = async () => {
     // Adres alanından olası URL'leri temizle (Eski kayıtlardan kalma)
-    const cleanAddress = (formData.address || '').replace(/https?:\/\/[^\s]+/, '').trim();
+    const cleanAddress = (formData.address || '').replace(/https?:\/\/[^\s]+/g, '').trim();
 
     let shareText = `👤 ${formData.title}\n📞 ${formData.phone || 'Telefon Yok'}\n🏠 ${cleanAddress || 'Adres Yok'}`;
 
