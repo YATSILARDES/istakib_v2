@@ -196,7 +196,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
       )}
 
       {showImagePreview && formData.serialNumberImage && (
-        <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4" onClick={() => setShowImagePreview(false)}>
+        <div className="fixed inset-0 z-[210] bg-black/90 flex items-center justify-center p-4" onClick={() => setShowImagePreview(false)}>
           <button className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full">
             <X className="w-8 h-8" />
           </button>
@@ -204,7 +204,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         </div>
       )}
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div className="bg-slate-900 border border-slate-700 w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col h-[90vh]">
           {/* Header */}
           <div className="px-6 py-4 border-b border-slate-700 bg-slate-800">
