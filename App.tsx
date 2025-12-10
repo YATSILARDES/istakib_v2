@@ -152,7 +152,6 @@ export default function App() {
   const handleSaveSettings = async (newSettings: AppSettings) => {
     try {
       await setDoc(doc(db, 'settings', 'general'), newSettings, { merge: true });
-      setIsAdminPanelOpen(false);
     } catch (e) {
       console.error("Error saving settings: ", e);
       setError("Ayarlar kaydedilemedi.");
