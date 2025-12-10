@@ -11,7 +11,8 @@ interface AddressLinkProps {
 const AddressLink: React.FC<AddressLinkProps> = ({ address, className, showIcon = false }) => {
     if (!address) return null;
 
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    // 'q' parametresi genellikle doğrudan pinleme (işaretleme) yapma konusunda 'search/?query=' den daha agresiftir.
+    const mapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
 
     return (
         <a
