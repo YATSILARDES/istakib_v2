@@ -334,6 +334,45 @@ export default function App() {
     }
   };
 
+  const handleConvertRoutineTask = async (taskId: string, targetStatus: TaskStatus) => {
+    try {
+      const routineTask = routineTasks.find(t => t.id === taskId);
+      if (!routineTask) return;
+
+      // 1. Yeni Task Oluştur
+      await addDoc(collection(db, 'tasks'), {
+        orderNumber: nextOrderNumber,
+        title: routineTask.customerName || 'İsimsiz Müşteri',
+        jobDescription: '', // Kullanıcı isteği: Eksik içeriği buraya GELMESİN
+        description: '', // Kullanıcı isteği: Notlara da GELMESİN
+        status: targetStatus,
+        assignee: '', // Atamasız başlasın
+        date: new Date().toISOString(),
+        address: routineTask.address || '',
+        phone: routineTask.phoneNumber || '',
+        generalNote: '',
+        teamNote: '',
+        checkStatus: null,
+        gasOpeningDate: '',
+        gasNote: '',
+        serviceSerialNumber: '',
+        serviceNote: '',
+        createdBy: user?.email,
+        createdAt: serverTimestamp()
+      });
+
+      // 2. Eski RoutineTask'i Sil
+      await deleteDoc(doc(db, 'routine_tasks', taskId));
+
+      setToast({ message: 'Eksik başarıyla karta dönüştürüldü.', visible: true });
+      setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
+
+    } catch (e) {
+      console.error("Convert routine error:", e);
+      setError("Dönüştürme işlemi başarısız.");
+    }
+  };
+
   // Handlers - Assignment & Staff
   const handleAssignTask = async (taskId: string, assignee: string, assigneeEmail?: string) => {
     try {
@@ -656,6 +695,7 @@ export default function App() {
           onAddTask={handleAddRoutineTask}
           onToggleTask={handleToggleRoutineTask}
           onDeleteTask={handleDeleteRoutineTask}
+          onConvertTask={handleConvertRoutineTask}
         />
       )}
 
