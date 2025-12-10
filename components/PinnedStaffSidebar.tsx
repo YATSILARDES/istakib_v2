@@ -169,14 +169,28 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
                         <div
                           key={t.id}
                           onClick={() => onTaskClick(t)}
-                          className="p-2.5 rounded border border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40 transition-all cursor-pointer group"
+                          className={`
+                            p-2.5 rounded border transition-all cursor-pointer group
+                            ${t.checkStatus === 'missing'
+                              ? 'bg-orange-900/40 border-orange-500/50 hover:border-orange-400 shadow-orange-900/10'
+                              : t.checkStatus === 'clean'
+                                ? 'bg-emerald-900/40 border-emerald-500/50 hover:border-emerald-400 shadow-emerald-900/10'
+                                : 'border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40'
+                            }
+                          `}
                         >
                           <div className="flex items-start gap-2">
-                            <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                            <div className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.checkStatus === 'missing' ? 'bg-orange-400' :
+                                t.checkStatus === 'clean' ? 'bg-emerald-400' : 'bg-blue-400'
+                              }`} />
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs text-blue-100 font-medium leading-snug">{t.title}</div>
+                              <div className={`text-xs font-medium leading-snug ${t.checkStatus === 'missing' ? 'text-orange-100' :
+                                  t.checkStatus === 'clean' ? 'text-emerald-100' : 'text-blue-100'
+                                }`}>{t.title}</div>
                               {t.address && (
-                                <div className="flex items-center gap-1 mt-1 text-[10px] text-blue-300/70 truncate">
+                                <div className={`flex items-center gap-1 mt-1 text-[10px] truncate ${t.checkStatus === 'missing' ? 'text-orange-300/70' :
+                                    t.checkStatus === 'clean' ? 'text-emerald-300/70' : 'text-blue-300/70'
+                                  }`}>
                                   <MapPin className="w-3 h-3 flex-shrink-0" />
                                   {t.address}
                                 </div>
