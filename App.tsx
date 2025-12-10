@@ -548,9 +548,10 @@ export default function App() {
 
   // RETURN RENDER
   // Pre-calculate users for Admin Panels (Mobile & Desktop)
+  const registeredStaff = appSettings.staffList || [];
   const uniqueUsers = (() => {
     const allEmails = new Set<string>();
-    (appSettings.staffList || []).forEach(s => s.email && allEmails.add(s.email));
+    registeredStaff.forEach(s => s.email && allEmails.add(s.email));
     tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
     routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
     return Array.from(allEmails).filter(Boolean);
@@ -570,6 +571,8 @@ export default function App() {
           onAddTask={handleAddTaskClick}
           onToggleRoutineTask={handleToggleRoutineTask}
           onOpenAdmin={() => setIsAdminPanelOpen(true)}
+          onOpenRoutineModal={() => setIsRoutineModalOpen(true)}
+          onOpenAssignmentModal={() => setIsAssignmentModalOpen(true)}
         />
 
         {/* Mobile Admin Panel */}
@@ -582,6 +585,35 @@ export default function App() {
             users={uniqueUsers}
             tasks={tasks}
             onTasksUpdate={setTasks}
+          />
+        )}
+
+        {/* Shared Modals for Mobile */}
+        {isRoutineModalOpen && (
+          <RoutineTasksModal
+            isOpen={isRoutineModalOpen}
+            onClose={() => setIsRoutineModalOpen(false)}
+            tasks={routineTasks}
+            onAddTask={handleAddRoutineTask}
+            onToggleTask={handleToggleRoutineTask}
+            onDeleteTask={handleDeleteRoutineTask}
+            onConvertTask={handleConvertRoutineTask}
+          />
+        )}
+
+        {isAssignmentModalOpen && (
+          <AssignmentModal
+            isOpen={isAssignmentModalOpen}
+            onClose={() => setIsAssignmentModalOpen(false)}
+            tasks={tasks}
+            routineTasks={routineTasks}
+            onAssignTask={handleAssignTask}
+            onAssignRoutineTask={handleAssignRoutineTask}
+            staffList={registeredStaff}
+            pinnedStaff={appSettings.pinnedStaff || []}
+            onAddStaff={handleAddStaff}
+            onRemoveStaff={handleRemoveStaff}
+            onTogglePinStaff={handleTogglePinStaff}
           />
         )}
 

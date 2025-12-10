@@ -333,6 +333,37 @@ export default function MobileLayout({
                     </div>
                 )}
 
+                {/* VIEW: TASKS */}
+                {activeTab === 'tasks' && (
+                    <div className="px-4 py-2 space-y-4 pb-24">
+
+                        {/* Management Tools - Mobile */}
+                        {(userPermissions?.role === 'admin' || userPermissions?.canAccessRoutineTasks || userPermissions?.canAccessAssignment) && (
+                            <div className="grid grid-cols-2 gap-3">
+                                {(userPermissions?.role === 'admin' || userPermissions?.canAccessRoutineTasks) && (
+                                    <button
+                                        onClick={onOpenRoutineModal}
+                                        className="bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 p-3 rounded-xl flex flex-col items-center gap-2 transition-colors active:scale-95 transition-transform"
+                                    >
+                                        <Bell className="w-6 h-6 text-purple-400" />
+                                        <span className="text-xs font-bold text-purple-300">Eksikler Havuzu</span>
+                                    </button>
+                                )}
+
+                                {(userPermissions?.role === 'admin' || userPermissions?.canAccessAssignment) && (
+                                    <button
+                                        onClick={onOpenAssignmentModal}
+                                        className="bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 p-3 rounded-xl flex flex-col items-center gap-2 transition-colors active:scale-95 transition-transform"
+                                    >
+                                        <Users className="w-6 h-6 text-blue-400" />
+                                        <span className="text-xs font-bold text-blue-300">Görev Dağıtımı</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* VIEW: PROFILE */}
                 {activeTab === 'profile' && (
                     <div className="px-4 py-2 space-y-6">
