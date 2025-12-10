@@ -12,7 +12,7 @@ import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
 
-import { NOTIFICATION_SOUND } from './utils/notification_sound';
+import { playNotificationSound } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
@@ -110,12 +110,7 @@ export default function App() {
               setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
 
               // 3. Sesli Bildirim
-              try {
-                const audio = new Audio(NOTIFICATION_SOUND);
-                audio.play().catch(e => console.log('Audio play failed', e));
-              } catch (e) {
-                console.log('Audio API error', e);
-              }
+              playNotificationSound();
             } else {
               // Hedef kişi DEĞİLSEK ama yöneticiysek yine de görelim mi? 
               // Kullanıcı isteğine göre: "Admin olarak bana hep geliyor" -> İstenen bu mu? 
