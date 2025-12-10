@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, Filter, LogOut, KeyRound, LayoutGrid, List } from 'lucide-react';
+import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock } from 'lucide-react';
 import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -26,31 +26,58 @@ export default function MobileLayout({
 }: MobileLayoutProps) {
     const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile'>('home');
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Helper: Get Display Name
     const displayName = userPermissions?.name || user?.displayName || user?.email?.split('@')[0] || 'Kullanıcı';
     const roleName = userPermissions?.role === 'admin' ? 'Yönetici' : 'Personel';
 
-    // Filter Logic
+    // --- DATA FILTERING LOGIC ---
+
+    // 1. My Items (Tasks & Routine Tasks)
     const myTasks = tasks.filter(t => t.assigneeEmail === user?.email);
 
-    // Decide which tasks to show based on Tab
-    let displayedTasks = tasks;
-    let pageTitle = 'Operasyon Paneli';
+    const myRoutineTasks = routineTasks.filter(t => {
+        // Check if assigned to me via email or name
+        const emailMatch = t.assigneeEmail && user?.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
+        // Fallback to name match if permissions available
+        const nameMatch = userPermissions?.name && t.assignee === userPermissions.name;
+        return emailMatch || nameMatch;
+    });
 
-    if (activeTab === 'tasks') {
-        displayedTasks = myTasks;
-        pageTitle = 'İşlerim';
-    } else if (activeTab === 'home') {
-        // "Home" Tab -> Show all (filtered by status pill)
-        displayedTasks = filterStatus === 'ALL'
+    // 2. Filter Helper Function (Search)
+    const applySearch = (items: any[]) => {
+        if (!searchQuery.trim()) return items;
+        const lowerQ = searchQuery.toLowerCase();
+        return items.filter(item => {
+            const title = (item.title || item.content || '').toLowerCase();
+            const address = (item.address || '').toLowerCase();
+            const phone = (item.phone || item.phoneNumber || '').toLowerCase();
+            const customer = (item.customerName || '').toLowerCase();
+            return title.includes(lowerQ) || address.includes(lowerQ) || phone.includes(lowerQ) || customer.includes(lowerQ);
+        });
+    };
+
+    // 3. Tab Specific Logic
+    let displayedTasks: Task[] = [];
+    let displayedRoutineTasks: RoutineTask[] = [];
+
+    if (activeTab === 'home') {
+        // Filter by Status Pill
+        const statusFiltered = filterStatus === 'ALL'
             ? tasks
             : tasks.filter(t => t.status === filterStatus);
+
+        // Apply Search
+        displayedTasks = applySearch(statusFiltered);
+        displayedRoutineTasks = []; // Home only shows main tasks for now? Or separate pool? sticking to Main Tasks per requirement.
+
+    } else if (activeTab === 'tasks') {
+        // My Tasks (Already filtered by user) -> Apply Search
+        displayedTasks = applySearch(myTasks);
+        displayedRoutineTasks = applySearch(myRoutineTasks);
     }
 
-    // Stats
-    const pendingCount = tasks.filter(t => t.status === TaskStatus.TO_CHECK).length;
-    const myPendingCount = myTasks.filter(t => t.status !== TaskStatus.GAS_OPENED && t.status !== TaskStatus.SERVICE_DIRECTED).length;
 
     // Handlers
     const handlePasswordReset = async () => {
@@ -71,8 +98,8 @@ export default function MobileLayout({
 
             {/* HEADER (Only for Home & Tasks) */}
             {activeTab !== 'profile' && (
-                <div className="px-5 pt-6 pb-6 bg-gradient-to-b from-slate-900 to-slate-800 shadow-sm shrink-0 z-10">
-                    <div className="flex justify-between items-center mb-4">
+                <div className="px-5 pt-6 pb-2 bg-gradient-to-b from-slate-900 to-slate-800 shadow-sm shrink-0 z-10 space-y-4">
+                    <div className="flex justify-between items-center">
                         <div>
                             <h2 className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Merhaba,</h2>
                             <h1 className="text-xl font-bold text-white leading-tight">{displayName}</h1>
@@ -88,27 +115,17 @@ export default function MobileLayout({
                         )}
                     </div>
 
-                    {/* Quick Stats (Only on Home) */}
-                    {activeTab === 'home' && (
-                        <div className="grid grid-cols-2 gap-3 mb-2">
-                            <div className="bg-blue-600/20 border border-blue-500/30 p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden">
-                                <div className="absolute -right-4 -top-4 w-16 h-16 bg-blue-500/20 rounded-full blur-xl"></div>
-                                <LayoutGrid className="w-5 h-5 text-blue-400 mb-1" />
-                                <div>
-                                    <div className="text-2xl font-bold text-white leading-none">{tasks.length}</div>
-                                    <div className="text-[10px] text-blue-300 mt-1">Toplam İş</div>
-                                </div>
-                            </div>
-                            <div className="bg-purple-600/20 border border-purple-500/30 p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden">
-                                <div className="absolute -right-4 -top-4 w-16 h-16 bg-purple-500/20 rounded-full blur-xl"></div>
-                                <Bell className="w-5 h-5 text-purple-400 mb-1" />
-                                <div>
-                                    <div className="text-2xl font-bold text-white leading-none">{pendingCount}</div>
-                                    <div className="text-[10px] text-purple-300 mt-1">Kontrol Bekleyen</div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* Search Input */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <input
+                            type="text"
+                            placeholder="İş, müşteri, adres veya telefon ara..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                        />
+                    </div>
                 </div>
             )}
 
@@ -124,7 +141,7 @@ export default function MobileLayout({
 
                 {/* VIEW: HOME & TASKS */}
                 {activeTab !== 'profile' && (
-                    <div className="px-4 py-2 space-y-5">
+                    <div className="px-4 py-2 space-y-6">
 
                         {/* Filter Pills (Home Only) */}
                         {activeTab === 'home' && (
@@ -147,19 +164,72 @@ export default function MobileLayout({
                             </div>
                         )}
 
-                        {/* Task List */}
+                        {/* --- ROUTINE TASKS SECTION (Only in 'Tasks' Tab) --- */}
+                        {activeTab === 'tasks' && displayedRoutineTasks.length > 0 && (
+                            <div className="space-y-3 animate-fadeIn">
+                                <div className="flex items-center gap-2 text-purple-400 border-b border-purple-500/20 pb-2">
+                                    <CheckSquare className="w-4 h-4" />
+                                    <h3 className="text-sm font-bold uppercase tracking-wide">Eksiklerim</h3>
+                                    <span className="bg-purple-500/20 text-purple-300 text-[10px] px-2 py-0.5 rounded-full">{displayedRoutineTasks.length}</span>
+                                </div>
+                                {displayedRoutineTasks.map(task => (
+                                    <div key={task.id} className="bg-slate-800/80 border border-purple-500/30 rounded-xl p-4 relative overflow-hidden shadow-sm">
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>
+                                        <h4 className="text-white font-medium text-sm mb-2">{task.content}</h4>
+
+                                        {(task.customerName || task.phoneNumber) && (
+                                            <div className="space-y-1 mb-2">
+                                                {task.customerName && (
+                                                    <div className="flex items-center gap-2 text-slate-400 text-xs">
+                                                        <User className="w-3 h-3" /> {task.customerName}
+                                                    </div>
+                                                )}
+                                                {task.phoneNumber && (
+                                                    <div className="flex items-center gap-2 text-slate-400 text-xs">
+                                                        <Phone className="w-3 h-3" />
+                                                        <a href={`tel:${task.phoneNumber}`} className="hover:text-purple-400 transition-colors">{task.phoneNumber}</a>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 border-t border-white/5 pt-2">
+                                            <span className="flex items-center gap-1">
+                                                <Clock className="w-3 h-3" />
+                                                {new Date(task.createdAt?.seconds * 1000).toLocaleDateString('tr-TR')}
+                                            </span>
+                                            <span className="text-purple-400 font-medium">Tamamlanmadı</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+
+                        {/* --- MAIN TASKS SECTION --- */}
+                        {/* Show section header only if showing routine tasks as well */}
+                        {activeTab === 'tasks' && displayedRoutineTasks.length > 0 && (
+                            <div className="flex items-center gap-2 text-blue-400 border-b border-blue-500/20 pb-2 mt-6">
+                                <LayoutGrid className="w-4 h-4" />
+                                <h3 className="text-sm font-bold uppercase tracking-wide">Saha Görevleri</h3>
+                                <span className="bg-blue-500/20 text-blue-300 text-[10px] px-2 py-0.5 rounded-full">{displayedTasks.length}</span>
+                            </div>
+                        )}
+
                         <div className="space-y-3">
-                            {displayedTasks.length === 0 && (
+                            {displayedTasks.length === 0 && displayedRoutineTasks.length === 0 && (
                                 <div className="text-center text-slate-500 py-12 flex flex-col items-center gap-3">
                                     <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center">
                                         <Search className="w-8 h-8 opacity-20" />
                                     </div>
-                                    <span className="text-sm">Görüntülenecek iş bulunamadı.</span>
+                                    <span className="text-sm">
+                                        {searchQuery ? 'Arama kriterlerine uygun iş bulunamadı.' : 'Görüntülenecek iş bulunamadı.'}
+                                    </span>
                                 </div>
                             )}
 
                             {displayedTasks.map(task => {
-                                // COLOR CODING LOGIC (Same as Desktop)
+                                // COLOR CODING LOGIC
                                 let cardStyle = "bg-slate-800 border-slate-700/50"; // Default
                                 let badgeStyle = "bg-blue-500/20 text-blue-400"; // Default Badge
                                 let shadowStyle = "";
