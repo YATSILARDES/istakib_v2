@@ -253,7 +253,6 @@ export default function App() {
           status: taskData.status || TaskStatus.TO_CHECK,
           assignee: taskData.assignee || '',
           date: taskData.date || new Date().toISOString(),
-          date: taskData.date || new Date().toISOString(),
           address: taskData.address || '',
           locationCoordinates: taskData.locationCoordinates || '',
           phone: taskData.phone || '',
