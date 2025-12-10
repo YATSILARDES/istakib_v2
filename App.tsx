@@ -75,9 +75,10 @@ export default function App() {
 
           // Combine and deduplicate
           const allTargetEmails = [...configuredEmails];
-          if (assigneeEmail && !allTargetEmails.includes(assigneeEmail)) {
-            allTargetEmails.push(assigneeEmail);
-          }
+          // REMOVED: Assignee automatic inclusion. Now only explicitly configured users get notifications.
+          // if (assigneeEmail && !allTargetEmails.includes(assigneeEmail)) {
+          //   allTargetEmails.push(assigneeEmail);
+          // }
 
           if (allTargetEmails.length > 0) {
             console.log(`Bildirim gönderiliyor (Config + Assignee): ${allTargetEmails.join(', ')} -> ${task.title} - ${task.status}`);
