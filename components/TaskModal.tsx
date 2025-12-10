@@ -104,7 +104,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
   };
 
   const handleShare = async () => {
-    let shareText = `👤 ${formData.title}\n📞 ${formData.phone || 'Telefon Yok'}\n🏠 ${formData.address || 'Adres Yok'}`;
+    // Adres alanından olası URL'leri temizle (Eski kayıtlardan kalma)
+    const cleanAddress = (formData.address || '').replace(/https?:\/\/[^\s]+/, '').trim();
+
+    let shareText = `👤 ${formData.title}\n📞 ${formData.phone || 'Telefon Yok'}\n🏠 ${cleanAddress || 'Adres Yok'}`;
 
     if (formData.locationCoordinates) {
       shareText += `\n\n📍 Konum:\n${formData.locationCoordinates}`;
