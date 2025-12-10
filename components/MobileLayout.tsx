@@ -133,7 +133,7 @@ export default function MobileLayout({
                             placeholder="İş, müşteri, adres veya telefon ara..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-base text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
                         />
                     </div>
                 </div>
@@ -153,15 +153,9 @@ export default function MobileLayout({
                 {activeTab !== 'profile' && (
                     <div className="px-4 py-2 space-y-6">
 
-                        {/* Filter Pills (Home Only) */}
+                        {/* Filter Pills (Home Only) - REMOVED 'ALL' BUTTON */}
                         {activeTab === 'home' && (
                             <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                                <button
-                                    onClick={() => setFilterStatus('ALL')}
-                                    className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${filterStatus === 'ALL' ? 'bg-white text-slate-900 font-bold' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}
-                                >
-                                    Tümü
-                                </button>
                                 {availableStatusList.map(status => (
                                     <button
                                         key={status}
@@ -187,21 +181,25 @@ export default function MobileLayout({
                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>
                                         <h4 className="text-white font-medium text-sm mb-2">{task.content}</h4>
 
-                                        {(task.customerName || task.phoneNumber) && (
-                                            <div className="space-y-1 mb-2">
-                                                {task.customerName && (
-                                                    <div className="flex items-center gap-2 text-slate-400 text-xs">
-                                                        <User className="w-3 h-3" /> {task.customerName}
-                                                    </div>
-                                                )}
-                                                {task.phoneNumber && (
-                                                    <div className="flex items-center gap-2 text-slate-400 text-xs">
-                                                        <Phone className="w-3 h-3" />
-                                                        <a href={`tel:${task.phoneNumber}`} className="hover:text-purple-400 transition-colors">{task.phoneNumber}</a>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                        <div className="space-y-1.5 mb-2">
+                                            {task.customerName && (
+                                                <div className="flex items-center gap-2 text-sky-400 text-xs">
+                                                    <User className="w-3 h-3 text-sky-500/70" /> {task.customerName}
+                                                </div>
+                                            )}
+                                            {task.address && ( // ADDED ADDRESS
+                                                <div className="flex items-center gap-2 text-amber-300/90 text-xs">
+                                                    <MapPin className="w-3 h-3 text-amber-500/70" />
+                                                    <span className="truncate">{task.address}</span>
+                                                </div>
+                                            )}
+                                            {task.phoneNumber && (
+                                                <div className="flex items-center gap-2 text-emerald-400 text-xs">
+                                                    <Phone className="w-3 h-3 text-emerald-500/70" />
+                                                    <a href={`tel:${task.phoneNumber}`} className="hover:text-emerald-300 transition-colors">{task.phoneNumber}</a>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 border-t border-white/5 pt-2">
                                             <span className="flex items-center gap-1">
@@ -270,12 +268,12 @@ export default function MobileLayout({
 
                                         {/* Content */}
                                         <div className="relative z-10">
-                                            <h4 className={`font-bold text-sm mb-1 line-clamp-2 ${task.checkStatus === 'missing' ? 'text-orange-100' : task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-white'}`}>
+                                            <h4 className={`font-bold text-sm mb-2 line-clamp-2 ${task.checkStatus === 'missing' ? 'text-orange-100' : task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-white'}`}>
                                                 {task.title}
                                             </h4>
 
-                                            <div className="flex items-center gap-2 text-slate-400 text-xs mb-3">
-                                                <MapPin className="w-3 h-3 shrink-0" />
+                                            <div className="flex items-center gap-2 text-amber-300/90 text-xs mb-3">
+                                                <MapPin className="w-3 h-3 shrink-0 text-amber-500/70" />
                                                 <span className="truncate">{task.address || 'Adres Girilmemiş'}</span>
                                             </div>
 
@@ -289,7 +287,7 @@ export default function MobileLayout({
                                                             e.stopPropagation();
                                                             window.open(`tel:${task.phone}`);
                                                         }}
-                                                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center border border-white/10 transition-colors"
+                                                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-white/10 transition-colors"
                                                     >
                                                         <Phone className="w-3.5 h-3.5" />
                                                     </button>
