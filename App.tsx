@@ -547,7 +547,17 @@ export default function App() {
   }
 
   // RETURN RENDER
+  // Pre-calculate users for Admin Panels (Mobile & Desktop)
+  const uniqueUsers = (() => {
+    const allEmails = new Set<string>();
+    (appSettings.staffList || []).forEach(s => s.email && allEmails.add(s.email));
+    tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+    routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+    return Array.from(allEmails).filter(Boolean);
+  })();
+
   if (isMobile) {
+
     return (
       <>
         <MobileLayout

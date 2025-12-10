@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2 } from 'lucide-react';
+import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield } from 'lucide-react';
 import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -25,7 +25,8 @@ export default function MobileLayout({
     onSignOut,
     onTaskClick,
     onAddTask,
-    onToggleRoutineTask
+    onToggleRoutineTask,
+    onOpenAdmin
 }: MobileLayoutProps) {
     const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile'>('home');
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
