@@ -10,7 +10,7 @@ import AssignmentModal from './components/AssignmentModal';
 
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
-import MobileLayoutDemo from './components/MobileLayoutDemo';
+import MobileLayout from './components/MobileLayout';
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
 
 import { playNotificationSound } from './utils/notification_sound';
@@ -30,6 +30,10 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [routineTasks, setRoutineTasks] = useState<RoutineTask[]>([]); // Rutin İşler
   const [userPermissions, setUserPermissions] = useState<UserPermission | null>(null); // Permission Logic
+
+  // Responsive State
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,9 +47,15 @@ export default function App() {
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
 
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  const [isMobileDemoOpen, setIsMobileDemoOpen] = useState(false); // MOBILE DEMO STATE
   const [appSettings, setAppSettings] = useState<AppSettings>({ notifications: {}, pinnedStaff: [] });
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
+
+  // Handle Resize
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Settings Listener
   useEffect(() => {
@@ -61,7 +71,7 @@ export default function App() {
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, []);  // ... (Rest of useEffects same as before) ...
 
   // Notification Logic
   useEffect(() => {
@@ -457,61 +467,69 @@ export default function App() {
   if (loading) return <div className="h-screen bg-slate-900 flex items-center justify-center text-white">Yükleniyor...</div>;
   if (!user) return <Login />;
 
-  // Benzersiz Personel Listesi (StaffMember Objesi Olarak)
-  // 1. Settings'den gelen kayıtlı personel
+  // ... (Calculations logic same)
+  // Benzersiz Personel Listesi
   const registeredStaff = appSettings.staffList || [];
-
-  // 2. Tasklarda geçen ama settings'de olmayan (eski kayıtlar) isimler
-  // Bunlar için email 'unknown' veya boş olacak.
   const taskAssignees = [...tasks, ...routineTasks].map(t => t.assignee).filter(Boolean) as string[];
   const pinnedStaffNames = appSettings.pinnedStaff || [];
-
   const allNames = Array.from(new Set([...taskAssignees, ...pinnedStaffNames, ...registeredStaff.map(s => s.name)]));
-
   const allStaff: StaffMember[] = allNames.map(name => {
     const registered = registeredStaff.find(s => s.name === name);
     return registered || { name, email: '' }; // Kayıtlı değilse emailsiz döndür
   });
 
-  // Filtreleme (Admin değilse sadece kendi işleri)
-  // Fail-Safe Logic: Varsayılan olarak BOŞ liste, yetki gelince dolar.
-
+  // FiltrelemeLogic
   let visibleTasks: Task[] = [];
   let visibleRoutineTasks: RoutineTask[] = [];
-
-  // Admin kontrolü (Email listesi)
   const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
 
-  // 1. Admin ise hepsini gör
   if (isAdmin) {
     visibleTasks = tasks;
     visibleRoutineTasks = routineTasks;
-  }
-  // 2. Yetki verisi yoksa BOOOŞ kalsın
-  else if (!userPermissions) {
+  } else if (!userPermissions) {
     visibleTasks = [];
     visibleRoutineTasks = [];
-  }
-  // 3. Personel ise filtrele
-  else {
+  } else {
     const myName = userPermissions.name;
     const myEmail = userPermissions.email;
     const canSeePool = userPermissions.canAccessRoutineTasks;
     const allowedColumns = userPermissions.allowedColumns || [];
-
-    // KANBAN TASK FİLTRESİ: Yetkili olunan sütundaki TÜM görevleri göster
-    visibleTasks = tasks.filter(t => {
-      // Görevin bulunduğu sütun, kullanıcının görebileceği sütunlar arasında mı?
-      return allowedColumns.includes(t.status);
-    });
-
-    // EKSİK LİSTESİ (RUTİN İŞLER) FİLTRESİ: Sadece kendine atananları göster
+    visibleTasks = tasks.filter(t => allowedColumns.includes(t.status));
     visibleRoutineTasks = routineTasks.filter(t => {
       const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
       const nameMatch = myName && t.assignee === myName;
       const isUnassigned = (!t.assignee || t.assignee.trim() === '') && !t.assigneeEmail;
       return emailMatch || nameMatch || (isUnassigned && canSeePool);
     });
+  }
+
+  // RETURN RENDER
+  if (isMobile) {
+    return (
+      <>
+        <MobileLayout
+          user={user}
+          userPermissions={userPermissions}
+          tasks={tasks}
+          routineTasks={routineTasks}
+          onSignOut={handleSignOut}
+          onTaskClick={handleTaskClick}
+          onAddTask={handleAddTaskClick}
+        />
+        {/* Modals for Mobile */}
+        {isModalOpen && (
+          <TaskModal
+            task={selectedTask}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSaveTask}
+            onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
+            isOpen={isModalOpen}
+            nextOrderNumber={tasks.length + 1}
+            isAdmin={isAdmin}
+          />
+        )}
+      </>
+    );
   }
 
   return (
@@ -570,16 +588,6 @@ export default function App() {
               <Settings className="w-5 h-5" />
             </button>
           )}
-
-          {/* MOBILE DEMO BUTTON */}
-          <button
-            onClick={() => setIsMobileDemoOpen(true)}
-            className="hidden md:flex items-center gap-2 bg-slate-700 hover:bg-blue-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-            title="Mobil Görünüm Önizleme"
-          >
-            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
-            Mobil Önizle
-          </button>
 
           <button
             onClick={handleSignOut}
@@ -757,17 +765,6 @@ export default function App() {
             <X className="w-4 h-4" />
           </button>
         </div>
-      )}
-
-      {/* MOBILE DEMO PREVIEW */}
-      {isMobileDemoOpen && (
-        <MobileLayoutDemo
-          tasks={tasks}
-          routineTasks={routineTasks}
-          onClose={() => setIsMobileDemoOpen(false)}
-          userEmail={user?.email || ''}
-          onTaskClick={handleTaskClick}
-        />
       )}
     </div>
   );
