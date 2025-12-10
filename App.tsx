@@ -17,6 +17,8 @@ import { playNotificationSound } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
+import { getToken, onMessage } from 'firebase/messaging'; // NEW
+import { messaging } from './src/firebase'; // NEW
 
 // Yöneticiler Listesi
 const ADMIN_EMAILS = ['caner192@hotmail.com'];
@@ -158,12 +160,53 @@ export default function App() {
   // Audio Refs & Gemini
 
 
-  // Auth Listener
+  // Auth Listener & Notifications
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+
+      // Notification Logic (Run only if user is logged in)
+      if (currentUser) {
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            console.log('Notification permission granted.');
+
+            if ('serviceWorker' in navigator) {
+              const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+              console.log('Service Worker registered:', registration.scope);
+
+              // Get Token with VAPID Key
+              const token = await getToken(messaging, {
+                vapidKey: "BAURdcxGoBuc1kI8ImEAu1epIqemw2Lg3zys-O4R9qg175P6l5ycnlGWMx84elDgQDgd8RNBISqdJm59s5mdSmY",
+                serviceWorkerRegistration: registration
+              });
+
+              if (token) {
+                console.log("FCM Token:", token);
+                await setDoc(doc(db, 'fcm_tokens', currentUser.email!), {
+                  token,
+                  email: currentUser.email,
+                  platform: window.innerWidth < 768 ? 'mobile' : 'desktop',
+                  lastSeen: serverTimestamp()
+                }, { merge: true });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Notification setup error:', error);
+        }
+      }
     });
+
+    // Foreground Message Handler
+    onMessage(messaging, (payload) => {
+      console.log('Message received. ', payload);
+      setToast({ message: payload.notification?.title || 'Yeni Bildirim', visible: true });
+      playNotificationSound();
+    });
+
     return () => unsubscribe();
   }, []);
 
