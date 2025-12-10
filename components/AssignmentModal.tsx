@@ -108,11 +108,11 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-6xl rounded-xl shadow-2xl overflow-hidden flex flex-col h-[90vh]">
+      <div className="bg-slate-900 border border-slate-700 w-full max-w-6xl rounded-xl shadow-2xl overflow-hidden flex flex-col h-[95dvh] md:h-[90vh]">
 
         {/* Başlık */}
-        <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between bg-slate-800">
-          <div className="flex items-center gap-4">
+        <div className="relative px-4 py-3 md:px-6 md:py-4 border-b border-slate-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-800">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto pr-8 md:pr-0">
             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
               <User className="w-6 h-6 text-blue-400" />
               Görev Dağıtımı & Liste Oluşturma
@@ -220,7 +220,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
             >
               <Printer className="w-4 h-4" /> Yazdır
             </button>
-            <button onClick={onClose} className="text-slate-400 hover:text-white p-2 transition-colors">
+            <button onClick={onClose} className="text-slate-400 hover:text-white p-2 transition-colors absolute top-2 right-2 md:static">
               <X className="w-6 h-6" />
             </button>
           </div>
