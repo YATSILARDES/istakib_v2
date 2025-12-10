@@ -510,7 +510,7 @@ export default function App() {
         <MobileLayout
           user={user}
           userPermissions={userPermissions}
-          tasks={orderedTasks}
+          tasks={tasks}
           routineTasks={routineTasks}
           onSignOut={handleSignOut}
           onTaskClick={handleTaskClick}
