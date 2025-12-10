@@ -3,6 +3,7 @@ import { Task, TaskStatus, StatusLabels } from '../types';
 import { X, Save, Calendar, MapPin, Phone, FileText, User, Trash2, AlertTriangle, CheckCircle2, PhoneCall, Share2, Flame, Wrench, ClipboardCheck, ScanBarcode, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
 import Scanner from './Scanner';
 import CameraCapture from './CameraCapture';
+import AddressLink from './AddressLink';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -324,6 +325,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                       <label className="text-sm font-medium text-slate-400">Adres</label>
                       <input type="text" value={formData.address || ''} onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                         className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                      {formData.address && (
+                        <div className="text-xs text-blue-400 mt-1 flex justify-end">
+                          <AddressLink address={formData.address} showIcon={true} className="hover:text-blue-300" />
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">

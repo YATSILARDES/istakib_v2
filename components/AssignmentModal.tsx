@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Task, RoutineTask, TaskStatus, StaffMember } from '../types';
 import { X, User, ArrowRight, ArrowLeft, ClipboardList, CheckSquare, Printer, Plus, Trash2, Save, Pin, PinOff, Phone, MapPin, UserCircle } from 'lucide-react';
+import AddressLink from './AddressLink';
 
 interface AssignmentModalProps {
   isOpen: boolean;
@@ -251,7 +252,9 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                     <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between group hover:border-slate-500 transition-colors">
                       <div>
                         <div className="font-medium text-slate-200 text-sm">{task.title}</div>
-                        <div className="text-xs text-slate-500">{task.address}</div>
+                        <div className="text-xs text-slate-500">
+                          <AddressLink address={task.address} className="text-slate-500 hover:text-slate-300" />
+                        </div>
                       </div>
                       <button
                         onClick={() => selectedStaffName && onAssignTask(task.id, selectedStaffName, selectedStaffEmail)}
@@ -295,7 +298,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                             )}
                             {task.address && (
                               <span className="text-amber-400 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {task.address}
+                                <AddressLink address={task.address} showIcon={true} className="text-amber-400 hover:text-amber-200" />
                               </span>
                             )}
                           </div>
@@ -352,7 +355,9 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                           <span className="text-xs text-blue-400 mr-1">#{task.orderNumber}</span>
                           {task.title}
                         </div>
-                        <div className="text-xs text-slate-500">{task.address}</div>
+                        <div className="text-xs text-slate-500">
+                          <AddressLink address={task.address} className="text-slate-500 hover:text-slate-300" />
+                        </div>
                         {task.status !== TaskStatus.TO_CHECK && (
                           <div className="text-[10px] text-orange-400 mt-1">Durum: {task.status}</div>
                         )}
@@ -398,7 +403,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                             )}
                             {task.address && (
                               <span className="text-amber-400 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {task.address}
+                                <AddressLink address={task.address} showIcon={true} className="text-amber-400 hover:text-amber-200" />
                               </span>
                             )}
                           </div>

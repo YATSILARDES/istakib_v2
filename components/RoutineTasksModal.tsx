@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RoutineTask, TaskStatus, StatusLabels } from '../types';
 import { X, Plus, User, Trash2, CalendarCheck, CheckSquare, Square, Phone, MapPin, UserCircle, ArrowRightCircle, Check } from 'lucide-react';
+import AddressLink from './AddressLink';
 
 interface RoutineTasksModalProps {
   isOpen: boolean;
@@ -179,7 +180,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                             )}
                             {task.address && (
                               <span className="text-amber-400 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {task.address}
+                                <AddressLink address={task.address} showIcon={true} className="text-amber-400 hover:text-amber-200" />
                               </span>
                             )}
                           </div>
@@ -243,7 +244,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                               )}
                               {task.address && (
                                 <span className="text-slate-400 flex items-center gap-1">
-                                  <MapPin className="w-3 h-3" /> {task.address}
+                                  <AddressLink address={task.address} showIcon={true} className="text-slate-400 hover:text-slate-200" />
                                 </span>
                               )}
                             </div>
