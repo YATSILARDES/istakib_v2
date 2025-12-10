@@ -253,7 +253,9 @@ export default function App() {
           status: taskData.status || TaskStatus.TO_CHECK,
           assignee: taskData.assignee || '',
           date: taskData.date || new Date().toISOString(),
+          date: taskData.date || new Date().toISOString(),
           address: taskData.address || '',
+          locationCoordinates: taskData.locationCoordinates || '',
           phone: taskData.phone || '',
           generalNote: taskData.generalNote || '',
           teamNote: taskData.teamNote || '',
@@ -297,7 +299,7 @@ export default function App() {
 
 
   // Handlers - Routine Tasks
-  const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string) => {
+  const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string) => {
     try {
       await addDoc(collection(db, 'routine_tasks'), {
         content,
@@ -305,6 +307,7 @@ export default function App() {
         customerName: customerName || '',
         phoneNumber: phoneNumber || '',
         address: address || '',
+        locationCoordinates: locationCoordinates || '',
         isCompleted: false,
         createdAt: serverTimestamp(),
         createdBy: user?.email
@@ -349,6 +352,7 @@ export default function App() {
         assignee: '', // Atamasız başlasın
         date: new Date().toISOString(),
         address: routineTask.address || '',
+        locationCoordinates: routineTask.locationCoordinates || '',
         phone: routineTask.phoneNumber || '',
         generalNote: '',
         teamNote: '',

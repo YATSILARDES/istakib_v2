@@ -25,8 +25,12 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     status: TaskStatus.TO_CHECK,
     assignee: '',
     date: '',
+    assignee: '',
+    date: '',
     address: '',
+    locationCoordinates: '',
     phone: '',
+    generalNote: '',
     generalNote: '',
     teamNote: '',
     checkStatus: null,
@@ -63,8 +67,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         status: TaskStatus.TO_CHECK,
         assignee: '',
         date: new Date().toISOString().split('T')[0], // Default today
+        date: new Date().toISOString().split('T')[0], // Default today
         address: '',
+        locationCoordinates: '',
         phone: '',
+        generalNote: '',
         generalNote: '',
         teamNote: '',
         checkStatus: null,
@@ -102,7 +109,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
   };
 
   const handleShare = async () => {
-    const shareText = `${formData.title}\nTel: ${formData.phone || 'Yok'}\nAdres: ${formData.address || 'Yok'}`;
+    let shareText = `${formData.title}\nTel: ${formData.phone || 'Yok'}\nAdres: ${formData.address || 'Yok'}`;
+    if (formData.locationCoordinates) {
+      shareText += `\nKonum: ${formData.locationCoordinates}`;
+    }
     const shareData = {
       title: 'Müşteri Bilgileri',
       text: shareText
@@ -336,6 +346,28 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                           <MapPin className="w-4 h-4" />
                         </button>
                       </div>
+                      {/* Konum Koordinat Gösterimi */}
+                      {formData.locationCoordinates && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <a
+                            href={formData.locationCoordinates}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-slate-800 text-blue-400 text-xs px-2 py-1 rounded flex items-center gap-1 hover:text-blue-300 transition-colors border border-slate-600/50"
+                          >
+                            <MapPin className="w-3 h-3" />
+                            Konum Kaydı Var (Haritada Aç)
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, locationCoordinates: '' }))}
+                            className="text-slate-500 hover:text-red-400"
+                            title="Konumu Sil"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -574,7 +606,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         isOpen={showLocationModal}
         onClose={() => setShowLocationModal(false)}
         onConfirm={(url) => {
-          setFormData(prev => ({ ...prev, address: prev.address ? `${prev.address} ${url}` : url }));
+          setFormData(prev => ({ ...prev, locationCoordinates: url }));
           setShowLocationModal(false);
         }}
       />

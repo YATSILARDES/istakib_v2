@@ -7,7 +7,7 @@ interface RoutineTasksModalProps {
   isOpen: boolean;
   onClose: () => void;
   tasks: RoutineTask[];
-  onAddTask: (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string) => void;
+  onAddTask: (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string) => void;
   onToggleTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onConvertTask: (taskId: string, targetStatus: TaskStatus) => void;
@@ -26,6 +26,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   const [newTaskContent, setNewTaskContent] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
+  const [locationCoordinates, setLocationCoordinates] = useState('');
   const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Conversion State
@@ -38,11 +39,12 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
     e.preventDefault();
     if (newTaskContent.trim()) {
       // Add with empty assignee (unassigned pool)
-      onAddTask(newTaskContent, '', customerName, phoneNumber, address);
+      onAddTask(newTaskContent, '', customerName, phoneNumber, address, locationCoordinates);
       setNewTaskContent('');
       setCustomerName('');
       setPhoneNumber('');
       setAddress('');
+      setLocationCoordinates('');
     }
   };
 
@@ -128,6 +130,22 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                   <MapPin className="w-4 h-4" />
                 </button>
               </div>
+              {/* Konum Gösterimi */}
+              {locationCoordinates && (
+                <div className="flex items-center gap-2 mt-1 -mb-1">
+                  <span className="text-[10px] text-blue-400 flex items-center gap-1 bg-slate-800/50 px-2 py-0.5 rounded border border-blue-500/20">
+                    <MapPin className="w-3 h-3" /> Konum Eklendi
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setLocationCoordinates('')}
+                    className="text-slate-500 hover:text-red-400"
+                    title="Konumu Kaldır"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
 
               {/* Üçüncü Satır: Eksik + Ekle Butonu */}
               <div className="flex flex-col sm:flex-row gap-3">
@@ -326,7 +344,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
         isOpen={showLocationModal}
         onClose={() => setShowLocationModal(false)}
         onConfirm={(url) => {
-          setAddress(prev => prev ? `${prev} ${url}` : url);
+          setLocationCoordinates(url);
           setShowLocationModal(false);
         }}
       />

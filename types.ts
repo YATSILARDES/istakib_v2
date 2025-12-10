@@ -23,6 +23,7 @@ export interface Task {
   // New Customer Details
   date?: string;
   address?: string;
+  locationCoordinates?: string; // Konum Koordinatları (Lat, Lng)
   phone?: string;
   generalNote?: string; // Kişi Bilgileri içindeki not
 
@@ -91,5 +92,6 @@ export interface RoutineTask {
   customerName?: string; // Müşteri Adı Soyadı
   phoneNumber?: string; // Telefon Numarası
   address?: string; // Adres
+  locationCoordinates?: string; // Konum Koordinatları
   assignedAt?: any; // Atanma Zamanı (Sıralama için)
 }
