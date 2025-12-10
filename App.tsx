@@ -112,8 +112,6 @@ export default function App() {
                     body: message,
                     icon: '/icon.png'
                   });
-                } else if ('Notification' in window && Notification.permission !== 'denied') {
-                  Notification.requestPermission();
                 }
               } catch (e) {
                 console.log('Notification API not supported');
