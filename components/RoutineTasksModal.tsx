@@ -48,13 +48,14 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
     }
   };
 
-  const activeTasks = tasks.filter(t => !t.isCompleted);
-  const completedTasks = tasks.filter(t => t.isCompleted);
+
 
   const handleStartConversion = (taskId: string) => {
     setConvertingTaskId(taskId);
     setTargetStatus(TaskStatus.TO_CHECK); // Default choice
   };
+
+  const [activeTab, setActiveTab] = useState<'pool' | 'assigned' | 'completed'>('pool');
 
   const handleConfirmConversion = () => {
     if (convertingTaskId) {
@@ -62,6 +63,123 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
       setConvertingTaskId(null);
     }
   };
+
+  // Filter Logic
+  const poolTasks = tasks.filter(t => !t.isCompleted && (!t.assignee || t.assignee.trim() === ''));
+  const assignedTasks = tasks.filter(t => !t.isCompleted && t.assignee && t.assignee.trim() !== '');
+  const doneTasks = tasks.filter(t => t.isCompleted);
+
+  // Helper: Render Task Card
+  const renderTaskCard = (task: RoutineTask, isCompletedView: boolean) => (
+    <div key={task.id} className={`group flex items-start gap-3 border rounded-lg p-3 transition-all ${isCompletedView ? 'bg-slate-800/20 border-slate-700/50' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}>
+      <button
+        onClick={() => onToggleTask(task.id)}
+        className={`mt-0.5 transition-colors ${isCompletedView ? 'text-emerald-500' : 'text-slate-400 hover:text-purple-400'}`}
+        title={isCompletedView ? "Tamamlanmadı yap" : "Tamamlandı işaretle"}
+      >
+        {isCompletedView ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+      </button>
+
+      <div className="flex-1 overflow-hidden">
+        {/* Müşteri Bilgileri */}
+        {(task.customerName || task.phoneNumber || task.address) && (
+          <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5 text-xs ${isCompletedView ? 'opacity-70' : ''}`}>
+            {task.customerName && (
+              <span className={`${isCompletedView ? 'text-slate-400' : 'text-blue-400'} flex items-center gap-1`}>
+                <UserCircle className="w-3 h-3" /> {task.customerName}
+              </span>
+            )}
+            {task.phoneNumber && (
+              <a
+                href={`tel:${task.phoneNumber}`}
+                className={`${isCompletedView ? 'text-slate-400 hover:text-emerald-300' : 'text-emerald-400 hover:text-emerald-300'} flex items-center gap-1 hover:underline`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Phone className="w-3 h-3" /> {task.phoneNumber}
+              </a>
+            )}
+            {task.address && (
+              <span className={`${isCompletedView ? 'text-slate-400' : 'text-amber-400'} flex items-center gap-1`}>
+                <MapPin className="w-3 h-3" /> {task.address}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Eksik İçeriği */}
+        <p className={`${isCompletedView ? 'text-slate-500 line-through' : 'text-slate-200'} text-sm leading-relaxed whitespace-pre-wrap break-all`}>{task.content}</p>
+
+        {/* Alt Bilgiler (Tarih, Atama vs) */}
+        {!isCompletedView && (
+          <div className="flex items-center gap-2 mt-1.5">
+            {task.assignee ? (
+              <span className="text-xs bg-purple-900/30 text-purple-300 px-2 py-0.5 rounded border border-purple-800/50 flex items-center gap-1">
+                <User className="w-3 h-3" /> {task.assignee}
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-500 italic">Atanmadı</span>
+            )}
+            <span className="text-[10px] text-slate-500">{new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}</span>
+          </div>
+        )}
+
+        {/* Dönüştürme UI (Sadece tamamlananlar veya özel durumlarda görünürdü ama burada opsiyonel yapabiliriz) */}
+        {/* Şu anki mantıkta sadece Tamamlananlarda gösteriyorduk ama aktiflerde de kişi kartı oluşturma butonu vardı. Her ikisine de ekleyelim mantıklıca. */}
+
+        {convertingTaskId === task.id ? (
+          <div className="mt-2 p-2 bg-slate-800 border border-slate-700 rounded-lg animate-in fade-in slide-in-from-top-1">
+            <p className="text-xs text-slate-300 mb-2 font-medium">Bu eksik için kart oluşturulacak:</p>
+            <div className="flex gap-2">
+              <select
+                value={targetStatus}
+                onChange={(e) => setTargetStatus(e.target.value as TaskStatus)}
+                className="flex-1 bg-slate-900 border border-slate-600 rounded text-xs text-white px-2 py-1 outline-none focus:border-purple-500"
+              >
+                {Object.entries(StatusLabels).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleConfirmConversion}
+                className="bg-purple-600 hover:bg-purple-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors"
+              >
+                <Check className="w-3 h-3" />
+                Oluştur
+              </button>
+              <button
+                onClick={() => setConvertingTaskId(null)}
+                className="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded text-xs transition-colors"
+              >
+                İptal
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2">
+            {/* Sadece İsim veya Telefon varsa dönüştürme mantıklı olur. Hem aktif hem tamamlanmış için açık kalsın. */}
+            {(task.customerName || task.phoneNumber) && (
+              <button
+                onClick={() => handleStartConversion(task.id)}
+                className="text-[10px] flex items-center gap-1 text-slate-500 hover:text-blue-400 transition-colors border border-slate-700 hover:border-blue-400/50 px-2 py-1 rounded bg-slate-900/50"
+                title="Bu kişiyi ana listeye taşı"
+              >
+                <ArrowRightCircle className="w-3 h-3" />
+                Kişi Kartı Oluştur
+              </button>
+            )}
+          </div>
+        )}
+
+      </div>
+
+      <button
+        onClick={() => onDeleteTask(task.id)}
+        className={`p-1 transition-colors ${isCompletedView ? 'text-slate-600 hover:text-red-400' : 'opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400'}`}
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -168,174 +286,79 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             </form>
           </div>
 
-          {/* Task List */}
+          {/* Tab Navigation */}
+          <div className="px-6 mt-4 border-b border-slate-700 flex gap-4">
+            <button
+              onClick={() => setActiveTab('pool')}
+              className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'pool' ? 'text-purple-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              Havuzdaki Eksikler
+              <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{poolTasks.length}</span>
+              {activeTab === 'pool' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('assigned')}
+              className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'assigned' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              Atanan Eksikler
+              <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{assignedTasks.length}</span>
+              {activeTab === 'assigned' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('completed')}
+              className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              Tamamlanan Eksikler
+              <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{doneTasks.length}</span>
+              {activeTab === 'completed' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-t-full" />}
+            </button>
+          </div>
+
+          {/* Task List Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-            {/* Active Tasks */}
-            <div>
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Havuzdaki Eksikler ({activeTasks.length})</h3>
+            {/* VIEW: POOL TASKS */}
+            {activeTab === 'pool' && (
               <div className="space-y-2">
-                {activeTasks.length === 0 ? (
-                  <p className="text-slate-600 italic text-sm">Havuz boş.</p>
-                ) : (
-                  activeTasks.map(task => (
-                    <div key={task.id} className="group flex items-start gap-3 bg-slate-800/50 border border-slate-700 hover:border-slate-600 rounded-lg p-3 transition-all">
-                      <button
-                        onClick={() => onToggleTask(task.id)}
-                        className="mt-0.5 text-slate-400 hover:text-purple-400 transition-colors"
-                        title="Tamamlandı işaretle"
-                      >
-                        <Square className="w-5 h-5" />
-                      </button>
-                      <div className="flex-1 overflow-hidden">
-                        {/* Müşteri Bilgileri */}
-                        {(task.customerName || task.phoneNumber || task.address) && (
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5 text-xs">
-                            {task.customerName && (
-                              <span className="text-blue-400 flex items-center gap-1">
-                                <UserCircle className="w-3 h-3" /> {task.customerName}
-                              </span>
-                            )}
-                            {task.phoneNumber && (
-                              <a
-                                href={`tel:${task.phoneNumber}`}
-                                className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Phone className="w-3 h-3" /> {task.phoneNumber}
-                              </a>
-                            )}
-                            {task.address && (
-                              <span className="text-amber-400 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {task.address}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {/* Eksik İçeriği */}
-                        <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap break-all">{task.content}</p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          {task.assignee ? (
-                            <span className="text-xs bg-purple-900/30 text-purple-300 px-2 py-0.5 rounded border border-purple-800/50 flex items-center gap-1">
-                              <User className="w-3 h-3" /> {task.assignee}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-slate-500 italic">Atanmadı</span>
-                          )}
-                          <span className="text-[10px] text-slate-500">{new Date(task.createdAt).toLocaleDateString('tr-TR')}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => onDeleteTask(task.id)}
-                        className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 p-1 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                {poolTasks.length === 0 ? (
+                  <div className="text-center py-10">
+                    <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-600">
+                      <CheckSquare className="w-8 h-8 opacity-50" />
                     </div>
-                  ))
+                    <p className="text-slate-500 text-sm">Havuzda bekleyen eksik yok.</p>
+                  </div>
+                ) : (
+                  poolTasks.map(task => renderTaskCard(task, false))
                 )}
               </div>
-            </div>
+            )}
 
-            {/* Completed Tasks */}
-            {completedTasks.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Tamamlananlar ({completedTasks.length})</h3>
-                <div className="space-y-2 opacity-60">
-                  {completedTasks.map(task => (
-                    <div key={task.id}>
-                      <div className="flex items-start gap-3 bg-slate-800/20 border border-slate-700/50 rounded-lg p-3">
-                        <button
-                          onClick={() => onToggleTask(task.id)}
-                          className="text-emerald-500 mt-0.5"
-                        >
-                          <CheckSquare className="w-5 h-5" />
-                        </button>
-                        <div className="flex-1 overflow-hidden">
-                          {/* Müşteri Bilgileri */}
-                          {(task.customerName || task.phoneNumber || task.address) && (
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1 text-xs opacity-70">
-                              {task.customerName && (
-                                <span className="text-slate-400 flex items-center gap-1">
-                                  <UserCircle className="w-3 h-3" /> {task.customerName}
-                                </span>
-                              )}
-                              {task.phoneNumber && (
-                                <a
-                                  href={`tel:${task.phoneNumber}`}
-                                  className="text-slate-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Phone className="w-3 h-3" /> {task.phoneNumber}
-                                </a>
-                              )}
-                              {task.address && (
-                                <span className="text-slate-400 flex items-center gap-1">
-                                  <MapPin className="w-3 h-3" /> {task.address}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          <p className="text-slate-500 line-through text-sm whitespace-pre-wrap break-all">{task.content}</p>
-
-                          {/* Dönüştürme UI */}
-                          {convertingTaskId === task.id ? (
-                            <div className="mt-2 p-2 bg-slate-800 border border-slate-700 rounded-lg animate-in fade-in slide-in-from-top-1">
-                              <p className="text-xs text-slate-300 mb-2 font-medium">Bu eksik için kart oluşturulacak:</p>
-                              <div className="flex gap-2">
-                                <select
-                                  value={targetStatus}
-                                  onChange={(e) => setTargetStatus(e.target.value as TaskStatus)}
-                                  className="flex-1 bg-slate-900 border border-slate-600 rounded text-xs text-white px-2 py-1 outline-none focus:border-purple-500"
-                                >
-                                  {Object.entries(StatusLabels).map(([key, label]) => (
-                                    <option key={key} value={key}>{label}</option>
-                                  ))}
-                                </select>
-                                <button
-                                  onClick={handleConfirmConversion}
-                                  className="bg-purple-600 hover:bg-purple-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors"
-                                >
-                                  <Check className="w-3 h-3" />
-                                  Oluştur
-                                </button>
-                                <button
-                                  onClick={() => setConvertingTaskId(null)}
-                                  className="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded text-xs transition-colors"
-                                >
-                                  İptal
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-2">
-                              {/* Sadece İsim veya Telefon varsa dönüştürme mantıklı olur */}
-                              {(task.customerName || task.phoneNumber) && (
-                                <button
-                                  onClick={() => handleStartConversion(task.id)}
-                                  className="text-[10px] flex items-center gap-1 text-slate-500 hover:text-blue-400 transition-colors border border-slate-700 hover:border-blue-400/50 px-2 py-1 rounded bg-slate-900/50"
-                                  title="Bu kişiyi ana listeye taşı"
-                                >
-                                  <ArrowRightCircle className="w-3 h-3" />
-                                  Kişi Kartı Oluştur
-                                </button>
-                              )}
-                            </div>
-                          )}
-
-                        </div>
-                        <button
-                          onClick={() => onDeleteTask(task.id)}
-                          className="text-slate-600 hover:text-red-400 p-1 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {/* VIEW: ASSIGNED TASKS */}
+            {activeTab === 'assigned' && (
+              <div className="space-y-2">
+                {assignedTasks.length === 0 ? (
+                  <div className="text-center py-10">
+                    <p className="text-slate-500 text-sm">Henüz bir eksik atanmamış.</p>
+                  </div>
+                ) : (
+                  assignedTasks.map(task => renderTaskCard(task, false))
+                )}
               </div>
             )}
+
+            {/* VIEW: COMPLETED TASKS */}
+            {activeTab === 'completed' && (
+              <div className="space-y-2 opacity-80">
+                {doneTasks.length === 0 ? (
+                  <div className="text-center py-10">
+                    <p className="text-slate-500 text-sm">Henüz tamamlanan eksik yok.</p>
+                  </div>
+                ) : (
+                  doneTasks.map(task => renderTaskCard(task, true))
+                )}
+              </div>
+            )}
+
           </div>
 
         </div>
