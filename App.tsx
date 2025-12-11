@@ -825,6 +825,7 @@ export default function App() {
           onToggleTask={handleToggleRoutineTask}
           onDeleteTask={handleDeleteRoutineTask}
           onConvertTask={handleConvertRoutineTask}
+          onUpdateTask={handleUpdateRoutineTask}
         />
       )}
 
