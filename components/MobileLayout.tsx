@@ -287,8 +287,8 @@ export default function MobileLayout({
                                 return (
                                     <div
                                         key={task.id}
-                                        onClick={() => onTaskClick(task)}
-                                        className={`rounded-2xl p-4 border active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden ${cardStyle} ${shadowStyle}`}
+                                        // onClick removed to prevent accidental opens while scrolling
+                                        className={`rounded-2xl p-4 border transition-all relative overflow-hidden ${cardStyle} ${shadowStyle}`}
                                     >
                                         {/* Status Badge & Row Num */}
                                         <div className="flex justify-between items-start mb-2 relative z-10">
@@ -310,9 +310,12 @@ export default function MobileLayout({
                                             </div>
 
                                             <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                                                <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                                                <button
+                                                    onClick={() => onTaskClick(task)}
+                                                    className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
+                                                >
                                                     <Calendar className="w-3.5 h-3.5" /> Detay
-                                                </div>
+                                                </button>
                                                 {task.phone && (
                                                     <button
                                                         onClick={(e) => {
