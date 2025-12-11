@@ -42,6 +42,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
   // COLLAPSIBLE SECTIONS STATE (Mobile Focus)
   const [isMainTasksExpanded, setIsMainTasksExpanded] = useState(true);
   const [isRoutineTasksExpanded, setIsRoutineTasksExpanded] = useState(true);
+  const [isStaffListExpanded, setIsStaffListExpanded] = useState(true);
 
   // Personel listesi değiştiğinde veya boşsa seçim yap
   useEffect(() => {
@@ -413,8 +414,15 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
           {/* SAĞ SÜTUN: Personel Listesi (Atanmış) */}
           <div className="flex flex-col bg-slate-800/20 min-h-0">
-            <div className="p-3 bg-blue-900/20 border-b border-slate-700 font-medium text-blue-200 flex justify-between">
+            <div
+              className="p-3 bg-blue-900/20 border-b border-slate-700 font-medium text-blue-200 flex justify-between cursor-pointer md:cursor-default"
+              onClick={() => setIsStaffListExpanded(!isStaffListExpanded)}
+            >
               <span className="flex items-center gap-2">
+                {/* Only show chevron on mobile */}
+                <span className="md:hidden">
+                  {isStaffListExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
                 <User className="w-4 h-4" /> {selectedStaffName || 'Personel Seçiniz'} - İş Listesi
               </span>
               <span className="text-xs bg-blue-900/50 px-2 py-0.5 rounded text-blue-300">
@@ -422,7 +430,8 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar print:overflow-visible">
+            {/* Conditionally render content on mobile based on state, always show on desktop */}
+            <div className={`flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar print:overflow-visible ${!isStaffListExpanded ? 'hidden md:block' : ''}`}>
 
               {/* Personel Müşteri İşleri */}
               <div>
