@@ -94,4 +94,6 @@ export interface RoutineTask {
   address?: string; // Adres
   locationCoordinates?: string; // Konum Koordinatları
   assignedAt?: any; // Atanma Zamanı (Sıralama için)
+  district?: string; // İlçe
+  city?: string; // İl
 }

@@ -349,7 +349,7 @@ export default function App() {
 
 
   // Handlers - Routine Tasks
-  const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string) => {
+  const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string) => {
     try {
       await addDoc(collection(db, 'routine_tasks'), {
         content,
@@ -358,6 +358,8 @@ export default function App() {
         phoneNumber: phoneNumber || '',
         address: address || '',
         locationCoordinates: locationCoordinates || '',
+        district: district || '',
+        city: city || '',
         isCompleted: false,
         createdAt: serverTimestamp(),
         createdBy: user?.email

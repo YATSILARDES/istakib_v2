@@ -7,7 +7,7 @@ interface RoutineTasksModalProps {
   isOpen: boolean;
   onClose: () => void;
   tasks: RoutineTask[];
-  onAddTask: (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string) => void;
+  onAddTask: (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string) => void;
   onToggleTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onConvertTask: (taskId: string, targetStatus: TaskStatus) => void;
@@ -30,6 +30,8 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   const [address, setAddress] = useState('');
   const [locationCoordinates, setLocationCoordinates] = useState('');
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [district, setDistrict] = useState('');
+  const [city, setCity] = useState('');
 
   // Edit State
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -93,6 +95,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   };
 
   const [activeTab, setActiveTab] = useState<'pool' | 'assigned' | 'completed'>('pool');
+  const [activeDistrict, setActiveDistrict] = useState<string>('Tümü');
 
   const handleConfirmConversion = () => {
     if (convertingTaskId) {
@@ -105,6 +108,14 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   const poolTasks = tasks.filter(t => !t.isCompleted && (!t.assignee || t.assignee.trim() === ''));
   const assignedTasks = tasks.filter(t => !t.isCompleted && t.assignee && t.assignee.trim() !== '');
   const doneTasks = tasks.filter(t => t.isCompleted);
+
+  // Get Unique Districts from Pool Tasks
+  const uniqueDistricts = ['Tümü', ...Array.from(new Set(poolTasks.map(t => t.district).filter(d => d && d.trim() !== ''))).sort()];
+
+  // Filter Pool Tasks by Active District
+  const filteredPoolTasks = activeDistrict === 'Tümü'
+    ? poolTasks
+    : poolTasks.filter(t => t.district === activeDistrict);
 
   // Helper: Render Task Card
   const renderTaskCard = (task: RoutineTask, isCompletedView: boolean) => (
@@ -119,7 +130,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
 
       <div className="flex-1 overflow-hidden">
         {/* Müşteri Bilgileri */}
-        {(task.customerName || task.phoneNumber || task.address) && (
+        {(task.customerName || task.phoneNumber || task.address || task.district) && (
           <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5 text-xs ${isCompletedView ? 'opacity-70' : ''}`}>
             {task.customerName && (
               <span className={`${isCompletedView ? 'text-slate-400' : 'text-blue-400'} flex items-center gap-1`}>
@@ -134,6 +145,11 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
               >
                 <Phone className="w-3 h-3" /> {task.phoneNumber}
               </a>
+            )}
+            {task.district && (
+              <span className="bg-purple-900/30 text-purple-300 px-1.5 py-0.5 rounded border border-purple-800/30">
+                {task.district}
+              </span>
             )}
             {task.address && (
               <span className={`${isCompletedView ? 'text-slate-400' : 'text-amber-400'} flex items-center gap-1`}>
@@ -285,25 +301,44 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                 </div>
               </div>
 
-              {/* İkinci Satır: Adres */}
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="Adres"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-10 pr-9 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowLocationModal(true)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-400 transition-colors p-1"
-                  title="Konum Ekle"
-                >
-                  <MapPin className="w-4 h-4" />
-                </button>
+              {/* İkinci Satır: Adres + İlçe + İl */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Adres"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-10 pr-9 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLocationModal(true)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-400 transition-colors p-1"
+                    title="Konum Ekle"
+                  >
+                    <MapPin className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="w-full sm:w-1/3 flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="İlçe"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    className="w-1/2 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="İl"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-1/2 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                  />
+                </div>
               </div>
+
               {/* Konum Gösterimi */}
               {locationCoordinates && (
                 <div className="flex items-center gap-2 mt-1 -mb-1">
@@ -343,10 +378,10 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
           </div>
 
           {/* Tab Navigation */}
-          <div className="px-6 mt-4 border-b border-slate-700 flex gap-4">
+          <div className="px-6 mt-4 border-b border-slate-700 flex gap-4 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('pool')}
-              className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'pool' ? 'text-purple-400' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'pool' ? 'text-purple-400' : 'text-slate-500 hover:text-slate-300'}`}
             >
               Havuzdaki Eksikler
               <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{poolTasks.length}</span>
@@ -354,7 +389,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('assigned')}
-              className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'assigned' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'assigned' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
             >
               Atanan Eksikler
               <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{assignedTasks.length}</span>
@@ -362,7 +397,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('completed')}
-              className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
             >
               Tamamlanan Eksikler
               <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{doneTasks.length}</span>
@@ -370,21 +405,38 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             </button>
           </div>
 
+          {/* District Filter Chips (Only for Pool Tasks) */}
+          {activeTab === 'pool' && uniqueDistricts.length > 1 && (
+            <div className="px-6 pt-3 pb-1 flex gap-2 overflow-x-auto no-scrollbar">
+              {uniqueDistricts.map(dist => (
+                <button
+                  key={dist}
+                  onClick={() => setActiveDistrict(dist)}
+                  className={`text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap border ${activeDistrict === dist ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'}`}
+                >
+                  {dist}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Task List Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
             {/* VIEW: POOL TASKS */}
             {activeTab === 'pool' && (
               <div className="space-y-2">
-                {poolTasks.length === 0 ? (
+                {filteredPoolTasks.length === 0 ? (
                   <div className="text-center py-10">
                     <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-600">
                       <CheckSquare className="w-8 h-8 opacity-50" />
                     </div>
-                    <p className="text-slate-500 text-sm">Havuzda bekleyen eksik yok.</p>
+                    <p className="text-slate-500 text-sm">
+                      {activeDistrict !== 'Tümü' ? `"${activeDistrict}" ilçesinde eksik bulunamadı.` : 'Havuzda bekleyen eksik yok.'}
+                    </p>
                   </div>
                 ) : (
-                  poolTasks.map(task => renderTaskCard(task, false))
+                  filteredPoolTasks.map(task => renderTaskCard(task, false))
                 )}
               </div>
             )}
