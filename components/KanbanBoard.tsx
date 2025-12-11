@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels, RoutineTask } from '../types';
-import { MoreVertical, ClipboardList, ClipboardCheck, Banknote, Flame, Wrench, Circle, Phone, MapPin, CheckCircle2, Search, CheckSquare, Square, UserCircle } from 'lucide-react';
+import { MoreVertical, ClipboardList, ClipboardCheck, Banknote, Flame, Wrench, Circle, Phone, MapPin, CheckCircle2, Search, CheckSquare, Square, UserCircle, Share2, PhoneCall } from 'lucide-react';
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -117,6 +118,59 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     return { routine: filteredRoutine, standard: filteredStandard };
   };
 
+  const handleShareTask = async (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const cleanAddress = (task.address || '').replace(/https?:\/\/[^\s]+/g, '').trim();
+    let shareText = `👤 ${task.title}\n📞 ${task.phone || 'Telefon Yok'}\n🏠 ${cleanAddress || 'Adres Yok'}`;
+
+    if (task.locationCoordinates) {
+      shareText += `\n\n📍 Konum:\n${task.locationCoordinates}`;
+    }
+
+    const shareData = {
+      title: 'Müşteri Bilgileri',
+      text: shareText
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        alert('Bilgiler panoya kopyalandı.');
+      }
+    } catch (err) {
+      console.error('Sharing failed', err);
+    }
+  };
+
+  const handleShareRoutineTask = async (task: RoutineTask, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const cleanAddress = (task.address || '').replace(/https?:\/\/[^\s]+/g, '').trim();
+    let shareText = `📝 Eksik/Not\n👤 ${task.customerName || 'Müşteri Yok'}\n📞 ${task.phoneNumber || 'Telefon Yok'}\n🏠 ${cleanAddress || 'Adres Yok'}\n\n📄 İçerik: ${task.content}`;
+
+    if (task.locationCoordinates) {
+      shareText += `\n\n📍 Konum:\n${task.locationCoordinates}`;
+    }
+
+    const shareData = {
+      title: 'Eksik Bilgisi',
+      text: shareText
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        alert('Bilgiler panoya kopyalandı.');
+      }
+    } catch (err) {
+      console.error('Sharing failed', err);
+    }
+  };
+
+
   // Destructure filtered results
   const { routine: filteredRoutine, standard: filteredStandard } = getFilteredPersonalTasks();
 
@@ -161,7 +215,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       key={t.id}
                       onClick={() => onTaskClick(t)}
                       className={`
-                        p-3 rounded-lg border transition-all cursor-pointer group shadow-sm
+                        p-3 rounded-lg border transition-all cursor-pointer group shadow-sm relative
                         ${t.checkStatus === 'missing'
                           ? 'bg-orange-900/40 border-orange-500/50 hover:border-orange-400 shadow-orange-900/10'
                           : t.checkStatus === 'clean'
@@ -186,6 +240,27 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           </div>
                         </div>
                       </div>
+
+                      {/* Action Buttons (Share & Call) */}
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {t.phone && (
+                          <a
+                            href={`tel:${t.phone}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white transition-colors border border-green-500/20"
+                            title="Ara"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        <button
+                          onClick={(e) => handleShareTask(t, e)}
+                          className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-colors border border-blue-500/20"
+                          title="Paylaş"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -196,10 +271,20 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 <div className="space-y-2">
                   {filteredStandard.length > 0 && <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest pl-1 pt-2 border-t border-slate-700/50">Eksikler / Notlar ({filteredRoutine.length})</div>}
                   {filteredRoutine.map(t => (
-                    <div key={t.id} className={`flex flex-col gap-2 p-3 rounded-lg border transition-all ${t.isCompleted
+                    <div key={t.id} className={`flex flex-col gap-2 p-3 rounded-lg border transition-all relative ${t.isCompleted
                       ? 'bg-slate-800/30 border-slate-700/30 opacity-60'
                       : 'bg-indigo-900/20 border-indigo-500/30 hover:border-indigo-400/50 shadow-sm'
                       }`}>
+
+                      {/* Share Button for Routine Task - Top Right */}
+                      <button
+                        onClick={(e) => handleShareRoutineTask(t, e)}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-colors border border-indigo-500/20 z-10"
+                        title="Paylaş"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+
                       <div className="flex items-start gap-3">
                         <button
                           onClick={() => onToggleRoutineTask(t.id)}
@@ -208,7 +293,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           {t.isCompleted ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
                         </button>
 
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 pr-6"> {/* Added padding right for button space */}
                           {/* Customer Info Badges */}
                           {(t.customerName || t.phoneNumber || t.address) && (
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
@@ -303,29 +388,52 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     `}
                   >
                     {/* Row Number Badge - Compact */}
-                    <div className={`absolute top-2 right-2 text-[10px] font-mono font-bold opacity-60 ${task.checkStatus === 'missing' ? 'text-orange-300' :
+                    <div className={`absolute top-2 left-2 text-[10px] font-mono font-bold opacity-60 ${task.checkStatus === 'missing' ? 'text-orange-300' :
                       task.checkStatus === 'clean' ? 'text-emerald-300' : 'text-slate-500'
                       }`}>
                       #{task.orderNumber}
                     </div>
 
-                    {/* Title */}
-                    <h4 className={`font-medium text-sm leading-snug pr-8 mb-1.5 ${task.checkStatus === 'missing' ? 'text-orange-100' :
-                      task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-slate-200'
-                      }`}>
-                      {task.title}
-                      {task.jobDescription && <span className="ml-2 text-xs font-normal opacity-60 italic">({task.jobDescription})</span>}
-                    </h4>
+                    {/* Action Buttons: Phone & Share (Top Right) */}
+                    <div className="absolute top-2 right-2 flex gap-1 z-10">
+                      {task.phone && (
+                        <a
+                          href={`tel:${task.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white transition-colors border border-green-500/20 shadow-sm"
+                          title="Ara"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      <button
+                        onClick={(e) => handleShareTask(task, e)}
+                        className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-colors border border-blue-500/20 shadow-sm"
+                        title="Paylaş"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
 
-                    {/* Address Only - Compact */}
-                    {task.address && (
-                      <div className={`flex items-center gap-1.5 text-xs ${task.checkStatus === 'missing' ? 'text-orange-200/70' :
-                        task.checkStatus === 'clean' ? 'text-emerald-200/70' : 'text-slate-400'
+                    {/* Title */}
+                    <div className="mt-6"> {/* Spacing for top buttons */}
+                      <h4 className={`font-medium text-sm leading-snug pr-2 mb-1.5 ${task.checkStatus === 'missing' ? 'text-orange-100' :
+                        task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-slate-200'
                         }`}>
-                        <MapPin className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate max-w-[200px] text-inherit">{task.address}</span>
-                      </div>
-                    )}
+                        {task.title}
+                        {task.jobDescription && <span className="ml-2 text-xs font-normal opacity-60 italic">({task.jobDescription})</span>}
+                      </h4>
+
+                      {/* Address Only - Compact */}
+                      {task.address && (
+                        <div className={`flex items-center gap-1.5 text-xs ${task.checkStatus === 'missing' ? 'text-orange-200/70' :
+                          task.checkStatus === 'clean' ? 'text-emerald-200/70' : 'text-slate-400'
+                          }`}>
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate max-w-[200px] text-inherit">{task.address}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
 
