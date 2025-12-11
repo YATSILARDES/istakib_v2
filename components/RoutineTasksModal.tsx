@@ -383,48 +383,51 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             </form>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="px-6 mt-4 border-b border-slate-700 flex gap-4 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => setActiveTab('pool')}
-              className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'pool' ? 'text-purple-400' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-              Havuzdaki Eksikler
-              <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{poolTasks.length}</span>
-              {activeTab === 'pool' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500 rounded-t-full" />}
-            </button>
-            <button
-              onClick={() => setActiveTab('assigned')}
-              className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'assigned' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-              Atanan Eksikler
-              <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{assignedTasks.length}</span>
-              {activeTab === 'assigned' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-t-full" />}
-            </button>
-            <button
-              onClick={() => setActiveTab('completed')}
-              className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-              Tamamlanan Eksikler
-              <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{doneTasks.length}</span>
-              {activeTab === 'completed' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-t-full" />}
-            </button>
-          </div>
-
-          {/* District Filter Chips (Only for Pool Tasks) */}
-          {activeTab === 'pool' && uniqueDistricts.length > 1 && (
-            <div className="px-6 pt-3 pb-1 flex gap-2 overflow-x-auto no-scrollbar">
-              {uniqueDistricts.map(dist => (
-                <button
-                  key={dist}
-                  onClick={() => setActiveDistrict(dist)}
-                  className={`text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap border ${activeDistrict === dist ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'}`}
-                >
-                  {dist}
-                </button>
-              ))}
+          {/* Navigation & Filters Header */}
+          <div className="flex flex-col flex-shrink-0 border-b border-slate-700 bg-slate-900 z-10">
+            {/* Main Tabs */}
+            <div className="px-6 mt-4 flex gap-4 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => setActiveTab('pool')}
+                className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'pool' ? 'text-purple-400' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                Havuzdaki Eksikler
+                <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{poolTasks.length}</span>
+                {activeTab === 'pool' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500 rounded-t-full" />}
+              </button>
+              <button
+                onClick={() => setActiveTab('assigned')}
+                className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'assigned' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                Atanan Eksikler
+                <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{assignedTasks.length}</span>
+                {activeTab === 'assigned' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-t-full" />}
+              </button>
+              <button
+                onClick={() => setActiveTab('completed')}
+                className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                Tamamlanan Eksikler
+                <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{doneTasks.length}</span>
+                {activeTab === 'completed' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-t-full" />}
+              </button>
             </div>
-          )}
+
+            {/* District Filter Chips (Only for Pool Tasks) */}
+            {activeTab === 'pool' && uniqueDistricts.length > 1 && (
+              <div className="px-6 py-3 flex gap-2 overflow-x-auto no-scrollbar border-t border-slate-800 bg-slate-800/30">
+                {uniqueDistricts.map(dist => (
+                  <button
+                    key={dist}
+                    onClick={() => setActiveDistrict(dist)}
+                    className={`text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap border ${activeDistrict === dist ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'}`}
+                  >
+                    {dist}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Task List Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
