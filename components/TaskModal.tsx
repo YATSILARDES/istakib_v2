@@ -26,6 +26,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     assignee: '',
     date: '',
     address: '',
+    district: '',
+    city: '',
     locationCoordinates: '',
     phone: '',
     generalNote: '',
@@ -65,6 +67,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         assignee: '',
         date: new Date().toISOString().split('T')[0], // Default today
         address: '',
+        district: '',
+        city: '',
         locationCoordinates: '',
         phone: '',
         generalNote: '',
@@ -344,6 +348,20 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                         >
                           <MapPin className="w-4 h-4" />
                         </button>
+                      </div>
+
+                      {/* İlçe ve İl */}
+                      <div className="flex gap-4">
+                        <div className="flex-1 space-y-2">
+                          <label className="text-sm font-medium text-slate-400">İlçe</label>
+                          <input type="text" value={formData.district || ''} onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İlçe" />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <label className="text-sm font-medium text-slate-400">İl</label>
+                          <input type="text" value={formData.city || ''} onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İl" />
+                        </div>
                       </div>
                       {/* Konum Koordinat Gösterimi */}
                       {formData.locationCoordinates && (

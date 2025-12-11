@@ -24,6 +24,8 @@ export interface Task {
   date?: string;
   address?: string;
   locationCoordinates?: string; // Konum Koordinatları (Lat, Lng)
+  district?: string; // İlçe (Yeni: Gruplama için)
+  city?: string; // İl
   phone?: string;
   generalNote?: string; // Kişi Bilgileri içindeki not
 

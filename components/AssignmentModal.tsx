@@ -240,80 +240,125 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar pb-24">
 
-              {/* Atanmamış Müşteri İşleri */}
-              <div>
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <ClipboardList className="w-3 h-3" /> Kontrolü Yapılacak İşler
-                </h4>
-                <div className="space-y-2">
-                  {unassignedTasks.length === 0 && <p className="text-sm text-slate-600 italic">Atanacak iş yok.</p>}
-                  {unassignedTasks.map(task => (
-                    <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between group hover:border-slate-500 transition-colors">
-                      <div>
-                        <div className="font-medium text-slate-200 text-sm">{task.title}</div>
-                        <div className="text-xs text-slate-500">{task.address}</div>
-                      </div>
-                      <button
-                        onClick={() => selectedStaffName && onAssignTask(task.id, selectedStaffName, selectedStaffEmail)}
-                        disabled={!selectedStaffName}
-                        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors"
-                        title="Personele Ata"
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* GROUP BY DISTRICT LOGIC */}
+              {(() => {
+                // 1. Get all unique districts from both lists
+                const allDistricts = new Set<string>();
+                unassignedTasks.forEach(t => t.district ? allDistricts.add(t.district) : null);
+                unassignedRoutineTasks.forEach(t => t.district ? allDistricts.add(t.district) : null);
 
-              {/* Atanmamış Eksikler */}
-              <div>
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <CheckSquare className="w-3 h-3" /> Eksikler / Notlar
-                </h4>
-                <div className="space-y-2">
-                  {unassignedRoutineTasks.length === 0 && <p className="text-sm text-slate-600 italic">Eksik kaydı yok.</p>}
-                  {unassignedRoutineTasks.map(task => (
-                    <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-start justify-between group hover:border-slate-500 transition-colors">
-                      <div className="pr-2 flex-1 overflow-hidden">
-                        {/* Müşteri Bilgileri */}
-                        {(task.customerName || task.phoneNumber || task.address) && (
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1.5 text-xs">
-                            {task.customerName && (
-                              <span className="text-blue-400 flex items-center gap-1">
-                                <UserCircle className="w-3 h-3" /> {task.customerName}
-                              </span>
-                            )}
-                            {task.phoneNumber && (
-                              <a
-                                href={`tel:${task.phoneNumber}`}
-                                className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Phone className="w-3 h-3" /> {task.phoneNumber}
-                              </a>
-                            )}
-                            {task.address && (
-                              <span className="text-amber-400 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {task.address}
-                              </span>
-                            )}
+                // Convert to array and sort (put values like 'Diğer' or empty at end logic is handled by displaying them as 'Genel / Belirtilmemiş')
+                const sortedDistricts = Array.from(allDistricts).sort();
+
+                // Include "No District" group explicitly
+                const displayGroups = [...sortedDistricts, 'EMPTY_DISTRICT'];
+
+                return displayGroups.map(groupName => {
+                  // Filter Tasks for this Group
+                  const groupTasks = unassignedTasks.filter(t =>
+                    groupName === 'EMPTY_DISTRICT' ? !t.district : t.district === groupName
+                  );
+                  const groupRoutineTasks = unassignedRoutineTasks.filter(t =>
+                    groupName === 'EMPTY_DISTRICT' ? !t.district : t.district === groupName
+                  );
+
+                  // If no tasks in this group, skip
+                  if (groupTasks.length === 0 && groupRoutineTasks.length === 0) return null;
+
+                  const headerTitle = groupName === 'EMPTY_DISTRICT' ? 'Genel / Belirtilmemiş' : groupName;
+
+                  return (
+                    <div key={groupName} className="mb-8 last:mb-0">
+                      <h3 className="text-sm font-bold text-slate-400 border-b border-slate-700 pb-1 mb-3 flex items-center gap-2 sticky top-0 bg-slate-900/95 py-2 z-10">
+                        <MapPin className="w-4 h-4 text-purple-500" />
+                        {headerTitle}
+                        <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-500">
+                          {groupTasks.length + groupRoutineTasks.length}
+                        </span>
+                      </h3>
+
+                      <div className="space-y-6">
+                        {/* Müşteri İşleri */}
+                        {groupTasks.length > 0 && (
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-2 pl-2 border-l-2 border-blue-500/30">
+                              <ClipboardList className="w-3 h-3" /> Kontrolü Yapılacak İşler
+                            </h4>
+                            <div className="space-y-2">
+                              {groupTasks.map(task => (
+                                <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between group hover:border-slate-500 transition-colors">
+                                  <div>
+                                    <div className="font-medium text-slate-200 text-sm">{task.title}</div>
+                                    <div className="text-xs text-slate-500">{task.address}</div>
+                                  </div>
+                                  <button
+                                    onClick={() => selectedStaffName && onAssignTask(task.id, selectedStaffName, selectedStaffEmail)}
+                                    disabled={!selectedStaffName}
+                                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors"
+                                    title="Personele Ata"
+                                  >
+                                    <ArrowRight className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
-                        <div className="text-sm text-slate-300 break-all whitespace-pre-wrap">{task.content}</div>
+
+                        {/* Eksikler */}
+                        {groupRoutineTasks.length > 0 && (
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-2 pl-2 border-l-2 border-purple-500/30">
+                              <CheckSquare className="w-3 h-3" /> Eksikler / Notlar
+                            </h4>
+                            <div className="space-y-2">
+                              {groupRoutineTasks.map(task => (
+                                <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-start justify-between group hover:border-slate-500 transition-colors">
+                                  <div className="pr-2 flex-1 overflow-hidden">
+                                    {/* Müşteri Bilgileri */}
+                                    {(task.customerName || task.phoneNumber || task.address) && (
+                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1.5 text-xs">
+                                        {task.customerName && (
+                                          <span className="text-blue-400 flex items-center gap-1">
+                                            <UserCircle className="w-3 h-3" /> {task.customerName}
+                                          </span>
+                                        )}
+                                        {task.phoneNumber && (
+                                          <a
+                                            href={`tel:${task.phoneNumber}`}
+                                            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <Phone className="w-3 h-3" /> {task.phoneNumber}
+                                          </a>
+                                        )}
+                                        {task.address && (
+                                          <span className="text-amber-400 flex items-center gap-1">
+                                            <MapPin className="w-3 h-3" /> {task.address}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    <div className="text-sm text-slate-300 break-all whitespace-pre-wrap">{task.content}</div>
+                                  </div>
+                                  <button
+                                    onClick={() => selectedStaffName && onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail)}
+                                    disabled={!selectedStaffName}
+                                    className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0 mt-1"
+                                    title="Personele Ata"
+                                  >
+                                    <ArrowRight className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <button
-                        onClick={() => selectedStaffName && onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail)}
-                        disabled={!selectedStaffName}
-                        className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0 mt-1"
-                        title="Personele Ata"
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  );
+                });
+              })()}
 
             </div>
           </div>

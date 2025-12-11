@@ -383,8 +383,8 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             </form>
           </div>
 
-          {/* Navigation & Filters Header */}
-          <div className="flex flex-col flex-shrink-0 border-b border-slate-700 bg-slate-900 z-10">
+          {/* Navigation & Filters Header - Fixed layout to prevent overlap */}
+          <div className="flex flex-col flex-shrink-0 border-b border-slate-700 bg-slate-900 z-20 relative">
             {/* Main Tabs */}
             <div className="px-6 mt-4 flex gap-4 overflow-x-auto no-scrollbar">
               <button

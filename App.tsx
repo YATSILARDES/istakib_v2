@@ -305,6 +305,8 @@ export default function App() {
           assignee: taskData.assignee || '',
           date: taskData.date || new Date().toISOString(),
           address: taskData.address || '',
+          district: taskData.district || '',
+          city: taskData.city || '',
           locationCoordinates: taskData.locationCoordinates || '',
           phone: taskData.phone || '',
           generalNote: taskData.generalNote || '',
