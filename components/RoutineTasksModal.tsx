@@ -52,12 +52,14 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
           customerName,
           phoneNumber,
           address,
-          locationCoordinates
+          locationCoordinates,
+          district,
+          city
         });
         setEditingTaskId(null);
       } else {
         // Add new task with empty assignee (unassigned pool)
-        onAddTask(newTaskContent, '', customerName, phoneNumber, address, locationCoordinates);
+        onAddTask(newTaskContent, '', customerName, phoneNumber, address, locationCoordinates, district, city);
       }
 
       // Reset Form
@@ -75,6 +77,8 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
     setCustomerName(task.customerName || '');
     setPhoneNumber(task.phoneNumber || '');
     setAddress(task.address || '');
+    setDistrict(task.district || '');
+    setCity(task.city || '');
     setLocationCoordinates(task.locationCoordinates || '');
   };
 
@@ -84,6 +88,8 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
     setCustomerName('');
     setPhoneNumber('');
     setAddress('');
+    setDistrict('');
+    setCity('');
     setLocationCoordinates('');
   };
 
