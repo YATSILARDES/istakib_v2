@@ -35,6 +35,10 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffEmail, setNewStaffEmail] = useState('');
 
+  // DISTRICT FILTER STATE
+  const [activeMainDistrict, setActiveMainDistrict] = useState<string>('Tümü');
+  const [activeRoutineDistrict, setActiveRoutineDistrict] = useState<string>('Tümü');
+
   // Personel listesi değiştiğinde veya boşsa seçim yap
   useEffect(() => {
     if (staffList.length > 0) {
@@ -58,6 +62,17 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
   const unassignedRoutineTasks = useMemo(() =>
     routineTasks.filter(t => !t.isCompleted && (!t.assignee || t.assignee.trim() === '' || t.assignee === 'Atanmadı')),
     [routineTasks]);
+
+  // Derived Filtered Lists
+  const filteredMainTasks = useMemo(() => {
+    if (activeMainDistrict === 'Tümü') return unassignedTasks;
+    return unassignedTasks.filter(t => t.district === activeMainDistrict);
+  }, [unassignedTasks, activeMainDistrict]);
+
+  const filteredRoutineTasks = useMemo(() => {
+    if (activeRoutineDistrict === 'Tümü') return unassignedRoutineTasks;
+    return unassignedRoutineTasks.filter(t => t.district === activeRoutineDistrict);
+  }, [unassignedRoutineTasks, activeRoutineDistrict]);
 
   const staffTasks = useMemo(() =>
     tasks.filter(t => t.assignee === selectedStaffName)
@@ -240,125 +255,138 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar pb-24">
 
-              {/* GROUP BY DISTRICT LOGIC */}
-              {(() => {
-                // 1. Get all unique districts from both lists
-                const allDistricts = new Set<string>();
-                unassignedTasks.forEach(t => t.district ? allDistricts.add(t.district) : null);
-                unassignedRoutineTasks.forEach(t => t.district ? allDistricts.add(t.district) : null);
+              {/* Atanmamış Müşteri İşleri */}
+              <div className="mb-8">
+                <div className="sticky top-0 bg-slate-900/95 z-10 pb-2 pt-1 mb-2 border-b border-slate-800">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <ClipboardList className="w-3 h-3" /> Kontrolü Yapılacak İşler
+                  </h4>
 
-                // Convert to array and sort (put values like 'Diğer' or empty at end logic is handled by displaying them as 'Genel / Belirtilmemiş')
-                const sortedDistricts = Array.from(allDistricts).sort();
+                  {/* Main Tasks District Filter */}
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    {['Tümü', ...Array.from(new Set(unassignedTasks.map(t => t.district).filter(Boolean)))].sort().map(dist => (
+                      <button
+                        key={dist}
+                        onClick={() => setActiveMainDistrict(dist || 'Tümü')}
+                        className={`text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap transition-colors border ${activeMainDistrict === (dist || 'Tümü')
+                            ? 'bg-blue-600 text-white border-blue-500'
+                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
+                          }`}
+                      >
+                        {dist || 'Belirtilmemiş'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                // Include "No District" group explicitly
-                const displayGroups = [...sortedDistricts, 'EMPTY_DISTRICT'];
-
-                return displayGroups.map(groupName => {
-                  // Filter Tasks for this Group
-                  const groupTasks = unassignedTasks.filter(t =>
-                    groupName === 'EMPTY_DISTRICT' ? !t.district : t.district === groupName
-                  );
-                  const groupRoutineTasks = unassignedRoutineTasks.filter(t =>
-                    groupName === 'EMPTY_DISTRICT' ? !t.district : t.district === groupName
-                  );
-
-                  // If no tasks in this group, skip
-                  if (groupTasks.length === 0 && groupRoutineTasks.length === 0) return null;
-
-                  const headerTitle = groupName === 'EMPTY_DISTRICT' ? 'Genel / Belirtilmemiş' : groupName;
-
-                  return (
-                    <div key={groupName} className="mb-8 last:mb-0">
-                      <h3 className="text-sm font-bold text-slate-400 border-b border-slate-700 pb-1 mb-3 flex items-center gap-2 sticky top-0 bg-slate-900/95 py-2 z-10">
-                        <MapPin className="w-4 h-4 text-purple-500" />
-                        {headerTitle}
-                        <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-500">
-                          {groupTasks.length + groupRoutineTasks.length}
-                        </span>
-                      </h3>
-
-                      <div className="space-y-6">
-                        {/* Müşteri İşleri */}
-                        {groupTasks.length > 0 && (
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-2 pl-2 border-l-2 border-blue-500/30">
-                              <ClipboardList className="w-3 h-3" /> Kontrolü Yapılacak İşler
-                            </h4>
-                            <div className="space-y-2">
-                              {groupTasks.map(task => (
-                                <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between group hover:border-slate-500 transition-colors">
-                                  <div>
-                                    <div className="font-medium text-slate-200 text-sm">{task.title}</div>
-                                    <div className="text-xs text-slate-500">{task.address}</div>
-                                  </div>
-                                  <button
-                                    onClick={() => selectedStaffName && onAssignTask(task.id, selectedStaffName, selectedStaffEmail)}
-                                    disabled={!selectedStaffName}
-                                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors"
-                                    title="Personele Ata"
-                                  >
-                                    <ArrowRight className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
+                <div className="space-y-2">
+                  {filteredMainTasks.length === 0 ? (
+                    <p className="text-sm text-slate-600 italic py-2">
+                      {activeMainDistrict !== 'Tümü' ? `"${activeMainDistrict}" için iş yok.` : 'Atanacak iş yok.'}
+                    </p>
+                  ) : (
+                    filteredMainTasks.map(task => (
+                      <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between group hover:border-slate-500 transition-colors">
+                        <div>
+                          <div className="font-medium text-slate-200 text-sm">{task.title}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {task.district && (
+                              <span className="text-[10px] bg-blue-900/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
+                                {task.district}
+                              </span>
+                            )}
+                            <div className="text-xs text-slate-500">{task.address}</div>
                           </div>
-                        )}
-
-                        {/* Eksikler */}
-                        {groupRoutineTasks.length > 0 && (
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-2 pl-2 border-l-2 border-purple-500/30">
-                              <CheckSquare className="w-3 h-3" /> Eksikler / Notlar
-                            </h4>
-                            <div className="space-y-2">
-                              {groupRoutineTasks.map(task => (
-                                <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-start justify-between group hover:border-slate-500 transition-colors">
-                                  <div className="pr-2 flex-1 overflow-hidden">
-                                    {/* Müşteri Bilgileri */}
-                                    {(task.customerName || task.phoneNumber || task.address) && (
-                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1.5 text-xs">
-                                        {task.customerName && (
-                                          <span className="text-blue-400 flex items-center gap-1">
-                                            <UserCircle className="w-3 h-3" /> {task.customerName}
-                                          </span>
-                                        )}
-                                        {task.phoneNumber && (
-                                          <a
-                                            href={`tel:${task.phoneNumber}`}
-                                            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <Phone className="w-3 h-3" /> {task.phoneNumber}
-                                          </a>
-                                        )}
-                                        {task.address && (
-                                          <span className="text-amber-400 flex items-center gap-1">
-                                            <MapPin className="w-3 h-3" /> {task.address}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                    <div className="text-sm text-slate-300 break-all whitespace-pre-wrap">{task.content}</div>
-                                  </div>
-                                  <button
-                                    onClick={() => selectedStaffName && onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail)}
-                                    disabled={!selectedStaffName}
-                                    className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0 mt-1"
-                                    title="Personele Ata"
-                                  >
-                                    <ArrowRight className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        </div>
+                        <button
+                          onClick={() => selectedStaffName && onAssignTask(task.id, selectedStaffName, selectedStaffEmail)}
+                          disabled={!selectedStaffName}
+                          className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors"
+                          title="Personele Ata"
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
                       </div>
-                    </div>
-                  );
-                });
-              })()}
+                    )))}
+                </div>
+              </div>
+
+              {/* Atanmamış Eksikler */}
+              <div>
+                <div className="sticky top-0 bg-slate-900/95 z-10 pb-2 pt-1 mb-2 border-b border-slate-800">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <CheckSquare className="w-3 h-3" /> Eksikler / Notlar
+                  </h4>
+
+                  {/* Routine Tasks District Filter */}
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    {['Tümü', ...Array.from(new Set(unassignedRoutineTasks.map(t => t.district).filter(Boolean)))].sort().map(dist => (
+                      <button
+                        key={dist}
+                        onClick={() => setActiveRoutineDistrict(dist || 'Tümü')}
+                        className={`text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap transition-colors border ${activeRoutineDistrict === (dist || 'Tümü')
+                            ? 'bg-purple-600 text-white border-purple-500'
+                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
+                          }`}
+                      >
+                        {dist || 'Belirtilmemiş'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {filteredRoutineTasks.length === 0 ? (
+                    <p className="text-sm text-slate-600 italic py-2">
+                      {activeRoutineDistrict !== 'Tümü' ? `"${activeRoutineDistrict}" için eksik yok.` : 'Eksik kaydı yok.'}
+                    </p>
+                  ) : (
+                    filteredRoutineTasks.map(task => (
+                      <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-start justify-between group hover:border-slate-500 transition-colors">
+                        <div className="pr-2 flex-1 overflow-hidden">
+                          {/* Müşteri Bilgileri */}
+                          {(task.customerName || task.phoneNumber || task.address || task.district) && (
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1.5 text-xs">
+                              {task.district && (
+                                <span className="text-purple-400 bg-purple-900/20 px-1.5 py-0.5 rounded border border-purple-500/20 flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" /> {task.district}
+                                </span>
+                              )}
+                              {task.customerName && (
+                                <span className="text-blue-400 flex items-center gap-1">
+                                  <UserCircle className="w-3 h-3" /> {task.customerName}
+                                </span>
+                              )}
+                              {task.phoneNumber && (
+                                <a
+                                  href={`tel:${task.phoneNumber}`}
+                                  className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Phone className="w-3 h-3" /> {task.phoneNumber}
+                                </a>
+                              )}
+                              {task.address && (
+                                <span className="text-amber-400 flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" /> {task.address}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <div className="text-sm text-slate-300 break-all whitespace-pre-wrap">{task.content}</div>
+                        </div>
+                        <button
+                          onClick={() => selectedStaffName && onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail)}
+                          disabled={!selectedStaffName}
+                          className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0 mt-1"
+                          title="Personele Ata"
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )))}
+                </div>
+              </div>
 
             </div>
           </div>
