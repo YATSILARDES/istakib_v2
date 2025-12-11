@@ -43,6 +43,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
   const [isMainTasksExpanded, setIsMainTasksExpanded] = useState(true);
   const [isRoutineTasksExpanded, setIsRoutineTasksExpanded] = useState(true);
   const [isStaffListExpanded, setIsStaffListExpanded] = useState(true);
+  const [isPoolSectionExpanded, setIsPoolSectionExpanded] = useState(true);
 
   // Personel listesi değiştiğinde veya boşsa seçim yap
   useEffect(() => {
@@ -251,14 +252,22 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
           {/* SOL SÜTUN: Havuz (Atanmamış) */}
           <div className="flex flex-col bg-slate-900/50 min-h-0">
-            <div className="p-3 bg-slate-800/50 border-b border-slate-700 font-medium text-slate-300 flex justify-between">
-              <span>Havuz (Atanmamış İşler)</span>
+            <div
+              className="p-3 bg-slate-800/50 border-b border-slate-700 font-medium text-slate-300 flex justify-between cursor-pointer md:cursor-default"
+              onClick={() => setIsPoolSectionExpanded(!isPoolSectionExpanded)}
+            >
+              <span className="flex items-center gap-2">
+                <span className="md:hidden">
+                  {isPoolSectionExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                Havuz (Atanmamış İşler)
+              </span>
               <span className="text-xs bg-slate-700 px-2 py-0.5 rounded text-slate-400">
                 {unassignedTasks.length + unassignedRoutineTasks.length}
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar pb-24">
+            <div className={`flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar pb-24 ${!isPoolSectionExpanded ? 'hidden md:block' : ''}`}>
 
               {/* Atanmamış Müşteri İşleri */}
               <div className="mb-8 border border-slate-700/50 rounded-lg overflow-hidden md:border-none md:rounded-none">
