@@ -343,25 +343,26 @@ export default function MobileLayout({
                                                     <Calendar className="w-3.5 h-3.5" /> Detay
                                                 </button>
 
-                                                {/* Share Button (Centered) */}
-                                                <button
-                                                    onClick={(e) => handleShareTask(task, e)}
-                                                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-white/10 transition-colors"
-                                                >
-                                                    <Share2 className="w-3.5 h-3.5" />
-                                                </button>
-
-                                                {task.phone && (
+                                                <div className="flex items-center gap-3">
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            window.open(`tel:${task.phone}`);
-                                                        }}
-                                                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                        onClick={(e) => handleShareTask(task, e)}
+                                                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-white/10 transition-colors"
                                                     >
-                                                        <Phone className="w-3.5 h-3.5" />
+                                                        <Share2 className="w-3.5 h-3.5" />
                                                     </button>
-                                                )}
+
+                                                    {task.phone && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                window.open(`tel:${task.phone}`);
+                                                            }}
+                                                            className="w-8 h-8 rounded-full bg-white/5 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                        >
+                                                            <Phone className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
