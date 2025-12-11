@@ -107,7 +107,31 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     setIsDeleting(false);
   };
 
+  const handleShare = async () => {
+    // Adres alanından olası URL'leri temizle (Eski kayıtlardan kalma)
+    const cleanAddress = (formData.address || '').replace(/https?:\/\/[^\s]+/g, '').trim();
 
+    let shareText = `👤 ${formData.title}\n📞 ${formData.phone || 'Telefon Yok'}\n🏠 ${cleanAddress || 'Adres Yok'}`;
+
+    if (formData.locationCoordinates) {
+      shareText += `\n\n📍 Konum:\n${formData.locationCoordinates}`;
+    }
+    const shareData = {
+      title: 'Müşteri Bilgileri',
+      text: shareText
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        alert('Bilgiler panoya kopyalandı.');
+      }
+    } catch (err) {
+      console.error('Sharing failed', err);
+    }
+  };
 
   const handleScanSuccess = (decodedText: string) => {
     setFormData({ ...formData, serviceSerialNumber: decodedText });
@@ -210,6 +234,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
               </div>
 
               <div className="flex items-center gap-2">
+                {isEdit && (
+                  <button
+                    onClick={handleShare}
+                    className="text-slate-400 hover:text-blue-400 p-2 rounded-lg hover:bg-slate-700 transition-all"
+                    title="Bilgileri Paylaş"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                )}
                 <button onClick={onClose} className="text-slate-400 hover:text-white p-2 transition-colors">
                   <X className="w-6 h-6" />
                 </button>

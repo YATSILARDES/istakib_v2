@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users } from 'lucide-react';
+import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2 } from 'lucide-react';
 import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -96,6 +96,32 @@ export default function MobileLayout({
         displayedRoutineTasks = applySearch(myRoutineTasks);
     }
 
+
+    const handleShareTask = async (task: Task, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const cleanAddress = (task.address || '').replace(/https?:\/\/[^\s]+/g, '').trim();
+        let shareText = `👤 ${task.title}\n📞 ${task.phone || 'Telefon Yok'}\n🏠 ${cleanAddress || 'Adres Yok'}`;
+
+        if (task.locationCoordinates) {
+            shareText += `\n\n📍 Konum:\n${task.locationCoordinates}`;
+        }
+
+        const shareData = {
+            title: 'Müşteri Bilgileri',
+            text: shareText
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareText);
+                alert('Bilgiler panoya kopyalandı.');
+            }
+        } catch (err) {
+            console.error('Sharing failed', err);
+        }
+    };
 
     // Handlers
     const handlePasswordReset = async () => {
@@ -316,6 +342,15 @@ export default function MobileLayout({
                                                 >
                                                     <Calendar className="w-3.5 h-3.5" /> Detay
                                                 </button>
+
+                                                {/* Share Button (Centered) */}
+                                                <button
+                                                    onClick={(e) => handleShareTask(task, e)}
+                                                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                >
+                                                    <Share2 className="w-3.5 h-3.5" />
+                                                </button>
+
                                                 {task.phone && (
                                                     <button
                                                         onClick={(e) => {
