@@ -387,6 +387,15 @@ export default function App() {
     }
   };
 
+  const handleUpdateRoutineTask = async (taskId: string, updatedData: Partial<RoutineTask>) => {
+    try {
+      const taskRef = doc(db, 'routine_tasks', taskId);
+      await updateDoc(taskRef, updatedData);
+    } catch (e) {
+      console.error("Update routine error:", e);
+    }
+  };
+
   const handleConvertRoutineTask = async (taskId: string, targetStatus: TaskStatus) => {
     try {
       const routineTask = routineTasks.find(t => t.id === taskId);
@@ -596,6 +605,7 @@ export default function App() {
             onToggleTask={handleToggleRoutineTask}
             onDeleteTask={handleDeleteRoutineTask}
             onConvertTask={handleConvertRoutineTask}
+            onUpdateTask={handleUpdateRoutineTask}
           />
         )}
 

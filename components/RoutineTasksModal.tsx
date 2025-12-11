@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { RoutineTask, TaskStatus, StatusLabels } from '../types';
-import { X, Plus, User, Trash2, CalendarCheck, CheckSquare, Square, Phone, MapPin, UserCircle, ArrowRightCircle, Check } from 'lucide-react';
+import { X, Plus, User, Trash2, CalendarCheck, CheckSquare, Square, Phone, MapPin, UserCircle, ArrowRightCircle, Check, Pencil, Save, XCircle } from 'lucide-react';
 import LocationPreviewModal from './LocationPreviewModal';
 
 interface RoutineTasksModalProps {
@@ -11,6 +11,7 @@ interface RoutineTasksModalProps {
   onToggleTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onConvertTask: (taskId: string, targetStatus: TaskStatus) => void;
+  onUpdateTask: (taskId: string, updatedData: Partial<RoutineTask>) => void;
 }
 
 const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
@@ -20,7 +21,8 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   onAddTask,
   onToggleTask,
   onDeleteTask,
-  onConvertTask
+  onConvertTask,
+  onUpdateTask
 }) => {
   const [customerName, setCustomerName] = useState('');
   const [newTaskContent, setNewTaskContent] = useState('');
@@ -28,6 +30,9 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   const [address, setAddress] = useState('');
   const [locationCoordinates, setLocationCoordinates] = useState('');
   const [showLocationModal, setShowLocationModal] = useState(false);
+
+  // Edit State
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   // Conversion State
   const [convertingTaskId, setConvertingTaskId] = useState<string | null>(null);
@@ -38,14 +43,46 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskContent.trim()) {
-      // Add with empty assignee (unassigned pool)
-      onAddTask(newTaskContent, '', customerName, phoneNumber, address, locationCoordinates);
+      if (editingTaskId) {
+        // Update existing task
+        onUpdateTask(editingTaskId, {
+          content: newTaskContent,
+          customerName,
+          phoneNumber,
+          address,
+          locationCoordinates
+        });
+        setEditingTaskId(null);
+      } else {
+        // Add new task with empty assignee (unassigned pool)
+        onAddTask(newTaskContent, '', customerName, phoneNumber, address, locationCoordinates);
+      }
+
+      // Reset Form
       setNewTaskContent('');
       setCustomerName('');
       setPhoneNumber('');
       setAddress('');
       setLocationCoordinates('');
     }
+  };
+
+  const handleEditClick = (task: RoutineTask) => {
+    setEditingTaskId(task.id);
+    setNewTaskContent(task.content);
+    setCustomerName(task.customerName || '');
+    setPhoneNumber(task.phoneNumber || '');
+    setAddress(task.address || '');
+    setLocationCoordinates(task.locationCoordinates || '');
+  };
+
+  const cancelEdit = () => {
+    setEditingTaskId(null);
+    setNewTaskContent('');
+    setCustomerName('');
+    setPhoneNumber('');
+    setAddress('');
+    setLocationCoordinates('');
   };
 
 
@@ -71,7 +108,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
 
   // Helper: Render Task Card
   const renderTaskCard = (task: RoutineTask, isCompletedView: boolean) => (
-    <div key={task.id} className={`group flex items-start gap-3 border rounded-lg p-3 transition-all ${isCompletedView ? 'bg-slate-800/20 border-slate-700/50' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}>
+    <div key={task.id} className={`group flex items-start gap-3 border rounded-lg p-3 transition-all ${isCompletedView ? 'bg-slate-800/20 border-slate-700/50' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'} ${editingTaskId === task.id ? 'ring-2 ring-purple-500/50 border-purple-500/50' : ''}`}>
       <button
         onClick={() => onToggleTask(task.id)}
         className={`mt-0.5 transition-colors ${isCompletedView ? 'text-emerald-500' : 'text-slate-400 hover:text-purple-400'}`}
@@ -172,12 +209,22 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
 
       </div>
 
-      <button
-        onClick={() => onDeleteTask(task.id)}
-        className={`p-1 transition-colors ${isCompletedView ? 'text-slate-600 hover:text-red-400' : 'opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400'}`}
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      <div className="flex flex-col gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => handleEditClick(task)}
+          className="p-1 text-slate-500 hover:text-blue-400 transition-colors"
+          title="Düzenle"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onDeleteTask(task.id)}
+          className="p-1 text-slate-500 hover:text-red-400 transition-colors"
+          title="Sil"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 
@@ -201,9 +248,18 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col">
 
-          {/* Add Task Form */}
-          <div className="p-6 bg-slate-800/30 border-b border-slate-700">
-            <p className="text-sm text-slate-400 mb-4">Buraya ekleyeceğiniz maddeler "Görev Dağıtımı" ekranında havuza düşecektir.</p>
+          {/* Add/Edit Task Form */}
+          <div className={`p-6 border-b border-slate-700 transition-colors ${editingTaskId ? 'bg-purple-900/10' : 'bg-slate-800/30'}`}>
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-sm text-slate-400">
+                {editingTaskId ? 'Eksik Düzenleniyor...' : 'Buraya ekleyeceğiniz maddeler "Görev Dağıtımı" ekranında havuza düşecektir.'}
+              </p>
+              {editingTaskId && (
+                <button onClick={cancelEdit} className="text-xs flex items-center gap-1 text-red-400 hover:text-red-300 bg-red-500/10 px-2 py-1 rounded">
+                  <XCircle className="w-3 h-3" /> Vazgeç
+                </button>
+              )}
+            </div>
             <form onSubmit={handleSubmit} className="space-y-3">
               {/* İlk Satır: Müşteri Adı + Telefon */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -277,10 +333,10 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                 <button
                   type="submit"
                   disabled={!newTaskContent.trim()}
-                  className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  className={`px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-white ${editingTaskId ? 'bg-orange-500 hover:bg-orange-600' : 'bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed'}`}
                 >
-                  <Plus className="w-5 h-5" />
-                  <span>Eksik Ekle</span>
+                  {editingTaskId ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                  <span>{editingTaskId ? 'Güncelle' : 'Eksik Ekle'}</span>
                 </button>
               </div>
             </form>
