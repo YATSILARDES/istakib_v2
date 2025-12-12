@@ -511,6 +511,62 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                             </div>
                                         </div>
 
+                                        {/* Rol Seçimi (YENİ) */}
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                                <Shield className="w-4 h-4" /> Rol Ataması
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {/* Staff Role */}
+                                                <label className={`relative group p-5 rounded-2xl border cursor-pointer transition-all overflow-hidden ${selectedPerm.role === 'staff' ? 'bg-slate-800 border-blue-500 shadow-lg shadow-blue-900/10' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}>
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div className={`p-2.5 rounded-xl ${selectedPerm.role === 'staff' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700/50 text-slate-500'}`}>
+                                                            <Users className="w-6 h-6" />
+                                                        </div>
+                                                        <input
+                                                            type="radio" name="role" className="hidden"
+                                                            checked={selectedPerm.role === 'staff'}
+                                                            onChange={() => handleUpdatePermission({ ...selectedPerm, role: 'staff' })}
+                                                        />
+                                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedPerm.role === 'staff' ? 'border-blue-500' : 'border-slate-600'}`}>
+                                                            {selectedPerm.role === 'staff' && <div className="w-3 h-3 bg-blue-500 rounded-full" />}
+                                                        </div>
+                                                    </div>
+                                                    <div className="font-bold text-white mb-1 text-lg">Standart Personel</div>
+                                                    <div className="text-xs text-slate-400 leading-relaxed">Sadece atanan işleri ve izin verilen alanları görür.</div>
+                                                </label>
+
+                                                {/* Manager Role */}
+                                                <label className={`relative group p-5 rounded-2xl border cursor-pointer transition-all overflow-hidden ${selectedPerm.role === 'manager' ? 'bg-slate-800 border-purple-500 shadow-lg shadow-purple-900/10' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}>
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div className={`p-2.5 rounded-xl ${selectedPerm.role === 'manager' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700/50 text-slate-500'}`}>
+                                                            <Shield className="w-6 h-6" />
+                                                        </div>
+                                                        <input
+                                                            type="radio" name="role" className="hidden"
+                                                            checked={selectedPerm.role === 'manager'}
+                                                            onChange={() => {
+                                                                // Manager yapınca her şeyi aç
+                                                                handleUpdatePermission({
+                                                                    ...selectedPerm,
+                                                                    role: 'manager',
+                                                                    canAccessRoutineTasks: true,
+                                                                    canAccessAssignment: true,
+                                                                    canAddCustomers: true,
+                                                                    allowedColumns: Object.values(TaskStatus)
+                                                                })
+                                                            }}
+                                                        />
+                                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedPerm.role === 'manager' ? 'border-purple-500' : 'border-slate-600'}`}>
+                                                            {selectedPerm.role === 'manager' && <div className="w-3 h-3 bg-purple-500 rounded-full" />}
+                                                        </div>
+                                                    </div>
+                                                    <div className="font-bold text-white mb-1 text-lg">Yönetici (Tam Yetkili)</div>
+                                                    <div className="text-xs text-slate-400 leading-relaxed">Admin ekranının aynısını görür. Tüm işlere ve modüllere erişebilir.</div>
+                                                </label>
+                                            </div>
+                                        </div>
+
                                         {/* Modül Yetkileri */}
                                         <div>
                                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">

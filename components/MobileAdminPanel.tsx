@@ -411,6 +411,34 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                             </button>
                         </div>
 
+                        {/* Role Toggles (YENİ) */}
+                        <h3 className="text-sm font-bold text-slate-500 uppercase mb-3">Kullanıcı Rolü</h3>
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            <button
+                                onClick={() => handleUpdatePermission({ ...selectedPerm, role: 'staff' })}
+                                className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${selectedPerm.role === 'staff' ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                            >
+                                <Users className="w-6 h-6" />
+                                <span className="text-sm font-bold">Personel</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    handleUpdatePermission({
+                                        ...selectedPerm,
+                                        role: 'manager',
+                                        canAccessRoutineTasks: true,
+                                        canAccessAssignment: true,
+                                        canAddCustomers: true,
+                                        allowedColumns: Object.values(TaskStatus)
+                                    })
+                                }}
+                                className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${selectedPerm.role === 'manager' ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-900/40' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                            >
+                                <Shield className="w-6 h-6" />
+                                <span className="text-sm font-bold">Yönetici</span>
+                            </button>
+                        </div>
+
                         {/* Module Toggles */}
                         <h3 className="text-sm font-bold text-slate-500 uppercase mb-3">Erişim İzinleri</h3>
                         <div className="space-y-3 mb-6">

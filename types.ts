@@ -77,7 +77,7 @@ export interface UserPermission {
   email: string;      // Login Email ve Benzersiz ID
   name: string;       // Personel Adı (Görev filtreleme için)
   allowedColumns: TaskStatus[];
-  role: 'admin' | 'staff';
+  role: 'admin' | 'staff' | 'manager';
   canAccessRoutineTasks?: boolean; // Eksikler Havuzu
   canAccessAssignment?: boolean;   // Görev Dağıtımı
   canAddCustomers?: boolean;       // Müşteri Ekle

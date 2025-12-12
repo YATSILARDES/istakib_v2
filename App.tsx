@@ -537,8 +537,10 @@ export default function App() {
   let visibleTasks: Task[] = [];
   let visibleRoutineTasks: RoutineTask[] = [];
   const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
+  const isManager = userPermissions?.role === 'manager';
+  const hasAdminAccess = isAdmin || isManager;
 
-  if (isAdmin) {
+  if (hasAdminAccess) {
     visibleTasks = tasks;
     visibleRoutineTasks = routineTasks;
   } else if (!userPermissions) {
@@ -650,8 +652,8 @@ export default function App() {
       {/* Header */}
       <header className="h-16 border-b border-slate-700 bg-slate-800 flex items-center justify-between px-6 shadow-lg z-10 shrink-0">
         <div className="flex items-center gap-3">
-          {/* Sidebar Toggle Button - Sadece Admin için */}
-          {isAdmin && (
+          {/* Sidebar Toggle Button - Admin ve Yönetici için */}
+          {hasAdminAccess && (
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
@@ -692,7 +694,8 @@ export default function App() {
             )}
           </div>
 
-          {user && ADMIN_EMAILS.includes(user.email || '') && (
+          {/* Admin Panel Button */}
+          {hasAdminAccess && (
             <button
               onClick={() => setIsAdminPanelOpen(true)}
               className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
@@ -715,8 +718,8 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex overflow-hidden relative">
 
-        {/* Sidebar (Pinned Staff) - SADECE ADMIN İÇİN */}
-        {isAdmin && (
+        {/* Sidebar (Pinned Staff) - ADMIN VE YÖNETİCİ İÇİN */}
+        {hasAdminAccess && (
           <div
             className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-slate-900 relative z-20 overflow-hidden ${isSidebarOpen ? 'w-[320px] border-r border-slate-700 opacity-100' : 'w-0 opacity-0'
               }`}
@@ -732,7 +735,7 @@ export default function App() {
                 onToggleTaskVerification={handleToggleTaskVerification}
                 onUnpin={(name) => handleTogglePinStaff(name)}
                 onClose={() => setIsSidebarOpen(false)}
-                isAdmin={isAdmin}
+                isAdmin={hasAdminAccess}
               />
             </div>
           </div>
@@ -749,7 +752,7 @@ export default function App() {
               <span className="text-xs text-red-500 font-bold border border-red-500 px-1 rounded">(V3.0 YENİ)</span>
               {userPermissions && (
                 <span className="text-[10px] text-slate-500 px-1 border border-slate-700 rounded">
-                  {userPermissions.role === 'admin' ? 'ADMIN' : `STAFF: ${userPermissions.name}`}
+                  {userPermissions.role === 'admin' ? 'ADMIN' : (userPermissions.role === 'manager' ? 'YÖNETİCİ' : `STAFF: ${userPermissions.name}`)}
                 </span>
               )}
             </h2>
@@ -762,7 +765,7 @@ export default function App() {
                   className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
                 >
                   <Bell className="w-4 h-4" />
-                  Eksikler Havuzu ({(isAdmin || userPermissions?.canAccessRoutineTasks)
+                  Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks)
                     ? routineTasks.filter(t => !t.isCompleted).length
                     : visibleRoutineTasks.filter(t => !t.isCompleted).length})
                   {/* Badge mantığı: Admin/Havuz yetkilisi tümünü görür, diğerleri sadece kendisininkini */}
@@ -770,7 +773,7 @@ export default function App() {
               )}
 
               {/* Görev Dağıtımı - Admin veya Yetkili */}
-              {(isAdmin || userPermissions?.canAccessAssignment) && (
+              {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
                 <button
                   onClick={() => setIsAssignmentModalOpen(true)}
                   className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
@@ -781,7 +784,7 @@ export default function App() {
               )}
 
               {/* Müşteri Ekle - Admin veya Yetkili */}
-              {(isAdmin || userPermissions?.canAddCustomers) && (
+              {(hasAdminAccess || userPermissions?.canAddCustomers) && (
                 <button
                   onClick={handleAddTaskClick}
                   className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20"
@@ -797,7 +800,7 @@ export default function App() {
           <KanbanBoard
             tasks={visibleTasks} // Filtrelenmiş görevler (Board Sütunları için)
             routineTasks={visibleRoutineTasks} // Personel Eksik Listesi (Staff için)
-            myTasks={!isAdmin && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []} // Personel Kendi Standart İşleri
+            myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []} // Personel Kendi Standart İşleri
             onTaskClick={handleTaskClick}
             onToggleRoutineTask={handleToggleRoutineTask}
             visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü
