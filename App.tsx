@@ -556,7 +556,7 @@ export default function App() {
       const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
       const nameMatch = myName && t.assignee === myName;
       const isUnassigned = (!t.assignee || t.assignee.trim() === '') && !t.assigneeEmail;
-      return emailMatch || nameMatch || (isUnassigned && canSeePool);
+      return emailMatch || nameMatch;
     });
   }
 
