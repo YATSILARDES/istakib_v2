@@ -804,7 +804,7 @@ export default function App() {
             onTaskClick={handleTaskClick}
             onToggleRoutineTask={handleToggleRoutineTask}
             visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü
-            showRoutineColumn={!isAdmin} // Admin ise Sütun Gizli, Staff ise Sütun Açık
+            showRoutineColumn={!hasAdminAccess} // Admin/Manager için bu sütunu gizle
             staffName={userPermissions?.name} // [NEW] Sütun başlığı için isim
           />
         </div>
