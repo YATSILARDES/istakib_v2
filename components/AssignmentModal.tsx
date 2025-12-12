@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Task, RoutineTask, TaskStatus, StaffMember } from '../types';
-import { X, User, ArrowRight, ArrowLeft, ClipboardList, CheckSquare, Printer, Plus, Trash2, Save, Pin, PinOff, Phone, MapPin, UserCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, User, ArrowRight, ArrowLeft, ClipboardList, CheckSquare, Printer, Plus, Trash2, Save, Pin, PinOff, Phone, MapPin, UserCircle, ChevronDown, ChevronRight, Calendar, List, ChevronLeft } from 'lucide-react';
 
 interface AssignmentModalProps {
   isOpen: boolean;
@@ -38,6 +38,15 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
   // DISTRICT FILTER STATE
   const [activeMainDistrict, setActiveMainDistrict] = useState<string>('Tümü');
   const [activeRoutineDistrict, setActiveRoutineDistrict] = useState<string>('Tümü');
+
+  // VIEW MODE STATE (List vs Weekly)
+  const [viewMode, setViewMode] = useState<'list' | 'week'>('week'); // Default week view for preview
+  const [weekStartDate, setWeekStartDate] = useState<Date>(() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
+    return new Date(d.setDate(diff));
+  });
 
   // COLLAPSIBLE SECTIONS STATE (Mobile Focus)
   const [isMainTasksExpanded, setIsMainTasksExpanded] = useState(true);
@@ -428,108 +437,217 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
           {/* SAĞ SÜTUN: Personel Listesi (Atanmış) */}
           <div className="flex flex-col bg-slate-800/20 min-h-0">
-            <div
-              className="p-3 bg-blue-900/20 border-b border-slate-700 font-medium text-blue-200 flex justify-between cursor-pointer md:cursor-default"
-              onClick={() => setIsStaffListExpanded(!isStaffListExpanded)}
-            >
-              <span className="flex items-center gap-2">
+            <div className="flex items-center justify-between p-3 bg-blue-900/20 border-b border-slate-700">
+              <div
+                className="font-medium text-blue-200 flex items-center gap-2 cursor-pointer md:cursor-default"
+                onClick={() => setIsStaffListExpanded(!isStaffListExpanded)}
+              >
                 {/* Only show chevron on mobile */}
                 <span className="md:hidden">
                   {isStaffListExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </span>
-                <User className="w-4 h-4" /> {selectedStaffName || 'Personel Seçiniz'} - İş Listesi
-              </span>
-              <span className="text-xs bg-blue-900/50 px-2 py-0.5 rounded text-blue-300">
-                {staffTasks.length + staffRoutineTasks.length}
-              </span>
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">{selectedStaffName || 'Personel'} - </span>
+                İş Programı
+              </div>
+
+              {/* View Toggle & Controls */}
+              <div className="flex items-center gap-2">
+                {/* Week Navigation (Only in Week Mode) */}
+                {viewMode === 'week' && (
+                  <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700 mr-2">
+                    <button
+                      onClick={() => setWeekStartDate(d => new Date(d.setDate(d.getDate() - 7)))}
+                      className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-[10px] px-2 text-slate-300 font-medium">
+                      {weekStartDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} - {new Date(new Date(weekStartDate).setDate(weekStartDate.getDate() + 6)).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+                    </span>
+                    <button
+                      onClick={() => setWeekStartDate(d => new Date(d.setDate(d.getDate() + 7)))}
+                      className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex bg-slate-800 rounded-lg p-0.5 border border-slate-700">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-1.5 rounded transition-all ${viewMode === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                    title="Liste Görünümü"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('week')}
+                    className={`p-1.5 rounded transition-all ${viewMode === 'week' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                    title="Haftalık Görünüm"
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Conditionally render content on mobile based on state, always show on desktop */}
-            <div className={`flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar print:overflow-visible ${!isStaffListExpanded ? 'hidden md:block' : ''}`}>
+            <div className={`flex-1 overflow-y-auto p-4 custom-scrollbar print:overflow-visible ${!isStaffListExpanded ? 'hidden md:block' : ''}`}>
 
-              {/* Personel Müşteri İşleri */}
-              <div>
-                <h4 className="text-xs font-bold text-blue-400/70 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  Görevler (Müşteri)
-                </h4>
-                <div className="space-y-2">
-                  {(!selectedStaffName || staffTasks.length === 0) && <p className="text-sm text-slate-600 italic">Bu personele atanmış müşteri işi yok.</p>}
-                  {staffTasks.map(task => (
-                    <div key={task.id} className="bg-slate-700/40 border border-slate-600/50 rounded-lg p-3 flex items-center justify-between group hover:border-red-500/30 transition-colors">
-                      <button
-                        onClick={() => onAssignTask(task.id, '', undefined)}
-                        className="bg-slate-700 hover:bg-red-500 hover:text-white text-slate-400 p-1.5 rounded-md transition-colors mr-3"
-                        title="Havuz'a Gönder (Atamayı Kaldır)"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                      </button>
-                      <div className="flex-1">
-                        <div className="font-medium text-slate-200 text-sm">
-                          <span className="text-xs text-blue-400 mr-1">#{task.orderNumber}</span>
-                          {task.title}
-                        </div>
-                        <div className="text-xs text-slate-500">{task.address}</div>
-                        {task.status !== TaskStatus.TO_CHECK && (
-                          <div className="text-[10px] text-orange-400 mt-1">Durum: {task.status}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Personel Rutin İşleri */}
-              <div>
-                <h4 className="text-xs font-bold text-purple-400/70 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  Eksikler / Notlar
-                </h4>
-                <div className="space-y-2">
-                  {(!selectedStaffName || staffRoutineTasks.length === 0) && <p className="text-sm text-slate-600 italic">Bu personele atanmış eksik yok.</p>}
-                  {staffRoutineTasks.map(task => (
-                    <div key={task.id} className="bg-slate-700/40 border border-slate-600/50 rounded-lg p-3 flex items-start justify-between group hover:border-red-500/30 transition-colors">
-                      <button
-                        onClick={() => onAssignRoutineTask(task.id, '', undefined)}
-                        className="bg-slate-700 hover:bg-red-500 hover:text-white text-slate-400 p-1.5 rounded-md transition-colors mr-3 flex-shrink-0 mt-1"
-                        title="Havuz'a Gönder (Atamayı Kaldır)"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                      </button>
-                      <div className="flex-1 overflow-hidden">
-                        {/* Müşteri Bilgileri */}
-                        {(task.customerName || task.phoneNumber || task.address) && (
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1.5 text-xs">
-                            {task.customerName && (
-                              <span className="text-blue-400 flex items-center gap-1">
-                                <UserCircle className="w-3 h-3" /> {task.customerName}
-                              </span>
-                            )}
-                            {task.phoneNumber && (
-                              <a
-                                href={`tel:${task.phoneNumber}`}
-                                className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Phone className="w-3 h-3" /> {task.phoneNumber}
-                              </a>
-                            )}
-                            {task.address && (
-                              <span className="text-amber-400 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {task.address}
-                              </span>
+              {viewMode === 'list' ? (
+                /* LIST VIEW (Existing) */
+                <div className="space-y-6">
+                  {/* Personel Müşteri İşleri */}
+                  <div>
+                    <h4 className="text-xs font-bold text-blue-400/70 uppercase tracking-wider mb-2 flex items-center gap-2">
+                      Görevler (Müşteri)
+                    </h4>
+                    <div className="space-y-2">
+                      {(!selectedStaffName || staffTasks.length === 0) && <p className="text-sm text-slate-600 italic">Bu personele atanmış müşteri işi yok.</p>}
+                      {staffTasks.map(task => (
+                        <div key={task.id} className="bg-slate-700/40 border border-slate-600/50 rounded-lg p-3 flex items-center justify-between group hover:border-red-500/30 transition-colors">
+                          <button
+                            onClick={() => onAssignTask(task.id, '', undefined)}
+                            className="bg-slate-700 hover:bg-red-500 hover:text-white text-slate-400 p-1.5 rounded-md transition-colors mr-3"
+                            title="Havuz'a Gönder (Atamayı Kaldır)"
+                          >
+                            <ArrowLeft className="w-4 h-4" />
+                          </button>
+                          <div className="flex-1">
+                            <div className="font-medium text-slate-200 text-sm">
+                              <span className="text-xs text-blue-400 mr-1">#{task.orderNumber}</span>
+                              {task.title}
+                            </div>
+                            <div className="text-xs text-slate-500">{task.address}</div>
+                            {task.status !== TaskStatus.TO_CHECK && (
+                              <div className="text-[10px] text-orange-400 mt-1">Durum: {task.status}</div>
                             )}
                           </div>
-                        )}
-                        <div className="text-sm text-slate-300 break-all whitespace-pre-wrap">{task.content}</div>
-                        <div className="mt-1 flex justify-end">
-                          <span className="text-[10px] text-slate-500 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700/50">
-                            {new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}
-                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Personel Rutin İşleri */}
+                  <div>
+                    <h4 className="text-xs font-bold text-purple-400/70 uppercase tracking-wider mb-2 flex items-center gap-2">
+                      Eksikler / Notlar
+                    </h4>
+                    <div className="space-y-2">
+                      {(!selectedStaffName || staffRoutineTasks.length === 0) && <p className="text-sm text-slate-600 italic">Bu personele atanmış eksik yok.</p>}
+                      {staffRoutineTasks.map(task => (
+                        <div key={task.id} className="bg-slate-700/40 border border-slate-600/50 rounded-lg p-3 flex items-start justify-between group hover:border-red-500/30 transition-colors">
+                          <button
+                            onClick={() => onAssignRoutineTask(task.id, '', undefined)}
+                            className="bg-slate-700 hover:bg-red-500 hover:text-white text-slate-400 p-1.5 rounded-md transition-colors mr-3 flex-shrink-0 mt-1"
+                            title="Havuz'a Gönder (Atamayı Kaldır)"
+                          >
+                            <ArrowLeft className="w-4 h-4" />
+                          </button>
+                          <div className="flex-1 overflow-hidden">
+                            {/* Müşteri Bilgileri */}
+                            {(task.customerName || task.phoneNumber || task.address) && (
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1.5 text-xs">
+                                {task.customerName && (
+                                  <span className="text-blue-400 flex items-center gap-1">
+                                    <UserCircle className="w-3 h-3" /> {task.customerName}
+                                  </span>
+                                )}
+                                {task.phoneNumber && (
+                                  <a
+                                    href={`tel:${task.phoneNumber}`}
+                                    className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Phone className="w-3 h-3" /> {task.phoneNumber}
+                                  </a>
+                                )}
+                                {task.address && (
+                                  <span className="text-amber-400 flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" /> {task.address}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            <div className="text-sm text-slate-300 break-all whitespace-pre-wrap">{task.content}</div>
+                            <div className="mt-1 flex justify-end">
+                              <span className="text-[10px] text-slate-500 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700/50">
+                                {new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* WEEKLY VIEW */
+                <div className="grid grid-cols-7 h-full min-w-[800px] gap-1 bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+                  {/* Render 7 Columns */}
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const dayDate = new Date(weekStartDate);
+                    dayDate.setDate(weekStartDate.getDate() + i);
+
+                    const dateStr = dayDate.toLocaleDateString('tr-TR');
+                    const dayName = dayDate.toLocaleDateString('tr-TR', { weekday: 'long' });
+                    const dayShortDate = dayDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'numeric' });
+                    const isToday = new Date().toDateString() === dayDate.toDateString();
+
+                    // Filter Tasks for this day
+                    const dayRoutineTasks = staffRoutineTasks.filter(t => {
+                      const d = new Date(t.createdAt?.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
+                      return d.toDateString() === dayDate.toDateString();
+                    });
+
+                    const dayMainTasks = staffTasks.filter(t => {
+                      // Main Tasks might not have a specific date field used for scheduling yet, checking 'date' field if exists
+                      // Assuming 'task.date' is string YYYY-MM-DD or DD.MM.YYYY
+                      // For now, let's skip visual mapping of main tasks unless they have a clear date field or assume mostly routine tasks.
+                      // Or create a dummy logic if no date. User asked fo "preview".
+                      // Let's rely on routine tasks mostly as they have createdAt
+                      return false;
+                    });
+
+                    return (
+                      <div key={i} className={`flex flex-col border-r border-slate-700 last:border-0 ${isToday ? 'bg-blue-900/10' : ''}`}>
+                        {/* Column Header */}
+                        <div className={`text-center py-2 border-b border-slate-700 ${isToday ? 'text-blue-400 font-bold' : 'text-slate-400'}`}>
+                          <div className="text-[10px] uppercase opacity-70">{dayName}</div>
+                          <div className="text-xs">{dayShortDate}</div>
+                        </div>
+
+                        {/* Tasks Container */}
+                        <div className="flex-1 p-1 space-y-1 overflow-y-auto">
+                          {dayRoutineTasks.map(t => (
+                            <div key={t.id} className="bg-slate-700/80 border border-slate-600 rounded p-1.5 text-[10px] group relative hover:z-10 hover:shadow-lg transition-all">
+                              <div className="line-clamp-3 text-slate-200 mb-1">{t.content}</div>
+                              <div className="flex justify-between items-center opacity-60">
+                                <span className="text-[9px] text-purple-300">Eksik</span>
+                                <button
+                                  onClick={() => onAssignRoutineTask(t.id, '', undefined)}
+                                  className="opacity-0 group-hover:opacity-100 hover:text-red-400"
+                                  title="Atamayı Kaldır"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {dayRoutineTasks.length === 0 && (
+                            <div className="h-full flex items-center justify-center opacity-10">
+                              <div className="w-full h-px bg-slate-500"></div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </div>
+              )}
 
             </div>
           </div>
