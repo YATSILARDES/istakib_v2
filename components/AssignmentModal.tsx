@@ -653,13 +653,11 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                       return d.toDateString() === dayDate.toDateString();
                     });
 
+                    // Filter Main Tasks for this day
                     const dayMainTasks = staffTasks.filter(t => {
-                      // Main Tasks might not have a specific date field used for scheduling yet, checking 'date' field if exists
-                      // Assuming 'task.date' is string YYYY-MM-DD or DD.MM.YYYY
-                      // For now, let's skip visual mapping of main tasks unless they have a clear date field or assume mostly routine tasks.
-                      // Or create a dummy logic if no date. User asked fo "preview".
-                      // Let's rely on routine tasks mostly as they have createdAt
-                      return false;
+                      if (!t.scheduledDate) return false;
+                      const d = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+                      return d.toDateString() === dayDate.toDateString();
                     });
 
                     return (
@@ -685,6 +683,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
                         {/* Tasks Container */}
                         <div className="flex-1 p-1 space-y-1 overflow-y-auto">
+                          {/* Routine Tasks (Orange/Standard) */}
                           {dayRoutineTasks.map(t => (
                             <div key={t.id} className="bg-slate-700/80 border border-slate-600 rounded p-1.5 text-[10px] group relative hover:z-10 hover:shadow-lg transition-all">
                               <div className="line-clamp-3 text-slate-200 mb-1">{t.content}</div>
@@ -704,11 +703,32 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                             </div>
                           ))}
 
-                          {dayRoutineTasks.length === 0 && (
+                          {/* Main Tasks (Blue/Distinct) */}
+                          {dayMainTasks.map(t => (
+                            <div key={t.id} className="bg-blue-900/40 border border-blue-700/50 rounded p-1.5 text-[10px] group relative hover:z-10 hover:shadow-lg transition-all">
+                              <div className="font-semibold text-blue-200 mb-0.5 truncate">{t.title}</div>
+                              <div className="line-clamp-2 text-slate-300 mb-1">{t.address}</div>
+                              <div className="flex justify-between items-center opacity-60">
+                                <span className="text-[9px] text-blue-300">Saha</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAssignTask(t.id, '', undefined); // Unassign
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 hover:text-red-400"
+                                  title="Atamayı Kaldır"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {dayRoutineTasks.length === 0 && dayMainTasks.length === 0 && (
                             <div className="h-full flex items-center justify-center opacity-10">
                               {/* Hint text if selected */}
                               {selectedDate && selectedDate.toDateString() === dayDate.toDateString() ? (
-                                <div className="text-[9px] text-center text-blue-300">Eksik<br />Seçip<br />Atayın</div>
+                                <div className="text-[9px] text-center text-blue-300">İş Seçip<br />Atayın</div>
                               ) : (
                                 <div className="w-full h-px bg-slate-500"></div>
                               )}
