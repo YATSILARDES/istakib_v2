@@ -288,8 +288,8 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                           key={dist}
                           onClick={() => setActiveMainDistrict(dist || 'Tümü')}
                           className={`text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap transition-colors border ${activeMainDistrict === (dist || 'Tümü')
-                              ? 'bg-blue-600 text-white border-blue-500'
-                              : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
+                            ? 'bg-blue-600 text-white border-blue-500'
+                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
                             }`}
                         >
                           {dist || 'Belirtilmemiş'}
@@ -352,8 +352,8 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                           key={dist}
                           onClick={() => setActiveRoutineDistrict(dist || 'Tümü')}
                           className={`text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap transition-colors border ${activeRoutineDistrict === (dist || 'Tümü')
-                              ? 'bg-purple-600 text-white border-purple-500'
-                              : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
+                            ? 'bg-purple-600 text-white border-purple-500'
+                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
                             }`}
                         >
                           {dist || 'Belirtilmemiş'}
@@ -403,6 +403,11 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                               </div>
                             )}
                             <div className="text-sm text-slate-300 break-all whitespace-pre-wrap">{task.content}</div>
+                            <div className="mt-1 flex justify-end">
+                              <span className="text-[10px] text-slate-500 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700/50">
+                                {new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}
+                              </span>
+                            </div>
                           </div>
                           <button
                             onClick={() => selectedStaffName && onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail)}
@@ -515,6 +520,11 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                           </div>
                         )}
                         <div className="text-sm text-slate-300 break-all whitespace-pre-wrap">{task.content}</div>
+                        <div className="mt-1 flex justify-end">
+                          <span className="text-[10px] text-slate-500 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700/50">
+                            {new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
