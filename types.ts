@@ -99,4 +99,5 @@ export interface RoutineTask {
   assignedAt?: any; // Atanma Zamanı (Sıralama için)
   district?: string; // İlçe
   city?: string; // İl
+  scheduledDate?: any; // Yeni: Planlanan Tarih
 }

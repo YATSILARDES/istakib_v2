@@ -119,34 +119,26 @@ export default function MobileLayout({
 
         if (!isAssignedToMe) return false;
 
-        // 2. Date Check (Weekly Plan Logic with Rollover)
-        // Logic: Show if (Date == Today) OR (Date < Today AND !isCompleted)
-        // If no date (old data), show it to avoid hiding tasks.
-        if (t.createdAt) {
-            const taskDate = new Date(t.createdAt.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
-            const today = new Date();
+        // Check `scheduledDate` (New) or fall back to `createdAt` (Legacy)
+        let filterDate: Date | null = null;
+        let hasSchedule = false;
 
-            // Reset hours for comparison
-            taskDate.setHours(0, 0, 0, 0);
-            today.setHours(0, 0, 0, 0);
-
-            const isToday = taskDate.getTime() === today.getTime();
-            const isPast = taskDate.getTime() < today.getTime();
-
-            if (isToday) return true;
-            if (isPast && !t.isCompleted) return true; // Rollover incomplete past tasks
-
-            return false; // Future tasks are hidden
+        if (t.scheduledDate) {
+            filterDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+            hasSchedule = true;
+        } else if (t.createdAt) {
+            // If no schedule, fallback to showing it (Backlog)
+            // Unless we want to treat createdAt as schedule if no separate schedule exists?
+            // User wants to decouple creation from scheduling.
+            // So if no explicit schedule, it is unscheduled -> Show it.
+            return true;
+        } else {
+            return true;
         }
 
-        return true;
-    }).sort((a, b) => {
-        // Sort by Date Ascending
-        // Older tasks (past due) will appear first
-        const dateA = a.createdAt ? new Date(a.createdAt.seconds ? a.createdAt.seconds * 1000 : a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime() : 0;
-        return dateA - dateB;
-    });
+        if (hasSchedule && filterDate) {
+            const today = new Date();
+        });
 
     // 2. Filter Helper Function (Search)
     const applySearch = (items: any[]) => {

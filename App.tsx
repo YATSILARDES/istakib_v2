@@ -477,10 +477,32 @@ export default function App() {
         assignedAt: serverTimestamp()
       };
 
+      // NEW: Use dedicated scheduledDate field, preserve createdAt
       if (scheduledDate) {
         const d = new Date(scheduledDate);
         d.setHours(12, 0, 0, 0);
-        updateData.createdAt = Timestamp.fromDate(d);
+        updateData.scheduledDate = Timestamp.fromDate(d);
+      } else {
+        // If no date (e.g. unassigning date or standard assign assignment), should we clear it?
+        // Standard 'Arrow' assignment usually implies "ASAP" or "Backlog".
+        // If unscheduling (canceling), we might pass null?
+        // For now, if scheduledDate is undefined, we simply don't update it, OR we should perhaps clear it if explicitly requested.
+        // But the modal logic passes undefined for arrow click.
+        // Let's assume standard assignment doesn't clear date unless explicitly needed.
+        // Actually, if we want to "Clear" the date, we need to handle that.
+        // The AssignmentModal passes '' and undefined to unassign.
+
+        if (assignee === '') {
+          // Unassigning user -> Clear Schedule too?
+          updateData.scheduledDate = null; // Or deleteField()
+          // Actually, let's keep it simple. If assigning to '', we are unassigning.
+          // But if assigning to a user without a date, we might want to keep previous date OR clear it?
+          // Safest is: If we explicitly want to set date, we pass date.
+          // If we use standard arrow, we might not want to change the date if it's already set? 
+          // Or does standard arrow mean "No Date"? 
+          // User's context: "Takvime eklediğim tarihle".
+          // If I drag/drop or use arrow, I might mean "Do it".
+        }
       }
 
       await updateDoc(taskRef, updateData);

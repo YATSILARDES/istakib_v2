@@ -641,8 +641,28 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
                     // Filter Tasks for this day
                     const dayRoutineTasks = staffRoutineTasks.filter(t => {
-                      const d = new Date(t.createdAt?.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
-                      return d.toDateString() === dayDate.toDateString();
+                      // Check scheduledDate first (New Logic)
+                      if (t.scheduledDate) {
+                        const d = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+                        return d.toDateString() === dayDate.toDateString();
+                      }
+                      // Fallback to createdAt if NO scheduledDate?
+                      // If we decouple, we should technically NOT show tasks here if they are 'backlog' (undated).
+                      // But legacy data might rely on createdAt.
+                      // Let's support legacy: If scheduledDate is missing, use createdAt.
+                      // Wait, if I assign a date, I set scheduledDate.
+                      // If I UNASSIGN, I might clear it?
+                      // If I have a task created today and I schedule it for tomorrow.
+                      // It has createdAt=Today, scheduledDate=Tomorrow.
+                      // Here we iterate 'days'.
+                      // If I check 'Today', I see tasks with scheduledDate=Today OR (scheduledDate=null AND createdAt=Today).
+
+                      if (t.createdAt) {
+                        // Only use createdAt if scheduledDate is missing
+                        const d = new Date(t.createdAt.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
+                        return d.toDateString() === dayDate.toDateString();
+                      }
+                      return false;
                     });
 
                     // Filter Main Tasks for this day
