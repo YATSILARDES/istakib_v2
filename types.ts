@@ -45,6 +45,7 @@ export interface Task {
   createdBy?: string;
   lastUpdatedBy?: string;
   createdAt?: any;
+  scheduledDate?: any; // Atanan Tarih (Firestore Timestamp)
   isCheckVerified?: boolean;
 }
 

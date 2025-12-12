@@ -449,10 +449,19 @@ export default function App() {
   };
 
   // Handlers - Assignment & Staff
-  const handleAssignTask = async (taskId: string, assignee: string, assigneeEmail?: string) => {
+  const handleAssignTask = async (taskId: string, assignee: string, assigneeEmail?: string, scheduledDate?: Date) => {
     try {
       const taskRef = doc(db, 'tasks', taskId);
-      await updateDoc(taskRef, { assignee, assigneeEmail: assigneeEmail || null, lastUpdatedBy: user?.email });
+      const updateData: any = { assignee, assigneeEmail: assigneeEmail || null, lastUpdatedBy: user?.email };
+
+      if (scheduledDate) {
+        // Set to noon to avoid timezone issues
+        const d = new Date(scheduledDate);
+        d.setHours(12, 0, 0, 0);
+        updateData.scheduledDate = Timestamp.fromDate(d);
+      }
+
+      await updateDoc(taskRef, updateData);
     } catch (e) {
       console.error("Assign error:", e);
     }

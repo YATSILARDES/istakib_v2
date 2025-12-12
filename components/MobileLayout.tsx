@@ -45,6 +45,56 @@ export default function MobileLayout({
     // 1. My Items (Tasks & Routine Tasks)
     const myTasks = tasks.filter(t => t.assigneeEmail === user?.email);
 
+    // 3. Filtered Tasks (Main Tasks)
+    const filterTask = (task: Task) => {
+        if (!searchQuery.trim()) return true;
+        const lowerQ = searchQuery.toLocaleLowerCase('tr');
+        const title = (task.title || '').toLocaleLowerCase('tr');
+        const address = (task.address || '').toLocaleLowerCase('tr');
+        const phone = (task.phone || '').toLocaleLowerCase('tr');
+        // Task interface doesn't have customerName by default, checking generic description if needed or just skipping
+        const desc = (task.description || '').toLocaleLowerCase('tr');
+        return title.includes(lowerQ) || address.includes(lowerQ) || phone.includes(lowerQ) || desc.includes(lowerQ);
+    };
+
+    // Rename to avoid conflict if displayedTasks is defined later, or replace the later definition
+    // Actually, let's look at where displayedTasks was defined. It seems I inserted this block at line 46.
+    // I should probably use a unique name here and then use it in the JSX, OR replace the original definition.
+    // Let's use 'filteredMainTasks' here.
+    const filteredMainTasks = myTasks.filter(t => {
+        // Filter by Search
+        if (!filterTask(t)) return false;
+
+        // Filter by Date (Weekly Plan Logic)
+        // Checks `scheduledDate` (new) or `date` (legacy string)
+        if (t.scheduledDate) {
+            const taskDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+            const today = new Date();
+            taskDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
+            const isToday = taskDate.getTime() === today.getTime();
+            const isPast = taskDate.getTime() < today.getTime();
+
+            // Show if Today OR (Past AND Not Completed)
+            // Assumption: Status other than GAS_OPENED, DEPOSIT_PAID, SERVICE_DIRECTED might be "incomplete"?
+            // For now, show ALL past tasks. User can filter by status column if needed.
+            if (isToday) return true;
+            if (isPast) return true; // Rollover
+
+            return false; // Future
+        }
+
+        return true;
+    }).sort((a, b) => {
+        // Sort by Date (Scheduled > Created)
+        const getDate = (t: Task) => {
+            if (t.scheduledDate) return new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate).getTime();
+            return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+        };
+        return getDate(a) - getDate(b);
+    });
+
     const myRoutineTasks = routineTasks.filter(t => {
         // 1. Assignment Check
         const emailMatch = t.assigneeEmail && user?.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
@@ -120,8 +170,18 @@ export default function MobileLayout({
         displayedRoutineTasks = []; // Home only shows main tasks for now? Or separate pool? sticking to Main Tasks per requirement.
 
     } else if (activeTab === 'tasks') {
-        // My Tasks (Already filtered by user) -> Apply Search
-        displayedTasks = applySearch(myTasks);
+        // My Tasks (Already filtered by user) -> Apply Search & Date Logic
+        // Note: filteredMainTasks already includes applySearch equivalent logic inside filterTask function
+        // But wait, applySearch helper is used for Home tab. 
+        // filteredMainTasks uses filterTask which replicates applySearch logic.
+        // So we can just use filteredMainTasks directly.
+        displayedTasks = filteredMainTasks;
+
+        // Use myRoutineTasks (which is also date-filtered and sorted)
+        // Check if myRoutineTasks needs search? 
+        // Current logic: myRoutineTasks has NO search applied in its definition above?
+        // Let's check myRoutineTasks definition. It ONLY filters by date/assignment.
+        // So we should apply search to it.
         displayedRoutineTasks = applySearch(myRoutineTasks);
     }
 

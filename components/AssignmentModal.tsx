@@ -8,7 +8,7 @@ interface AssignmentModalProps {
   onClose: () => void;
   tasks: Task[];
   routineTasks: RoutineTask[];
-  onAssignTask: (taskId: string, assigneeName: string, assigneeEmail?: string) => void;
+  onAssignTask: (taskId: string, assigneeName: string, assigneeEmail?: string, scheduledDate?: Date) => void;
   onAssignRoutineTask: (taskId: string, assigneeName: string, assigneeEmail?: string, scheduledDate?: Date) => void;
   staffList: StaffMember[];
   pinnedStaff: string[];
@@ -331,14 +331,35 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                               <div className="text-xs text-slate-500">{task.address}</div>
                             </div>
                           </div>
-                          <button
-                            onClick={() => selectedStaffName && onAssignTask(task.id, selectedStaffName, selectedStaffEmail)}
-                            disabled={!selectedStaffName}
-                            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors"
-                            title="Personele Ata"
-                          >
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
+
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => selectedStaffName && onAssignTask(task.id, selectedStaffName, selectedStaffEmail)}
+                              disabled={!selectedStaffName}
+                              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0"
+                              title="Personele Ata"
+                            >
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+
+                            {/* Targeted Date Assignment (Only in Week Mode) */}
+                            {viewMode === 'week' && selectedStaffName && (
+                              <button
+                                onClick={() => {
+                                  if (selectedDate) {
+                                    onAssignTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
+                                  } else {
+                                    alert("Lütfen sağdaki takvimden bir gün seçin.");
+                                  }
+                                }}
+                                className={`p-1.5 rounded-md transition-colors flex-shrink-0 text-white ${selectedDate ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                                title={selectedDate ? `${selectedDate.toLocaleDateString('tr-TR')} Tarihine Ata` : "Önce Takvimden Gün Seçin"}
+                                disabled={!selectedDate}
+                              >
+                                <Calendar className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )))}
                   </div>
