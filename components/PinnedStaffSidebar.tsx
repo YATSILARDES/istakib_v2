@@ -56,29 +56,93 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
   // Staff'a göre görevleri filtrele ve birleştir
   const getStaffCombinedTasks = (name: string) => {
     // 1. Rutin İşler (SIRALI: Atanma > Oluşturulma)
-    const staffRoutineTasks = routineTasks.filter(t => t.assignee === name).sort((a, b) => {
+    const staffRoutineTasks = routineTasks.filter(t => {
+      // 1. Name Check
+      if (t.assignee !== name) return false;
+
+      // 2. Date Check (Hide Future)
+      let filterDate: Date | null = null;
+      let hasSchedule = false;
+
+      if (t.scheduledDate) {
+        filterDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+        hasSchedule = true;
+      } else if (t.createdAt) {
+        // Legacy: Check if createdAt is in future
+        const d = new Date(t.createdAt.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
+        const today = new Date();
+        d.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        if (d.getTime() > today.getTime()) return false; // Hide Future Created (Legacy)
+        return true; // Show Backlog
+      } else {
+        return true;
+      }
+
+      if (hasSchedule && filterDate) {
+        const today = new Date();
+        filterDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        const isToday = filterDate.getTime() === today.getTime();
+        const isPast = filterDate.getTime() < today.getTime();
+
+        if (isToday) return true;
+        if (isPast && !t.isCompleted) return true;
+
+        return false; // Future -> Hide
+      }
+      return true;
+    }).sort((a, b) => {
       // 1. Tamamlanma durumu (Tamamlananlar en altta)
       if (a.isCompleted !== b.isCompleted) {
         return a.isCompleted ? 1 : -1;
       }
 
-      // 2. Atanma Zamanı
-      const aAssign = a.assignedAt?.toMillis?.() || a.assignedAt || 0;
-      const bAssign = b.assignedAt?.toMillis?.() || b.assignedAt || 0;
-
-      if (aAssign !== bAssign) {
-        return aAssign - bAssign;
-      }
-
-      // 3. Oluşturulma Zamanı
-      const aCreate = a.createdAt?.toMillis?.() || a.createdAt || 0;
-      const bCreate = b.createdAt?.toMillis?.() || b.createdAt || 0;
-      return aCreate - bCreate;
+      // 2. Sort by Schedule Date if avail, else Created
+      // (Simplified sort for sidebar)
+      const getDate = (task: RoutineTask) => {
+        if (task.scheduledDate) return new Date(task.scheduledDate.seconds ? task.scheduledDate.seconds * 1000 : task.scheduledDate).getTime();
+        return task.createdAt?.seconds ? task.createdAt.seconds * 1000 : 0;
+      };
+      return getDate(a) - getDate(b);
     });
 
     // 2. Normal Görevler (Standart İşler)
-    const staffStandardTasks = tasks.filter(t => t.assignee === name && t.status !== TaskStatus.CHECK_COMPLETED); // Tamamlananlar hariç mi? Genelde "Yapılacaklar" listesi burası. İsteğe göre değişir.
-    // Kullanıcı "kontrol yapılacak işler görünmüyor" dediği için tüm aktif işleri gösterelim.
+    const staffStandardTasks = tasks.filter(t => {
+      if (t.assignee !== name) return false;
+      if (t.status === TaskStatus.CHECK_COMPLETED) return false;
+
+      // Main Task Date Filtering
+      if (t.scheduledDate) {
+        const taskDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+        const today = new Date();
+        taskDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        const isToday = taskDate.getTime() === today.getTime();
+        const isPast = taskDate.getTime() < today.getTime(); // Rollover logic for main tasks? Assuming yes if incomplete.
+
+        if (isToday) return true;
+        if (isPast) return true; // Rollover
+
+        return false; // Future
+      }
+
+      // Legacy 'date' string check could be here if needed, but Main Tasks usually use scheduledDate now.
+      // If legacy date string exists and is future? 
+      if (t.date) {
+        const d = new Date(t.date);
+        if (!isNaN(d.getTime())) {
+          const today = new Date();
+          d.setHours(0, 0, 0, 0);
+          today.setHours(0, 0, 0, 0);
+          if (d.getTime() > today.getTime()) return false; // Hide Future
+        }
+      }
+
+      return true;
+    });
 
     // Tipleri birleştirip tek liste yapıyoruz (render aşamasında ayıracağız)
     return {
@@ -181,15 +245,15 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
                         >
                           <div className="flex items-start gap-2">
                             <div className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.checkStatus === 'missing' ? 'bg-orange-400' :
-                                t.checkStatus === 'clean' ? 'bg-emerald-400' : 'bg-blue-400'
+                              t.checkStatus === 'clean' ? 'bg-emerald-400' : 'bg-blue-400'
                               }`} />
                             <div className="flex-1 min-w-0">
                               <div className={`text-xs font-medium leading-snug ${t.checkStatus === 'missing' ? 'text-orange-100' :
-                                  t.checkStatus === 'clean' ? 'text-emerald-100' : 'text-blue-100'
+                                t.checkStatus === 'clean' ? 'text-emerald-100' : 'text-blue-100'
                                 }`}>{t.title}</div>
                               {t.address && (
                                 <div className={`flex items-center gap-1 mt-1 text-[10px] truncate ${t.checkStatus === 'missing' ? 'text-orange-300/70' :
-                                    t.checkStatus === 'clean' ? 'text-emerald-300/70' : 'text-blue-300/70'
+                                  t.checkStatus === 'clean' ? 'text-emerald-300/70' : 'text-blue-300/70'
                                   }`}>
                                   <MapPin className="w-3 h-3 flex-shrink-0" />
                                   {t.address}
