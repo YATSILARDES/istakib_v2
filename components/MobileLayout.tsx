@@ -138,7 +138,27 @@ export default function MobileLayout({
 
         if (hasSchedule && filterDate) {
             const today = new Date();
-        });
+            filterDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
+            const isToday = filterDate.getTime() === today.getTime();
+            const isPast = filterDate.getTime() < today.getTime();
+
+            if (isToday) return true;
+            if (isPast && !t.isCompleted) return true; // Rollover
+
+            return false; // Future -> Hide
+        }
+
+        return true;
+    }).sort((a, b) => {
+        // Sort by Date Ascending
+        const getDate = (t: RoutineTask) => {
+            if (t.scheduledDate) return new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate).getTime();
+            return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+        };
+        return getDate(a) - getDate(b);
+    });
 
     // 2. Filter Helper Function (Search)
     const applySearch = (items: any[]) => {
