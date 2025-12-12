@@ -458,18 +458,25 @@ export default function App() {
     }
   };
 
-  const handleAssignRoutineTask = async (taskId: string, assignee: string, assigneeEmail?: string) => {
+  const handleAssignRoutineTask = async (taskId: string, assignee: string, assigneeEmail?: string, scheduledDate?: Date) => {
     try {
       const taskRef = doc(db, 'routine_tasks', taskId);
-      // Eğer atama yapılıyorsa (assignee doluysa) zaman damgası ekle, yoksa (havuza dönüyorsa) null yap
-      const assignedAt = assignee ? serverTimestamp() : null;
-      await updateDoc(taskRef, {
+
+      const updateData: any = {
         assignee,
-        assigneeEmail: assigneeEmail || null,
-        assignedAt
-      });
+        assigneeEmail: assigneeEmail || '',
+        assignedAt: serverTimestamp()
+      };
+
+      if (scheduledDate) {
+        const d = new Date(scheduledDate);
+        d.setHours(12, 0, 0, 0);
+        updateData.createdAt = Timestamp.fromDate(d);
+      }
+
+      await updateDoc(taskRef, updateData);
     } catch (e) {
-      console.error("Assign routine error:", e);
+      console.error("Assign routine task error:", e);
     }
   };
 

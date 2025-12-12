@@ -9,7 +9,7 @@ interface AssignmentModalProps {
   tasks: Task[];
   routineTasks: RoutineTask[];
   onAssignTask: (taskId: string, assigneeName: string, assigneeEmail?: string) => void;
-  onAssignRoutineTask: (taskId: string, assigneeName: string, assigneeEmail?: string) => void;
+  onAssignRoutineTask: (taskId: string, assigneeName: string, assigneeEmail?: string, scheduledDate?: Date) => void;
   staffList: StaffMember[];
   pinnedStaff: string[];
   onAddStaff: (name: string, email: string) => void;
@@ -47,6 +47,9 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
     const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
     return new Date(d.setDate(diff));
   });
+
+  // Weekly Planning State
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); // Default to today
 
   // COLLAPSIBLE SECTIONS STATE (Mobile Focus)
   const [isMainTasksExpanded, setIsMainTasksExpanded] = useState(true);
@@ -418,14 +421,41 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                               </span>
                             </div>
                           </div>
-                          <button
-                            onClick={() => selectedStaffName && onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail)}
-                            disabled={!selectedStaffName}
-                            className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0 mt-1"
-                            title="Personele Ata"
-                          >
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
+
+                          {/* Assignment Button - Context Aware */}
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => selectedStaffName && onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail)}
+                              disabled={!selectedStaffName}
+                              className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0 mt-1"
+                              title="Personele Ata (Havuz Tarihiyle)"
+                            >
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+
+                            {/* Targeted Date Assignment (Only in Week Mode) */}
+                            {viewMode === 'week' && selectedStaffName && (
+                              <button
+                                onClick={() => {
+                                  // If a date is specifically selected, use it. Otherwise default to today or let user know?
+                                  // Better UX: Show this button ONLY if a date column is selected?
+                                  // For now, let's use the 'selectedDate' state if implemented, or just today.
+                                  // Wait, I need to implement selectedDate state first.
+                                  // Assuming selectedDate is available in scope (will add it).
+                                  if (selectedDate) {
+                                    onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
+                                  } else {
+                                    alert("Lütfen sağdaki takvimden bir gün seçin.");
+                                  }
+                                }}
+                                className={`p-1.5 rounded-md transition-colors flex-shrink-0 text-white ${selectedDate ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                                title={selectedDate ? `${selectedDate.toLocaleDateString('tr-TR')} Tarihine Ata` : "Önce Takvimden Gün Seçin"}
+                                disabled={!selectedDate}
+                              >
+                                <Calendar className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )))}
                   </div>
@@ -612,11 +642,24 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                     });
 
                     return (
-                      <div key={i} className={`flex flex-col border-r border-slate-700 last:border-0 ${isToday ? 'bg-blue-900/10' : ''}`}>
+                      <div
+                        key={i}
+                        onClick={() => setSelectedDate(dayDate)} // Select this day
+                        className={`flex flex-col border-r border-slate-700 last:border-0 transition-colors cursor-pointer
+                           ${isToday ? 'bg-blue-900/10' : ''}
+                           ${selectedDate && selectedDate.toDateString() === dayDate.toDateString() ? 'bg-blue-600/20 ring-1 ring-inset ring-blue-500' : 'hover:bg-slate-700/30'}
+                         `}
+                      >
                         {/* Column Header */}
                         <div className={`text-center py-2 border-b border-slate-700 ${isToday ? 'text-blue-400 font-bold' : 'text-slate-400'}`}>
                           <div className="text-[10px] uppercase opacity-70">{dayName}</div>
                           <div className="text-xs">{dayShortDate}</div>
+                          {/* Visual Indicator for Selection */}
+                          {selectedDate && selectedDate.toDateString() === dayDate.toDateString() && (
+                            <div className="mt-1">
+                              <span className="text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full">Seçili</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Tasks Container */}
@@ -627,7 +670,10 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                               <div className="flex justify-between items-center opacity-60">
                                 <span className="text-[9px] text-purple-300">Eksik</span>
                                 <button
-                                  onClick={() => onAssignRoutineTask(t.id, '', undefined)}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Avoid selecting day when clicking unschedule
+                                    onAssignRoutineTask(t.id, '', undefined);
+                                  }}
                                   className="opacity-0 group-hover:opacity-100 hover:text-red-400"
                                   title="Atamayı Kaldır"
                                 >
@@ -639,7 +685,12 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
                           {dayRoutineTasks.length === 0 && (
                             <div className="h-full flex items-center justify-center opacity-10">
-                              <div className="w-full h-px bg-slate-500"></div>
+                              {/* Hint text if selected */}
+                              {selectedDate && selectedDate.toDateString() === dayDate.toDateString() ? (
+                                <div className="text-[9px] text-center text-blue-300">Eksik<br />Seçip<br />Atayın</div>
+                              ) : (
+                                <div className="w-full h-px bg-slate-500"></div>
+                              )}
                             </div>
                           )}
                         </div>

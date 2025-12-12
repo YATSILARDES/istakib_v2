@@ -46,11 +46,40 @@ export default function MobileLayout({
     const myTasks = tasks.filter(t => t.assigneeEmail === user?.email);
 
     const myRoutineTasks = routineTasks.filter(t => {
-        // Check if assigned to me via email or name
+        // 1. Assignment Check
         const emailMatch = t.assigneeEmail && user?.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
-        // Fallback to name match if permissions available
         const nameMatch = userPermissions?.name && t.assignee === userPermissions.name;
-        return emailMatch || nameMatch;
+        const isAssignedToMe = emailMatch || nameMatch;
+
+        if (!isAssignedToMe) return false;
+
+        // 2. Date Check (Weekly Plan Logic with Rollover)
+        // Logic: Show if (Date == Today) OR (Date < Today AND !isCompleted)
+        // If no date (old data), show it to avoid hiding tasks.
+        if (t.createdAt) {
+            const taskDate = new Date(t.createdAt.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
+            const today = new Date();
+
+            // Reset hours for comparison
+            taskDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
+            const isToday = taskDate.getTime() === today.getTime();
+            const isPast = taskDate.getTime() < today.getTime();
+
+            if (isToday) return true;
+            if (isPast && !t.isCompleted) return true; // Rollover incomplete past tasks
+
+            return false; // Future tasks are hidden
+        }
+
+        return true;
+    }).sort((a, b) => {
+        // Sort by Date Ascending
+        // Older tasks (past due) will appear first
+        const dateA = a.createdAt ? new Date(a.createdAt.seconds ? a.createdAt.seconds * 1000 : a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime() : 0;
+        return dateA - dateB;
     });
 
     // 2. Filter Helper Function (Search)
