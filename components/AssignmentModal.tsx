@@ -333,32 +333,24 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                           </div>
 
                           <div className="flex flex-col gap-1">
+                            {/* Standard Assign Button - Context Aware */}
                             <button
-                              onClick={() => selectedStaffName && onAssignTask(task.id, selectedStaffName, selectedStaffEmail)}
-                              disabled={!selectedStaffName}
-                              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0"
-                              title="Personele Ata"
-                            >
-                              <ArrowRight className="w-4 h-4" />
-                            </button>
-
-                            {/* Targeted Date Assignment (Only in Week Mode) */}
-                            {viewMode === 'week' && selectedStaffName && (
-                              <button
-                                onClick={() => {
-                                  if (selectedDate) {
+                              onClick={() => {
+                                if (selectedStaffName) {
+                                  // If in Week Mode and Date Selected, use it. Otherwise standard assign.
+                                  if (viewMode === 'week' && selectedDate) {
                                     onAssignTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
                                   } else {
-                                    alert("Lütfen sağdaki takvimden bir gün seçin.");
+                                    onAssignTask(task.id, selectedStaffName, selectedStaffEmail);
                                   }
-                                }}
-                                className={`p-1.5 rounded-md transition-colors flex-shrink-0 text-white ${selectedDate ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
-                                title={selectedDate ? `${selectedDate.toLocaleDateString('tr-TR')} Tarihine Ata` : "Önce Takvimden Gün Seçin"}
-                                disabled={!selectedDate}
-                              >
-                                <Calendar className="w-4 h-4" />
-                              </button>
-                            )}
+                                }
+                              }}
+                              disabled={!selectedStaffName}
+                              className={`p-1.5 rounded-md transition-colors flex-shrink-0 text-white ${viewMode === 'week' && selectedDate ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-blue-600 hover:bg-blue-500'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                              title={viewMode === 'week' && selectedDate ? `${selectedDate.toLocaleDateString('tr-TR')} Tarihine Ata` : "Personele Ata (Havuz)"}
+                            >
+                              {viewMode === 'week' && selectedDate ? <Calendar className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                            </button>
                           </div>
                         </div>
                       )))}
