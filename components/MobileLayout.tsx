@@ -127,10 +127,19 @@ export default function MobileLayout({
             filterDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
             hasSchedule = true;
         } else if (t.createdAt) {
-            // If no schedule, fallback to showing it (Backlog)
-            // Unless we want to treat createdAt as schedule if no separate schedule exists?
-            // User wants to decouple creation from scheduling.
-            // So if no explicit schedule, it is unscheduled -> Show it.
+            // Fallback: Check createdAt.
+            // If createdAt is in the FUTURE, it means it's a legacy scheduled task (where schedule overwrote creation).
+            // We must HIDE these too.
+            const d = new Date(t.createdAt.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
+            const today = new Date();
+            d.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
+            if (d.getTime() > today.getTime()) {
+                return false; // HIDE Future CreatedAt (Legacy Schedule)
+            }
+
+            // If Backlog (Past/Today), Show it.
             return true;
         } else {
             return true;
