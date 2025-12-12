@@ -333,23 +333,29 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                           </div>
 
                           <div className="flex flex-col gap-1">
-                            {/* Standard Assign Button - Context Aware */}
+                            {/* Atama Butonu (Tek Buton - Akıllı) */}
                             <button
                               onClick={() => {
-                                if (selectedStaffName) {
-                                  // If in Week Mode and Date Selected, use it. Otherwise standard assign.
-                                  if (viewMode === 'week' && selectedDate) {
-                                    onAssignTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
-                                  } else {
-                                    onAssignTask(task.id, selectedStaffName, selectedStaffEmail);
-                                  }
+                                if (!selectedStaffName) return;
+
+                                // Smart Assignment Logic for Main Tasks
+                                if (viewMode === 'week' && selectedDate) {
+                                  onAssignTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
+                                } else {
+                                  onAssignTask(task.id, selectedStaffName, selectedStaffEmail);
                                 }
                               }}
                               disabled={!selectedStaffName}
-                              className={`p-1.5 rounded-md transition-colors flex-shrink-0 text-white ${viewMode === 'week' && selectedDate ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-blue-600 hover:bg-blue-500'} disabled:opacity-50 disabled:cursor-not-allowed`}
-                              title={viewMode === 'week' && selectedDate ? `${selectedDate.toLocaleDateString('tr-TR')} Tarihine Ata` : "Personele Ata (Havuz)"}
+                              className={`p-1.5 rounded-md transition-colors flex-shrink-0 text-white 
+                                ${viewMode === 'week' && selectedDate
+                                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20'
+                                  : 'bg-blue-600 hover:bg-blue-500'}`}
+                              title={viewMode === 'week' && selectedDate
+                                ? `${selectedDate.toLocaleDateString('tr-TR')} Tarihine Ata`
+                                : "Personele Ata (Havuza)"}
                             >
-                              {viewMode === 'week' && selectedDate ? <Calendar className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                              {/* Always Arrow, but acts as calendar if date selected */}
+                              <ArrowRight className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -435,39 +441,34 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                             </div>
                           </div>
 
-                          {/* Assignment Button - Context Aware */}
+                          {/* Assignment Button - Context Aware Single Button */}
                           <div className="flex flex-col gap-1">
                             <button
-                              onClick={() => selectedStaffName && onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail)}
+                              onClick={() => {
+                                if (!selectedStaffName) return;
+
+                                // Smart Assignment Logic
+                                if (viewMode === 'week' && selectedDate) {
+                                  // If Week Mode AND Date Selected -> Assign to Date
+                                  onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
+                                } else {
+                                  // Otherwise -> Standard Assign (Backlog / No specific schedule)
+                                  onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail);
+                                }
+                              }}
                               disabled={!selectedStaffName}
-                              className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-1.5 rounded-md transition-colors flex-shrink-0 mt-1"
-                              title="Personele Ata (Havuz Tarihiyle)"
+                              className={`p-1.5 rounded-md transition-colors flex-shrink-0 mt-1 text-white 
+                                ${viewMode === 'week' && selectedDate
+                                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20'
+                                  : 'bg-purple-600 hover:bg-purple-500'}`}
+                              title={viewMode === 'week' && selectedDate
+                                ? `${selectedDate.toLocaleDateString('tr-TR')} Tarihine Ata`
+                                : "Personele Ata (Havuza)"}
                             >
+                              {/* Always show Arrow, per user request. Maybe add a small indicator if dated? */}
+                              {/* User said: "sadece ok işareti olsun takvim işaretinin görevini yapsın" */}
                               <ArrowRight className="w-4 h-4" />
                             </button>
-
-                            {/* Targeted Date Assignment (Only in Week Mode) */}
-                            {viewMode === 'week' && selectedStaffName && (
-                              <button
-                                onClick={() => {
-                                  // If a date is specifically selected, use it. Otherwise default to today or let user know?
-                                  // Better UX: Show this button ONLY if a date column is selected?
-                                  // For now, let's use the 'selectedDate' state if implemented, or just today.
-                                  // Wait, I need to implement selectedDate state first.
-                                  // Assuming selectedDate is available in scope (will add it).
-                                  if (selectedDate) {
-                                    onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
-                                  } else {
-                                    alert("Lütfen sağdaki takvimden bir gün seçin.");
-                                  }
-                                }}
-                                className={`p-1.5 rounded-md transition-colors flex-shrink-0 text-white ${selectedDate ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
-                                title={selectedDate ? `${selectedDate.toLocaleDateString('tr-TR')} Tarihine Ata` : "Önce Takvimden Gün Seçin"}
-                                disabled={!selectedDate}
-                              >
-                                <Calendar className="w-4 h-4" />
-                              </button>
-                            )}
                           </div>
                         </div>
                       )))}
