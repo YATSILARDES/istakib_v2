@@ -479,6 +479,9 @@ export default function App() {
     const currentPinned = appSettings.pinnedStaff || [];
     const newPinned = currentPinned.includes(name) ? currentPinned : [...currentPinned, name];
 
+    // OPTIMISTIC UPDATE
+    setAppSettings(prev => ({ ...prev, pinnedStaff: newPinned, staffList: newStaffList }));
+
     await handleSaveSettings({ ...appSettings, pinnedStaff: newPinned, staffList: newStaffList });
   };
 
