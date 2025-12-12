@@ -57,18 +57,33 @@ export default function MobileLayout({
         return title.includes(lowerQ) || address.includes(lowerQ) || phone.includes(lowerQ) || desc.includes(lowerQ);
     };
 
-    // Rename to avoid conflict if displayedTasks is defined later, or replace the later definition
-    // Actually, let's look at where displayedTasks was defined. It seems I inserted this block at line 46.
-    // I should probably use a unique name here and then use it in the JSX, OR replace the original definition.
-    // Let's use 'filteredMainTasks' here.
+    // Rename to avoid conflict
     const filteredMainTasks = myTasks.filter(t => {
         // Filter by Search
         if (!filterTask(t)) return false;
 
         // Filter by Date (Weekly Plan Logic)
         // Checks `scheduledDate` (new) or `date` (legacy string)
+        let taskDate: Date | null = null;
+
         if (t.scheduledDate) {
-            const taskDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+            taskDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+        } else if (t.date) {
+            // Handle legacy string date "YYYY-MM-DD" or "DD.MM.YYYY"
+            // Assuming standard ISO or Turkish format. Let's try to parse.
+            const d = new Date(t.date);
+            if (!isNaN(d.getTime())) {
+                taskDate = d;
+            } else {
+                // Try DD.MM.YYYY
+                const parts = t.date.split('.');
+                if (parts.length === 3) {
+                    taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                }
+            }
+        }
+
+        if (taskDate && !isNaN(taskDate.getTime())) {
             const today = new Date();
             taskDate.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0);
@@ -77,19 +92,20 @@ export default function MobileLayout({
             const isPast = taskDate.getTime() < today.getTime();
 
             // Show if Today OR (Past AND Not Completed)
-            // Assumption: Status other than GAS_OPENED, DEPOSIT_PAID, SERVICE_DIRECTED might be "incomplete"?
-            // For now, show ALL past tasks. User can filter by status column if needed.
             if (isToday) return true;
             if (isPast) return true; // Rollover
 
-            return false; // Future
+            return false; // Future -> HIDE
         }
 
+        // If NO Date at all, show it? Or hide?
+        // Existing logic was "Show".
         return true;
     }).sort((a, b) => {
         // Sort by Date (Scheduled > Created)
         const getDate = (t: Task) => {
             if (t.scheduledDate) return new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate).getTime();
+            if (t.date) { const d = new Date(t.date); if (!isNaN(d.getTime())) return d.getTime(); }
             return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
         };
         return getDate(a) - getDate(b);
