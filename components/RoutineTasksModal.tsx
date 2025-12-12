@@ -8,7 +8,7 @@ interface RoutineTasksModalProps {
   isOpen: boolean;
   onClose: () => void;
   tasks: RoutineTask[];
-  onAddTask: (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string) => void;
+  onAddTask: (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string, customDate?: string) => void;
   onToggleTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onConvertTask: (taskId: string, targetStatus: TaskStatus) => void;
@@ -33,6 +33,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [district, setDistrict] = useState('');
   const [city, setCity] = useState('');
+  const [customDate, setCustomDate] = useState(''); // YENİ: Tarih Seçimi
 
   // Edit State
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -63,7 +64,8 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
         setEditingTaskId(null);
       } else {
         // Add new task with empty assignee (unassigned pool)
-        onAddTask(newTaskContent, '', customerName, phoneNumber, address, locationCoordinates, district, city);
+        // Pass customDate to onAddTask
+        onAddTask(newTaskContent, '', customerName, phoneNumber, address, locationCoordinates, district, city, customDate);
       }
 
       // Reset Form
@@ -72,6 +74,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
       setPhoneNumber('');
       setAddress('');
       setLocationCoordinates('');
+      setCustomDate(''); // Reset date
     }
   };
 
@@ -84,6 +87,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
     setDistrict(task.district || '');
     setCity(task.city || '');
     setLocationCoordinates(task.locationCoordinates || '');
+    // Note: Editing date is not requested yet, skipping for now to keep it simple
     // Auto-open form when editing
     setIsAddFormExpanded(true);
   };
@@ -97,6 +101,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
     setDistrict('');
     setCity('');
     setLocationCoordinates('');
+    setCustomDate('');
   };
 
 
@@ -184,13 +189,14 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             ) : (
               <span className="text-[10px] text-slate-500 italic">Atanmadı</span>
             )}
-            <span className="text-[10px] text-slate-500">{new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}</span>
+            <span className="text-[10px] text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-700/50">
+              {/* Display Date prominently */}
+              {new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}
+            </span>
           </div>
         )}
 
-        {/* Dönüştürme UI (Sadece tamamlananlar veya özel durumlarda görünürdü ama burada opsiyonel yapabiliriz) */}
-        {/* Şu anki mantıkta sadece Tamamlananlarda gösteriyorduk ama aktiflerde de kişi kartı oluşturma butonu vardı. Her ikisine de ekleyelim mantıklıca. */}
-
+        {/* Dönüştürme UI ... */}
         {convertingTaskId === task.id ? (
           <div className="mt-2 p-2 bg-slate-800 border border-slate-700 rounded-lg animate-in fade-in slide-in-from-top-1">
             <p className="text-xs text-slate-300 mb-2 font-medium">Bu eksik için kart oluşturulacak:</p>
@@ -221,7 +227,6 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
           </div>
         ) : (
           <div className="mt-2">
-            {/* Sadece İsim veya Telefon varsa dönüştürme mantıklı olur. Hem aktif hem tamamlanmış için açık kalsın. */}
             {(task.customerName || task.phoneNumber) && (
               <button
                 onClick={() => handleStartConversion(task.id)}
@@ -390,8 +395,15 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                     </div>
                   )}
 
-                  {/* Üçüncü Satır: Eksik + Ekle Butonu */}
+                  {/* Üçüncü Satır: Eksik + Ekle Butonu + TARIH */}
                   <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="date"
+                      value={customDate}
+                      onChange={(e) => setCustomDate(e.target.value)}
+                      className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500 accent-purple-500"
+                      title="Ekleme Tarihi (Boş bırakılırsa bugün alınır)"
+                    />
                     <input
                       type="text"
                       placeholder="Eksik malzeme, yapılacak tamirat veya not girin... *"

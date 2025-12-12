@@ -18,7 +18,7 @@ import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermissio
 import { playNotificationSound } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { getToken, onMessage } from 'firebase/messaging'; // NEW
 import { messaging } from './src/firebase'; // NEW
 
@@ -351,8 +351,16 @@ export default function App() {
 
 
   // Handlers - Routine Tasks
-  const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string) => {
+  const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string, customDate?: string) => {
     try {
+      // Tarih belirleme: Custom varsa onu kullan (saat 12:00 olsun ki gün karışmasın), yoksa ServerTimestamp
+      let createdAtField = serverTimestamp();
+      if (customDate) {
+        const d = new Date(customDate);
+        d.setHours(12, 0, 0, 0); // Öğlen 12'ye sabitle
+        createdAtField = Timestamp.fromDate(d);
+      }
+
       await addDoc(collection(db, 'routine_tasks'), {
         content,
         assignee,
@@ -363,7 +371,7 @@ export default function App() {
         district: district || '',
         city: city || '',
         isCompleted: false,
-        createdAt: serverTimestamp(),
+        createdAt: createdAtField,
         createdBy: user?.email
       });
     } catch (e) {
