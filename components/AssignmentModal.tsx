@@ -322,6 +322,9 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                         <div key={task.id} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between group hover:border-slate-500 transition-colors">
                           <div>
                             <div className="font-medium text-slate-200 text-sm">{task.title}</div>
+                            {task.jobDescription && (
+                              <div className="text-[11px] text-slate-500 font-normal italic leading-tight mt-0.5">{task.jobDescription}</div>
+                            )}
                             <div className="flex items-center gap-2 mt-1">
                               {task.district && (
                                 <span className="text-[10px] bg-blue-900/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
@@ -550,7 +553,12 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                     </h4>
                     <div className="space-y-2">
                       {(!selectedStaffName || staffTasks.length === 0) && <p className="text-sm text-slate-600 italic">Bu personele atanmış müşteri işi yok.</p>}
-                      {staffTasks.map(task => (
+                      {staffTasks.filter(task => {
+                        if (!selectedDate) return true;
+                        if (!task.scheduledDate) return false;
+                        const d = new Date(task.scheduledDate.seconds ? task.scheduledDate.seconds * 1000 : task.scheduledDate);
+                        return d.toDateString() === selectedDate.toDateString();
+                      }).map(task => (
                         <div key={task.id} className="bg-slate-700/40 border border-slate-600/50 rounded-lg p-3 flex items-center justify-between group hover:border-red-500/30 transition-colors">
                           <button
                             onClick={() => onAssignTask(task.id, '', undefined)}
@@ -581,7 +589,21 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                     </h4>
                     <div className="space-y-2">
                       {(!selectedStaffName || staffRoutineTasks.length === 0) && <p className="text-sm text-slate-600 italic">Bu personele atanmış eksik yok.</p>}
-                      {staffRoutineTasks.map(task => (
+                      {staffRoutineTasks.filter(task => {
+                        if (!selectedDate) return true;
+                        // Routine Logic: Check Scheduled Date -> Then Legacy CreatedAt
+                        if (task.scheduledDate) {
+                          const d = new Date(task.scheduledDate.seconds ? task.scheduledDate.seconds * 1000 : task.scheduledDate);
+                          return d.toDateString() === selectedDate.toDateString();
+                        }
+                        if (task.createdAt) {
+                          const d = new Date(task.createdAt.seconds ? task.createdAt.seconds * 1000 : task.createdAt);
+                          // Handle Legacy Future CreatedAt Bug: Don't show if future?
+                          // Logic matches Calendar view:
+                          return d.toDateString() === selectedDate.toDateString();
+                        }
+                        return false;
+                      }).map(task => (
                         <div key={task.id} className="bg-slate-700/40 border border-slate-600/50 rounded-lg p-3 flex items-start justify-between group hover:border-red-500/30 transition-colors">
                           <button
                             onClick={() => onAssignRoutineTask(task.id, '', undefined)}
@@ -699,6 +721,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                           {/* Routine Tasks (Orange/Standard) */}
                           {dayRoutineTasks.map(t => (
                             <div key={t.id} className="bg-slate-700/80 border border-slate-600 rounded p-1.5 text-[10px] group relative hover:z-10 hover:shadow-lg transition-all">
+                              {t.customerName && <div className="font-bold text-blue-300 mb-0.5 truncate">{t.customerName}</div>}
                               <div className="line-clamp-3 text-slate-200 mb-1">{t.content}</div>
                               <div className="flex justify-between items-center opacity-60">
                                 <span className="text-[9px] text-purple-300">Eksik</span>
