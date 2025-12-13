@@ -26,6 +26,7 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({ userEmail, userName, 
 
                 try {
                     const { latitude, longitude, accuracy, heading, speed } = position.coords;
+                    console.log(`📍 Konum Güncellendi: ${latitude}, ${longitude} (${userEmail})`); // DEBUG
 
                     await setDoc(doc(db, 'user_locations', userEmail), {
                         lat: latitude,

@@ -9,11 +9,13 @@ import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
-    iconAnchor: [12, 41]
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -61,7 +63,20 @@ const StaffMap: React.FC = () => {
     const center = { lat: 39.9334, lng: 32.8597 }; // Ankara
 
     return (
-        <div className="w-full h-full rounded-xl overflow-hidden border border-slate-700 shadow-xl relative z-10">
+        <div className="w-full h-full rounded-xl overflow-hidden border border-slate-700 shadow-xl relative z-10 group">
+            {/* Info Overlay */}
+            <div className="absolute top-4 right-4 z-[500] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-lg shadow-2xl flex flex-col gap-1">
+                <span className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Aktif Personel: {locations.length}
+                </span>
+                {locations.length === 0 && (
+                    <span className="text-xs text-slate-400 max-w-[150px]">
+                        Henüz konum verisi alınamadı.
+                    </span>
+                )}
+            </div>
+
             <MapContainer
                 center={center}
                 zoom={6}
