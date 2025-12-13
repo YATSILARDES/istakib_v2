@@ -12,6 +12,7 @@ import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import MobileLayout from './components/MobileLayout';
 import MobileAdminPanel from './components/MobileAdminPanel';
+import LocationTracker from './components/LocationTracker';
 
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
 
@@ -699,6 +700,12 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1e293b] via-[#0f172a] to-[#020617] text-white font-sans selection:bg-blue-500/30">
+      <LocationTracker
+        userEmail={user?.email || null}
+        userName={user?.displayName || user?.email || null}
+        userRole={userPermissions?.role || null}
+      />
+
       {/* Header */}
       <header className="h-16 border-b border-white/10 bg-slate-900/60 backdrop-blur-md flex items-center justify-between px-6 shadow-2xl shadow-black/20 z-10 shrink-0">
         <div className="flex items-center gap-3">

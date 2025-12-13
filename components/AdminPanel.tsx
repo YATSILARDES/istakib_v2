@@ -3,7 +3,8 @@ import { db } from '@/src/firebase';
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
 import { UserPermission, AppSettings, Task, RoutineTask, TaskStatus, StatusLabels } from '../types';
 import * as XLSX from 'xlsx';
-import { User, Database, Bell, Download, Upload, Check, Plus, Trash2, Shield, Lock, Eye, AlertCircle, Save, X, Users, Loader2 } from 'lucide-react';
+import { User, Database, Bell, Download, Upload, Check, Plus, Trash2, Shield, Lock, Eye, AlertCircle, Save, X, Users, Loader2, Map as MapIcon } from 'lucide-react';
+import StaffMap from './StaffMap';
 
 interface AdminPanelProps {
     isOpen: boolean;
@@ -16,7 +17,7 @@ interface AdminPanelProps {
     onTasksUpdate: (newTasks: Task[]) => void;
 }
 
-type TabType = 'backup' | 'notifications' | 'permissions';
+type TabType = 'backup' | 'notifications' | 'permissions' | 'map';
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings, initialSettings, users, tasks, routineTasks, onTasksUpdate }) => {
     const [activeTab, setActiveTab] = useState<TabType>('backup');
@@ -400,6 +401,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
 
                         <div className="h-px bg-slate-700/50 my-2 mx-6" />
 
+                        <button onClick={() => setActiveTab('map')}
+                            className={`mx-3 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === 'map' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'text-slate-400 hover:bg-slate-800'}`}>
+                            <MapIcon className="w-5 h-5" /> Canlı Harita
+                        </button>
+
                         <button onClick={() => setActiveTab('permissions')}
                             className={`mx-3 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === 'permissions' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-slate-400 hover:bg-slate-800'}`}>
                             <Shield className="w-5 h-5" /> Personel Yetkileri
@@ -413,7 +419,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 relative">
+                    <div className="flex-1 overflow-auto bg-slate-900/50 p-6">
+                        {activeTab === 'map' && (
+                            <div className="h-full flex flex-col gap-4 animate-fadeIn">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <MapIcon className="w-6 h-6 text-indigo-500" /> Şantiye / Personel Haritası
+                                    </h2>
+                                    <span className="text-sm text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                                        Canlı veriler 30-60sn aralıklarla güncellenir
+                                    </span>
+                                </div>
+                                <div className="flex-1 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 relative">
+                                    <StaffMap />
+                                </div>
+                            </div>
+                        )}
+
                         {msg && (
                             <div className={`absolute top-6 right-6 z-50 px-4 py-3 rounded-xl text-white text-sm shadow-xl flex items-center justify-center font-medium animate-slideDown ${msg.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}>
                                 {msg.type === 'success' ? <Check className="w-5 h-5 mr-2" /> : <AlertCircle className="w-5 h-5 mr-2" />}
