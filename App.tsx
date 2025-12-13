@@ -915,8 +915,10 @@ export default function App() {
           const uniqueUsers = Array.from(allEmails).filter(Boolean);
           console.log("AdminPanel Users List:", uniqueUsers);
           return uniqueUsers;
+          return uniqueUsers;
         })()}
         tasks={tasks}
+        routineTasks={routineTasks}
         onTasksUpdate={setTasks}
       />
 
