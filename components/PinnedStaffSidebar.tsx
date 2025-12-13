@@ -154,8 +154,8 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
 
 
   return (
-    <div className="w-80 bg-slate-900 border-r border-slate-700 flex flex-col h-full overflow-hidden shadow-2xl z-20">
-      <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex items-center justify-between">
+    <div className="w-80 bg-slate-950/80 backdrop-blur-xl border-r border-white/5 flex flex-col h-full overflow-hidden shadow-2xl z-20">
+      <div className="p-4 border-b border-white/5 bg-slate-900/50 flex items-center justify-between">
         <div>
           <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
             <UserCircle className="w-4 h-4" />
@@ -165,7 +165,7 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="p-2 hover:bg-slate-700 text-red-400 hover:text-red-300 rounded-lg transition-colors flex items-center gap-2 border border-red-500/20 bg-red-500/10"
+          className="p-2 hover:bg-slate-800 text-red-400 hover:text-red-300 rounded-lg transition-colors flex items-center gap-2 border border-red-500/10 bg-red-500/5"
           title="Paneli Gizle"
         >
           <span className="text-[10px] font-bold">GİZLE</span>
@@ -192,10 +192,10 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
           const staffColorClass = getStaffColor(staffName);
 
           return (
-            <div key={staffName} className={`${staffColorClass} border rounded-lg overflow-hidden transition-all`}>
+            <div key={staffName} className={`${staffColorClass} border border-white/5 rounded-xl overflow-hidden transition-all shadow-md shadow-black/20`}>
               {/* Header */}
               <div
-                className={`flex items-center justify-between p-3 cursor-pointer hover:bg-slate-700/50 transition-colors ${isOpen ? 'bg-slate-800' : ''}`}
+                className={`flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 transition-colors ${isOpen ? 'bg-slate-900/50' : ''}`}
                 onClick={() => toggleStaff(staffName)}
               >
                 <div className="flex items-center gap-2 overflow-hidden">
@@ -224,7 +224,7 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
 
               {/* Content */}
               {isOpen && (
-                <div className="p-2 space-y-2 bg-slate-900/30 border-t border-slate-700/50">
+                <div className="p-2 space-y-2 bg-slate-950/30 border-t border-white/5">
                   {/* STANDARD TASKS SECTION (IF ANY) */}
                   {standard.length > 0 && (
                     <div className="space-y-1 mb-2">
@@ -234,19 +234,17 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
                           key={t.id}
                           onClick={() => onTaskClick(t)}
                           className={`
-                            p-2.5 rounded border transition-all cursor-pointer group
+                            p-3 rounded-xl border transition-all cursor-pointer group shadow-sm hover:translate-x-1
                             ${t.checkStatus === 'missing'
-                              ? 'bg-orange-900/40 border-orange-500/50 hover:border-orange-400 shadow-orange-900/10'
+                              ? 'bg-slate-900/90 border-l-2 border-l-orange-500 border-white/5 hover:border-orange-500/50'
                               : t.checkStatus === 'clean'
-                                ? 'bg-emerald-900/40 border-emerald-500/50 hover:border-emerald-400 shadow-emerald-900/10'
-                                : 'border-blue-500/20 bg-blue-900/10 hover:bg-blue-900/20 hover:border-blue-500/40'
+                                ? 'bg-slate-900/90 border-l-2 border-l-emerald-500 border-white/5 hover:border-emerald-500/50'
+                                : 'bg-slate-900/90 border-l-2 border-l-blue-500 border-white/5 hover:border-blue-500/50'
                             }
                           `}
                         >
                           <div className="flex items-start gap-2">
-                            <div className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.checkStatus === 'missing' ? 'bg-orange-400' :
-                              t.checkStatus === 'clean' ? 'bg-emerald-400' : 'bg-blue-400'
-                              }`} />
+                            {/* Dot REMOVED */}
                             <div className="flex-1 min-w-0">
                               <div className={`text-xs font-medium leading-snug ${t.checkStatus === 'missing' ? 'text-orange-100' :
                                 t.checkStatus === 'clean' ? 'text-emerald-100' : 'text-blue-100'
@@ -272,7 +270,10 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
                     <div className="space-y-1">
                       {standard.length > 0 && <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest pl-1 mt-3">Eksikler / Notlar</div>}
                       {routine.map(t => (
-                        <div key={t.id} className={`p-2.5 rounded border transition-all ${t.isCompleted ? 'bg-slate-800/40 border-slate-700 opacity-60' : 'bg-slate-800 border-slate-600 hover:border-blue-500/50'}`}>
+                        <div key={t.id} className={`p-3 rounded-xl border transition-all hover:translate-x-1 ${t.isCompleted
+                          ? 'bg-slate-900/40 border-slate-800 opacity-50'
+                          : 'bg-slate-900/90 border-l-2 border-l-purple-500 border-white/5'
+                          }`}>
                           <div className="flex items-start gap-2.5">
                             <button
                               onClick={() => onToggleRoutineTask(t.id)}
