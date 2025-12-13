@@ -697,9 +697,9 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-900 text-white font-sans">
+    <div className="flex flex-col h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1e293b] via-[#0f172a] to-[#020617] text-white font-sans selection:bg-blue-500/30">
       {/* Header */}
-      <header className="h-16 border-b border-slate-700 bg-slate-800 flex items-center justify-between px-6 shadow-lg z-10 shrink-0">
+      <header className="h-16 border-b border-white/10 bg-slate-900/60 backdrop-blur-md flex items-center justify-between px-6 shadow-2xl shadow-black/20 z-10 shrink-0">
         <div className="flex items-center gap-3">
           {/* Sidebar Toggle Button - Admin ve Yönetici için */}
           {hasAdminAccess && (
@@ -770,7 +770,7 @@ export default function App() {
         {/* Sidebar (Pinned Staff) - ADMIN VE YÖNETİCİ İÇİN */}
         {hasAdminAccess && (
           <div
-            className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-slate-900 relative z-20 overflow-hidden ${isSidebarOpen ? 'w-[320px] border-r border-slate-700 opacity-100' : 'w-0 opacity-0'
+            className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-slate-900/80 backdrop-blur-xl border-r border-white/5 relative z-20 overflow-hidden ${isSidebarOpen ? 'w-[320px] opacity-100' : 'w-0 opacity-0'
               }`}
           >
             {/* Fixed width inner container to prevent squashing during transition */}
@@ -793,9 +793,9 @@ export default function App() {
 
 
         {/* Board Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800 transition-all duration-300">
+        <div className="flex-1 flex flex-col min-w-0 bg-transparent transition-all duration-300">
           {/* Toolbar */}
-          <div className="px-6 py-4 flex items-center justify-between border-b border-slate-800/50">
+          <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-slate-900/20">
             <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
               Günlük Operasyon
               <span className="text-xs text-red-500 font-bold border border-red-500 px-1 rounded">(V3.0 YENİ)</span>
