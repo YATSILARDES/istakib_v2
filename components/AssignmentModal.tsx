@@ -49,7 +49,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
   });
 
   // Weekly Planning State
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); // Default to today
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null); // Default to null (No date selected)
 
   // COLLAPSIBLE SECTIONS STATE (Mobile Focus)
   const [isMainTasksExpanded, setIsMainTasksExpanded] = useState(true);
@@ -342,8 +342,12 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                                 if (!selectedStaffName) return;
 
                                 // Smart Assignment Logic for Main Tasks
-                                if (viewMode === 'week' && selectedDate) {
-                                  onAssignTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
+                                if (viewMode === 'week') {
+                                  if (selectedDate) {
+                                    onAssignTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
+                                  } else {
+                                    alert("Lütfen önce sağdaki takvimden proje/tarih seçiniz!");
+                                  }
                                 } else {
                                   onAssignTask(task.id, selectedStaffName, selectedStaffEmail);
                                 }
@@ -451,9 +455,12 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                                 if (!selectedStaffName) return;
 
                                 // Smart Assignment Logic
-                                if (viewMode === 'week' && selectedDate) {
-                                  // If Week Mode AND Date Selected -> Assign to Date
-                                  onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
+                                if (viewMode === 'week') {
+                                  if (selectedDate) {
+                                    onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail, selectedDate);
+                                  } else {
+                                    alert("Lütfen önce sağdaki takvimden gün seçiniz!");
+                                  }
                                 } else {
                                   // Otherwise -> Standard Assign (Backlog / No specific schedule)
                                   onAssignRoutineTask(task.id, selectedStaffName, selectedStaffEmail);
