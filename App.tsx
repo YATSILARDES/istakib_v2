@@ -690,6 +690,7 @@ export default function App() {
             isOpen={isModalOpen}
             nextOrderNumber={tasks.length + 1}
             isAdmin={isAdmin}
+            existingTasks={tasks}
           />
         )}
       </>
@@ -869,6 +870,7 @@ export default function App() {
           isOpen={isModalOpen}
           nextOrderNumber={tasks.length + 1}
           isAdmin={isAdmin}
+          existingTasks={tasks}
         />
       )}
 

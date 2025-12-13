@@ -13,11 +13,12 @@ interface TaskModalProps {
   task?: Task; // If provided, we are editing
   nextOrderNumber: number;
   isAdmin?: boolean; // Yönetici yetkisi
+  existingTasks: Task[]; // Duplicate check için
 }
 
 type TabType = 'personal' | 'service' | 'control';
 
-const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete, task, nextOrderNumber, isAdmin = false }) => {
+const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete, task, nextOrderNumber, isAdmin = false, existingTasks }) => {
   const [activeTab, setActiveTab] = useState<TabType>('personal');
   const [formData, setFormData] = useState<Partial<Task>>({
     title: '',
@@ -88,6 +89,21 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Duplicate Check
+    if (formData.title) {
+      const duplicate = existingTasks.find(t =>
+        t.title.trim().toLowerCase() === formData.title?.trim().toLowerCase() &&
+        t.id !== task?.id // Id eşleşmesi düzenleme modunda kendi referansını hariç tutar
+      );
+
+      if (duplicate) {
+        if (!confirm('Aynı isimde kayıtlı kişi bulunmaktadır. Yine de kaydedilsin mi?')) {
+          return;
+        }
+      }
+    }
+
     onSave(formData);
     onClose();
   };
