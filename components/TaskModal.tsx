@@ -38,7 +38,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     gasNote: '',
     serviceSerialNumber: '',
     serialNumberImage: '',
-    serviceNote: ''
+    serviceNote: '',
+    isProjectDrawn: false
   });
 
   const [isDeleting, setIsDeleting] = useState(false);
@@ -80,7 +81,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         gasNote: '',
         serviceSerialNumber: '',
         serialNumberImage: '',
-        serviceNote: ''
+        serviceNote: '',
+        isProjectDrawn: false
       });
     }
   }, [task, isOpen, nextOrderNumber]);

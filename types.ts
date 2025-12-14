@@ -47,6 +47,7 @@ export interface Task {
   createdAt?: any;
   scheduledDate?: any; // Atanan Tarih (Firestore Timestamp)
   isCheckVerified?: boolean;
+  isProjectDrawn?: boolean; // Proje Çizildi Durumu
 }
 
 export interface AudioConfig {

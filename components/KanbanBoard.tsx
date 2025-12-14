@@ -299,7 +299,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         ? 'bg-slate-800/90 border-l-4 border-l-orange-500 border-white/5 hover:border-orange-500/50'
                         : task.checkStatus === 'clean'
                           ? 'bg-slate-800/90 border-l-4 border-l-emerald-500 border-white/5 hover:border-emerald-500/50'
-                          : 'bg-slate-800/90 border-l-4 border-l-slate-600 border-white/5 hover:border-blue-500/50 hover:border-l-blue-500'
+                          : (!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED)
+                            ? 'bg-slate-800/90 border-l-4 border-l-orange-500 border-white/5 hover:border-orange-500/50 shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]'
+                            : 'bg-slate-800/90 border-l-4 border-l-slate-600 border-white/5 hover:border-blue-500/50 hover:border-l-blue-500'
                       }
                     `}
                   >
@@ -312,11 +314,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
                     {/* Title */}
                     <h4 className={`font-medium text-sm leading-snug pr-8 mb-1.5 ${task.checkStatus === 'missing' ? 'text-orange-100' :
-                      task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-slate-200'
+                      task.checkStatus === 'clean' ? 'text-emerald-100' :
+                        (!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED) ? 'text-orange-100' : 'text-slate-200'
                       }`}>
                       {task.title}
                       {task.jobDescription && <span className="ml-2 text-xs font-normal opacity-60 italic">({task.jobDescription})</span>}
                     </h4>
+
+                    {/* PROJECT MISSING BADGE */}
+                    {(!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED) && (
+                      <div className="mb-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500 text-white animate-pulse">
+                        PROJE EKSİK
+                      </div>
+                    )}
 
                     {/* Address Only - Compact */}
                     {task.address && (
