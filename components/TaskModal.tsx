@@ -345,6 +345,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                       </div>
                     </div>
 
+                    <div className="flex items-center gap-2 p-3 bg-slate-700/30 rounded-lg border border-slate-600/50">
+                      <input
+                        type="checkbox"
+                        checked={formData.isProjectDrawn || false}
+                        onChange={(e) => setFormData({ ...formData, isProjectDrawn: e.target.checked })}
+                        className="w-4 h-4 rounded border-slate-600 text-blue-600 focus:ring-blue-500 bg-slate-700 cursor-pointer"
+                        id="projectDrawn"
+                      />
+                      <label htmlFor="projectDrawn" className="text-sm font-medium text-slate-300 select-none cursor-pointer flex-1">
+                        Proje Çizildi
+                      </label>
+                    </div>
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-400">Adres</label>
                       <div className="relative">
