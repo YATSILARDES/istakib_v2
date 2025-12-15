@@ -74,7 +74,14 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
 
   // Verileri Filtrele
   const unassignedTasks = useMemo(() =>
-    tasks.filter(t => t.status === TaskStatus.TO_CHECK && (!t.assignee || t.assignee.trim() === '' || t.assignee === 'Atanmadı')),
+    tasks.filter(t =>
+      // Status can be TO_CHECK or DEPOSIT_PAID (Wait for Check OR Deposit Paid but not Checked yet)
+      (t.status === TaskStatus.TO_CHECK || t.status === TaskStatus.DEPOSIT_PAID) &&
+      // Must NOT have a completed check status (color) -> "Renk Atanmamış"
+      (!t.checkStatus) &&
+      // Must be unassigned
+      (!t.assignee || t.assignee.trim() === '' || t.assignee === 'Atanmadı')
+    ),
     [tasks]);
 
   const unassignedRoutineTasks = useMemo(() =>
