@@ -116,7 +116,7 @@ const LocationPreviewModal: React.FC<LocationPreviewModalProps> = ({ isOpen, onC
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-0 bg-slate-100 relative min-h-[350px] mt-4">
+                <div className="w-full h-[400px] bg-slate-100 relative mt-4">
                     {mode === 'auto' ? (
                         <>
                             {loading ? (
