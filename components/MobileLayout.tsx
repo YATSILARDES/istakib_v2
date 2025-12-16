@@ -226,7 +226,11 @@ export default function MobileLayout({
     const handleShareTask = async (task: Task, e: React.MouseEvent) => {
         e.stopPropagation();
         const cleanAddress = (task.address || '').replace(/https?:\/\/[^\s]+/g, '').trim();
-        let shareText = `👤 ${task.title}\n📞 ${task.phone || 'Telefon Yok'}\n🏠 ${cleanAddress || 'Adres Yok'}`;
+        let addressLine = cleanAddress;
+        if (task.district) addressLine += ` / ${task.district}`;
+        if (task.city) addressLine += ` / ${task.city}`;
+
+        let shareText = `👤 ${task.title}\n📞 ${task.phone || 'Telefon Yok'}\n🏠 ${addressLine || 'Adres Yok'}`;
 
         if (task.locationCoordinates) {
             shareText += `\n\n📍 Konum:\n${task.locationCoordinates}`;
