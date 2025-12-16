@@ -129,7 +129,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     // Adres alanından olası URL'leri temizle (Eski kayıtlardan kalma)
     const cleanAddress = (formData.address || '').replace(/https?:\/\/[^\s]+/g, '').trim();
 
-    let shareText = `👤 ${formData.title}\n📞 ${formData.phone || 'Telefon Yok'}\n🏠 ${cleanAddress || 'Adres Yok'}`;
+    let addressLine = cleanAddress;
+    if (formData.district) addressLine += ` / ${formData.district}`;
+    if (formData.city) addressLine += ` / ${formData.city}`;
+
+    let shareText = `👤 ${formData.title}\n📞 ${formData.phone || 'Telefon Yok'}\n🏠 ${addressLine || 'Adres Yok'}`;
 
     if (formData.locationCoordinates) {
       shareText += `\n\n📍 Konum:\n${formData.locationCoordinates}`;
