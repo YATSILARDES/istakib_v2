@@ -164,12 +164,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       className={`
                         p-3.5 rounded-xl border transition-all cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5
                         ${t.checkStatus === 'missing'
-                          ? 'bg-white border-l-4 border-l-orange-500 border-slate-200 hover:border-orange-500/50'
+                          ? 'bg-slate-200 border-l-4 border-l-orange-500 border-slate-300 hover:border-orange-500/50'
                           : t.checkStatus === 'clean'
-                            ? 'bg-white border-l-4 border-l-emerald-500 border-slate-200 hover:border-emerald-500/50'
-                            : 'bg-white border-l-4 border-l-blue-500 border-slate-200 hover:border-blue-500/50'
+                            ? 'bg-slate-200 border-l-4 border-l-emerald-500 border-slate-300 hover:border-emerald-500/50'
+                            : 'bg-slate-200 border-l-4 border-l-blue-500 border-slate-300 hover:border-blue-500/50'
                         }
                       `}
+
                     >
                       <div className="flex items-start gap-3">
                         {/* <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" /> REMOVED Dot, using Border-L instead for cleaner look */}
@@ -198,8 +199,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   {filteredStandard.length > 0 && <div className="text-[10px] font-bold text-purple-600 uppercase tracking-widest pl-1 pt-2 border-t border-slate-200">Eksikler / Notlar ({filteredRoutine.length})</div>}
                   {filteredRoutine.map(t => (
                     <div key={t.id} className={`flex flex-col gap-2 p-3.5 rounded-xl border transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 ${t.isCompleted
-                      ? 'bg-slate-50 border-slate-200 text-slate-400 opacity-60'
-                      : 'bg-white border-slate-200 hover:border-purple-500/30'
+                      ? 'bg-slate-100 border-slate-300 text-slate-500 opacity-60'
+                      : 'bg-slate-200 border-slate-300 hover:border-purple-500/30'
                       }`}>
                       <div className="flex items-start gap-3">
                         <button
@@ -296,12 +297,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     className={`
                       px-3.5 py-3.5 rounded-xl border transition-all cursor-pointer group relative shadow-sm hover:shadow-md hover:-translate-y-0.5
                       ${task.checkStatus === 'missing'
-                        ? 'bg-white border-l-4 border-l-orange-500 border-slate-200 hover:border-orange-500/50'
+                        ? 'bg-slate-200 border-l-4 border-l-orange-500 border-slate-300 hover:border-orange-500/50'
                         : task.checkStatus === 'clean'
-                          ? 'bg-white border-l-4 border-l-emerald-500 border-slate-200 hover:border-emerald-500/50'
+                          ? 'bg-slate-200 border-l-4 border-l-emerald-500 border-slate-300 hover:border-emerald-500/50'
                           : (!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED)
-                            ? 'bg-white border-l-4 border-l-orange-500 border-slate-200 hover:border-orange-500/50 shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]'
-                            : 'bg-white border-l-4 border-l-slate-300 border-slate-200 hover:border-blue-500/50 hover:border-l-blue-500'
+                            ? 'bg-slate-200 border-l-4 border-l-orange-500 border-slate-300 hover:border-orange-500/50 shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]'
+                            : 'bg-slate-200 border-l-4 border-l-slate-400 border-slate-300 hover:border-blue-500/50 hover:border-l-blue-500'
                       }
                     `}
                   >
