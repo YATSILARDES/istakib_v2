@@ -307,20 +307,23 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     `}
                   >
                     {/* Row Number Badge - Compact */}
-                    <div className={`absolute top-2 right-2 text-[10px] font-mono font-bold opacity-60 ${task.checkStatus === 'missing' ? 'text-orange-500' :
-                      task.checkStatus === 'clean' ? 'text-emerald-500' : 'text-slate-400'
+                    <div className={`absolute top-2 right-2 text-[10px] font-mono font-bold opacity-75 ${task.checkStatus === 'missing' ? 'text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded' :
+                      task.checkStatus === 'clean' ? 'text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded' : 'text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded'
                       }`}>
                       #{task.orderNumber}
                     </div>
 
                     {/* Title */}
-                    <h4 className={`font-medium text-sm leading-snug pr-8 mb-1.5 ${task.checkStatus === 'missing' ? 'text-orange-700' :
-                      task.checkStatus === 'clean' ? 'text-emerald-700' :
-                        (!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED) ? 'text-orange-700' : 'text-slate-700'
-                      }`}>
+                    <h4 className="font-bold text-sm leading-snug pr-8 mb-1 text-slate-800 group-hover:text-blue-700 transition-colors">
                       {task.title}
-                      {task.jobDescription && <span className="ml-2 text-xs font-normal opacity-60 italic text-slate-500">({task.jobDescription})</span>}
                     </h4>
+
+                    {/* Job Description - Colorful */}
+                    {task.jobDescription && (
+                      <div className="mb-2 text-xs font-semibold text-indigo-600 truncate">
+                        {task.jobDescription}
+                      </div>
+                    )}
 
                     {/* PROJECT MISSING BADGE */}
                     {(!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED) && (
@@ -329,13 +332,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       </div>
                     )}
 
-                    {/* Address Only - Compact */}
+                    {/* Address - Colorful */}
                     {task.address && (
-                      <div className={`flex items-center gap-1.5 text-xs ${task.checkStatus === 'missing' ? 'text-orange-600/70' :
-                        task.checkStatus === 'clean' ? 'text-emerald-600/70' : 'text-slate-500'
-                        }`}>
-                        <MapPin className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate max-w-[200px] text-inherit">{task.address}</span>
+                      <div className="flex items-center gap-1.5 text-xs text-sky-700 font-medium bg-sky-50/50 p-1 -ml-1 rounded-lg">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-sky-500" />
+                        <span className="truncate max-w-[200px]">{task.address}</span>
                       </div>
                     )}
                   </div>
