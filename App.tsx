@@ -698,15 +698,15 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1e293b] via-[#0f172a] to-[#020617] text-white font-sans selection:bg-blue-500/30">
+    <div className="flex flex-col h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-500/30">
       {/* Header */}
-      <header className="h-16 border-b border-white/10 bg-slate-900/60 backdrop-blur-md flex items-center justify-between px-6 shadow-2xl shadow-black/20 z-10 shrink-0">
+      <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 shadow-sm z-10 shrink-0">
         <div className="flex items-center gap-3">
           {/* Sidebar Toggle Button - Admin ve Yönetici için */}
           {hasAdminAccess && (
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
+              className="p-2 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-800 transition-colors"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -716,17 +716,17 @@ export default function App() {
             <Layout className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-tight">ONAY MÜHENDİSLİK</h1>
-            <p className="text-xs text-slate-400">İş Takip V2</p>
+            <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
+            <p className="text-xs text-slate-500">İş Takip V2</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="bg-slate-800/50 rounded-full px-3 py-1.5 border border-slate-700/50 flex items-center gap-3">
+          <div className="bg-slate-100 rounded-full px-3 py-1.5 border border-slate-200 flex items-center gap-3">
             {!connected ? (
               <button
                 onClick={connectToGemini}
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
                 title="Sesli Asistanı Başlat"
               >
                 <MicOff className="w-4 h-4" />
@@ -735,7 +735,7 @@ export default function App() {
             ) : (
               <button
                 onClick={disconnect}
-                className="flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors animate-pulse"
+                className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors animate-pulse"
                 title="Bağlantıyı Kes"
               >
                 <Mic className="w-4 h-4" />
@@ -748,7 +748,7 @@ export default function App() {
           {hasAdminAccess && (
             <button
               onClick={() => setIsAdminPanelOpen(true)}
-              className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
+              className="p-2 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-800 transition-colors"
               title="Yönetici Paneli"
             >
               <Settings className="w-5 h-5" />
@@ -757,7 +757,7 @@ export default function App() {
 
           <button
             onClick={handleSignOut}
-            className="p-2 hover:bg-slate-700 rounded-full transition-colors text-slate-400 hover:text-white"
+            className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500 hover:text-slate-800"
             title="Çıkış Yap"
           >
             <LogOut className="w-5 h-5" />
@@ -771,7 +771,7 @@ export default function App() {
         {/* Sidebar (Pinned Staff) - ADMIN VE YÖNETİCİ İÇİN */}
         {hasAdminAccess && (
           <div
-            className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-slate-900/80 backdrop-blur-xl border-r border-white/5 relative z-20 overflow-hidden ${isSidebarOpen ? 'w-[320px] opacity-100' : 'w-0 opacity-0'
+            className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-white/80 backdrop-blur-xl border-r border-slate-200 relative z-20 overflow-hidden ${isSidebarOpen ? 'w-[320px] opacity-100' : 'w-0 opacity-0'
               }`}
           >
             {/* Fixed width inner container to prevent squashing during transition */}
@@ -796,8 +796,8 @@ export default function App() {
         {/* Board Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-transparent transition-all duration-300">
           {/* Toolbar */}
-          <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-slate-900/20">
-            <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+          <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-slate-50/50">
+            <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
               Günlük Operasyon
               <span className="text-xs text-red-500 font-bold border border-red-500 px-1 rounded">(V3.0 YENİ)</span>
               {userPermissions && (
