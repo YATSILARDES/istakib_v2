@@ -318,9 +318,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       {task.title}
                     </h4>
 
-                    {/* Job Description - Colorful */}
+                    {/* Job Description - Fainter Tone */}
                     {task.jobDescription && (
-                      <div className="mb-2 text-xs font-semibold text-indigo-600 truncate">
+                      <div className="mb-2 text-xs font-medium text-slate-500/80 truncate">
                         {task.jobDescription}
                       </div>
                     )}
