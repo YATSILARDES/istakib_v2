@@ -754,7 +754,7 @@ function App() {
                   {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
                     <button
                       onClick={() => setActiveTab('routine_pool' as any)}
-                      className={`bg-purple-600/10 hover:bg-purple-600/20 text-purple-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-purple-200 ${activeTab === 'routine_pool' ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
+                      className={`bg-purple-600/10 hover:bg-purple-600/20 text-purple-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-purple-200 ${(activeTab as string) === 'routine_pool' ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
                     >
                       <Bell className="w-4 h-4" />
                       Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks) ? routineTasks.filter(t => !t.isCompleted).length : visibleRoutineTasks.filter(t => !t.isCompleted).length})
@@ -763,7 +763,7 @@ function App() {
                   {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
                     <button
                       onClick={() => setActiveTab('assignment' as any)}
-                      className={`bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-blue-200 ${activeTab === 'assignment' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                      className={`bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-blue-200 ${(activeTab as string) === 'assignment' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
                     >
                       <Users className="w-4 h-4" />
                       Görev Dağıtımı
