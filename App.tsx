@@ -5,8 +5,6 @@ import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
 import PinnedStaffSidebar from './components/PinnedStaffSidebar';
-import RoutineTasksModal from './components/RoutineTasksModal';
-import AssignmentModal from './components/AssignmentModal';
 
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
@@ -25,34 +23,26 @@ import { playNotificationSound } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { getToken, onMessage } from 'firebase/messaging'; // NEW
-import { messaging } from './src/firebase'; // NEW
+import { getToken, onMessage } from 'firebase/messaging';
+import { messaging } from './src/firebase';
 
-// Yöneticiler Listesi
-const ADMIN_EMAILS = ['caner192@hotmail.com'];
+const ADMIN_EMAILS = ['canercelik1994@gmail.com', 'admin@onaymuhendislik.com', 'demo@onay.com'];
 
-// ... Tool Definitions ...
-
-export default function App() {
+function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [routineTasks, setRoutineTasks] = useState<RoutineTask[]>([]); // Rutin İşler
-  const [userPermissions, setUserPermissions] = useState<UserPermission | null>(null); // Permission Logic
-
-  // Responsive State
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Admin Sidebar State
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [routineTasks, setRoutineTasks] = useState<RoutineTask[]>([]);
+  const [userPermissions, setUserPermissions] = useState<UserPermission | null>(null);
+
+  // UI State
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // REMOVED: isRoutineModalOpen, isAssignmentModalOpen -> handled by activeTab
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
 
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
@@ -60,7 +50,7 @@ export default function App() {
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
 
   // Dashboard & Navigation State
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'kanban' | 'assignment' | 'routine_pool'>('dashboard');
   const [viewMode, setViewMode] = useState<'dashboard' | 'board' | 'split'>('dashboard');
   const [boardFilter, setBoardFilter] = useState<TaskStatus | undefined>(undefined);
   const [isMissingFilterActive, setIsMissingFilterActive] = useState(false);
@@ -82,12 +72,12 @@ export default function App() {
         setAppSettings({
           notifications: data.notifications || {},
           pinnedStaff: data.pinnedStaff || [],
-          staffList: data.staffList || [] // Include staffList!
+          staffList: data.staffList || []
         });
       }
     });
     return () => unsubscribe();
-  }, []);  // ... (Rest of useEffects same as before) ...
+  }, []);
 
   // Notification Logic
   useEffect(() => {
@@ -100,21 +90,10 @@ export default function App() {
           const task = change.doc.data() as Task;
           // FIX: Include both configured notification emails AND the assigned staff email
           const configuredEmails = appSettings.notifications?.[task.status] || [];
-          const assigneeEmail = task.assigneeEmail;
-
-          // Combine and deduplicate
+          // Assignee removed from standard notifications in V2 as per updated logic to notify specific people or admin
           const allTargetEmails = [...configuredEmails];
-          // REMOVED: Assignee automatic inclusion. Now only explicitly configured users get notifications.
-          // if (assigneeEmail && !allTargetEmails.includes(assigneeEmail)) {
-          //   allTargetEmails.push(assigneeEmail);
-          // }
 
           if (allTargetEmails.length > 0) {
-            console.log(`Bildirim gönderiliyor (Config + Assignee): ${allTargetEmails.join(', ')} -> ${task.title} - ${task.status}`);
-
-            // HERKES (veya admin) için genel bildirim yerine, SADECE ilgili kişiye bildirim gönderelim.
-            // Önceki kodda herkese toast mesajı gösteriliyordu, bu yüzden admin de görüyordu.
-
             const currentUserEmail = user.email?.toLowerCase() || '';
             const normalizedTargetEmails = allTargetEmails.map(e => e.toLowerCase());
 
@@ -139,12 +118,6 @@ export default function App() {
 
               // 3. Sesli Bildirim
               playNotificationSound();
-            } else {
-              // Hedef kişi DEĞİLSEK ama yöneticiysek yine de görelim mi? 
-              // Kullanıcı isteğine göre: "Admin olarak bana hep geliyor" -> İstenen bu mu? 
-              // Hayır, "atadığım kişiye gelmiyor" diyor. Demek ki asıl sorun diğer kişi.
-              // Ama admin paneli açık olduğu için admin tüm değişiklikleri dinliyor.
-              console.log('Bu bildirim benim için değil:', currentUserEmail);
             }
           }
         }
@@ -170,34 +143,25 @@ export default function App() {
     }
   };
 
-  // Audio Refs & Gemini
-
-
   // Auth Listener & Notifications
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setLoading(false);
 
-      // Notification Logic (Run only if user is logged in)
       if (currentUser) {
         try {
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
-            console.log('Notification permission granted.');
-
             if ('serviceWorker' in navigator) {
               const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-              console.log('Service Worker registered:', registration.scope);
 
-              // Get Token with VAPID Key
               const token = await getToken(messaging, {
                 vapidKey: "BAURdcxGoBuc1kI8ImEAu1epIqemw2Lg3zys-O4R9qg175P6l5ycnlGWMx84elDgQDgd8RNBISqdJm59s5mdSmY",
                 serviceWorkerRegistration: registration
               });
 
               if (token) {
-                console.log("FCM Token:", token);
                 await setDoc(doc(db, 'fcm_tokens', currentUser.email!), {
                   token,
                   email: currentUser.email,
@@ -213,7 +177,6 @@ export default function App() {
       }
     });
 
-    // Foreground Message Handler
     onMessage(messaging, (payload) => {
       console.log('Message received. ', payload);
       setToast({ message: payload.notification?.title || 'Yeni Bildirim', visible: true });
@@ -247,11 +210,10 @@ export default function App() {
       setRoutineTasks(fetchedRoutine);
     });
 
-    // PERMISSIONS LOGIC (NEW ROBUST SYSTEM)
+    // PERMISSIONS LOGIC
     let unsubPerm = () => { };
     if (user && user.email) {
       if (ADMIN_EMAILS.includes(user.email)) {
-        // Admin her zaman full yetkili
         setUserPermissions({
           email: user.email,
           name: 'Admin',
@@ -262,18 +224,16 @@ export default function App() {
           canAddCustomers: true
         });
       } else {
-        // Staff için Firestore dinle
         const emailLower = user.email.toLowerCase();
         unsubPerm = onSnapshot(doc(db, 'permissions', emailLower), (docSnap) => {
           if (docSnap.exists()) {
             setUserPermissions(docSnap.data() as UserPermission);
           } else {
-            // Kayıt yoksa hiçbir şeyi göremez
             setUserPermissions({
               email: emailLower,
               name: '',
               role: 'staff',
-              allowedColumns: [], // Göremez
+              allowedColumns: [],
               canAccessRoutineTasks: false,
               canAccessAssignment: false,
               canAddCustomers: false
@@ -365,11 +325,10 @@ export default function App() {
   // Handlers - Routine Tasks
   const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string, customDate?: string) => {
     try {
-      // Tarih belirleme: Custom varsa onu kullan (saat 12:00 olsun ki gün karışmasın), yoksa ServerTimestamp
       let createdAtField = serverTimestamp();
       if (customDate) {
         const d = new Date(customDate);
-        d.setHours(12, 0, 0, 0); // Öğlen 12'ye sabitle
+        d.setHours(12, 0, 0, 0);
         createdAtField = Timestamp.fromDate(d);
       }
 
@@ -429,14 +388,13 @@ export default function App() {
       const routineTask = routineTasks.find(t => t.id === taskId);
       if (!routineTask) return;
 
-      // 1. Yeni Task Oluştur
       await addDoc(collection(db, 'tasks'), {
         orderNumber: nextOrderNumber,
         title: routineTask.customerName || 'İsimsiz Müşteri',
-        jobDescription: '', // Kullanıcı isteği: Eksik içeriği buraya GELMESİN
-        description: '', // Kullanıcı isteği: Notlara da GELMESİN
+        jobDescription: '',
+        description: '',
         status: targetStatus,
-        assignee: '', // Atamasız başlasın
+        assignee: '',
         date: new Date().toISOString(),
         address: routineTask.address || '',
         locationCoordinates: routineTask.locationCoordinates || '',
@@ -444,15 +402,10 @@ export default function App() {
         generalNote: '',
         teamNote: '',
         checkStatus: null,
-        gasOpeningDate: '',
-        gasNote: '',
-        serviceSerialNumber: '',
-        serviceNote: '',
         createdBy: user?.email,
         createdAt: serverTimestamp()
       });
 
-      // 2. Eski RoutineTask'i Sil
       await deleteDoc(doc(db, 'routine_tasks', taskId));
 
       setToast({ message: 'Eksik başarıyla karta dönüştürüldü.', visible: true });
@@ -471,7 +424,6 @@ export default function App() {
       const updateData: any = { assignee, assigneeEmail: assigneeEmail || null, lastUpdatedBy: user?.email };
 
       if (scheduledDate) {
-        // Set to noon to avoid timezone issues
         const d = new Date(scheduledDate);
         d.setHours(12, 0, 0, 0);
         updateData.scheduledDate = Timestamp.fromDate(d);
@@ -493,31 +445,13 @@ export default function App() {
         assignedAt: serverTimestamp()
       };
 
-      // NEW: Use dedicated scheduledDate field, preserve createdAt
       if (scheduledDate) {
         const d = new Date(scheduledDate);
         d.setHours(12, 0, 0, 0);
         updateData.scheduledDate = Timestamp.fromDate(d);
       } else {
-        // If no date (e.g. unassigning date or standard assign assignment), should we clear it?
-        // Standard 'Arrow' assignment usually implies "ASAP" or "Backlog".
-        // If unscheduling (canceling), we might pass null?
-        // For now, if scheduledDate is undefined, we simply don't update it, OR we should perhaps clear it if explicitly requested.
-        // But the modal logic passes undefined for arrow click.
-        // Let's assume standard assignment doesn't clear date unless explicitly needed.
-        // Actually, if we want to "Clear" the date, we need to handle that.
-        // The AssignmentModal passes '' and undefined to unassign.
-
         if (assignee === '') {
-          // Unassigning user -> Clear Schedule too?
-          updateData.scheduledDate = null; // Or deleteField()
-          // Actually, let's keep it simple. If assigning to '', we are unassigning.
-          // But if assigning to a user without a date, we might want to keep previous date OR clear it?
-          // Safest is: If we explicitly want to set date, we pass date.
-          // If we use standard arrow, we might not want to change the date if it's already set? 
-          // Or does standard arrow mean "No Date"? 
-          // User's context: "Takvime eklediğim tarihle".
-          // If I drag/drop or use arrow, I might mean "Do it".
+          updateData.scheduledDate = null;
         }
       }
 
@@ -528,37 +462,27 @@ export default function App() {
   };
 
   const handleAddStaff = async (name: string, email: string) => {
-    // Hem isme (Pinned için) hem de StaffList'e ekle
     const currentStaffList = appSettings.staffList || [];
-
-    // Eğer aynı isimde yoksa ekle
     let newStaffList = currentStaffList;
     if (!currentStaffList.some(s => s.name === name)) {
       newStaffList = [...currentStaffList, { name, email }];
     }
 
-    // Pinned listesine de ekle
     const currentPinned = appSettings.pinnedStaff || [];
     const newPinned = currentPinned.includes(name) ? currentPinned : [...currentPinned, name];
 
-    // OPTIMISTIC UPDATE
     setAppSettings(prev => ({ ...prev, pinnedStaff: newPinned, staffList: newStaffList }));
-
     await handleSaveSettings({ ...appSettings, pinnedStaff: newPinned, staffList: newStaffList });
   };
 
   const handleRemoveStaff = async (name: string) => {
     if (!confirm(`${name} isimli personeli silmek istediğinize emin misiniz?`)) return;
 
-    // 1. Pinned listesinden çıkar
     const currentPinned = appSettings.pinnedStaff || [];
     const newPinned = currentPinned.filter(p => p !== name);
-
-    // 2. StaffList'ten çıkar
     const currentStaffList = appSettings.staffList || [];
     const newStaffList = currentStaffList.filter(s => s.name !== name);
 
-    // 3. Ayarları kaydet
     await handleSaveSettings({
       ...appSettings,
       pinnedStaff: newPinned,
@@ -576,18 +500,13 @@ export default function App() {
   };
 
 
-  // ... (Gemini Functions, SignOut, etc. same as before)
   const handleSignOut = () => signOut(auth);
-  // Gemini Connection Logic (Same as before, collapsed for brevity)
-  const connectToGemini = async () => { /* ... (Same code) ... */ };
-  const disconnect = useCallback(() => { /* ... (Same code) ... */ }, []);
 
   // --- Render ---
 
   if (loading) return <div className="h-screen bg-slate-900 flex items-center justify-center text-white">Yükleniyor...</div>;
   if (!user) return <Login />;
 
-  // ... (Calculations logic same)
   // Benzersiz Personel Listesi
   const registeredStaff = appSettings.staffList || [];
   const taskAssignees = [...tasks, ...routineTasks].map(t => t.assignee).filter(Boolean) as string[];
@@ -604,7 +523,7 @@ export default function App() {
       setIsAdminPanelOpen(true);
       return;
     }
-    setActiveTab(tab);
+    setActiveTab(tab as any);
     if (tab === 'dashboard') {
       setViewMode('dashboard');
     }
@@ -612,20 +531,18 @@ export default function App() {
 
   const handleDashboardNavigate = (status?: TaskStatus) => {
     setBoardFilter(status);
-    setIsMissingFilterActive(false); // Reset missing filter when navigating from cards
-    // Split View Logic for specific statuses
+    setIsMissingFilterActive(false);
     if (status === TaskStatus.CHECK_COMPLETED || status === TaskStatus.DEPOSIT_PAID) {
       setViewMode('split');
     } else {
       setViewMode('board');
-      // Single Column View is handled by KanbanBoard receiving boardFilter logic
     }
   };
 
   const handleFilterMissing = () => {
     setBoardFilter(undefined);
-    setSearchTerm(''); // Clear search term to show all missing
-    setIsMissingFilterActive(true); // Activate explicit filter
+    setSearchTerm('');
+    setIsMissingFilterActive(true);
     setViewMode('board');
   };
 
@@ -649,44 +566,41 @@ export default function App() {
     visibleTasks = visibleTasks.filter(t => t.checkStatus === 'missing');
   }
 
-  // 2. Permission Filter (Existing)
-  // 2. Permission Filter (Existing)
-  // Define variables for scope
+  // 2. Permission Filter
   let visibleRoutineTasks: RoutineTask[] = [];
   const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
   const isManager = userPermissions?.role === 'manager';
   const hasAdminAccess = isAdmin || isManager;
 
   if (hasAdminAccess) {
-    // visibleTasks remains as is (from search)
     visibleRoutineTasks = routineTasks;
   } else if (!userPermissions) {
     visibleTasks = [];
     visibleRoutineTasks = [];
   } else {
+    // If not admin, verify filtered visibility
+    if (!searchTerm && !isMissingFilterActive) {
+      // Apply filters only if no active search or special filter
+      // Actually user logic was: Filtered by allowedColumns first.
+      const allowedColumns = userPermissions.allowedColumns || [];
+      visibleTasks = visibleTasks.filter(t => allowedColumns.includes(t.status));
+    }
+
     const myName = userPermissions.name;
     const myEmail = userPermissions.email;
     const canSeePool = userPermissions.canAccessRoutineTasks;
-    const allowedColumns = userPermissions.allowedColumns || [];
-
-    visibleTasks = visibleTasks.filter(t => allowedColumns.includes(t.status));
 
     visibleRoutineTasks = routineTasks.filter(t => {
-      // Routine Tasks Logic: See if assigned to me OR pool if allowed
       const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
       const nameMatch = myName && t.assignee === myName;
-      // Standard staff only see their own tasks in routine list? 
-      // Or if they have 'canSeePool', they see unassigned ones too?
-      // Logic from original code:
       const isUnassigned = (!t.assignee || t.assignee.trim() === '') && !t.assigneeEmail;
-      if (canSeePool && isUnassigned) return true;
 
+      if (canSeePool && isUnassigned) return true;
       return emailMatch || nameMatch;
     });
   }
 
   // RETURN RENDER
-  // Pre-calculate users for Admin Panels (Mobile & Desktop)
   const uniqueUsers = (() => {
     const allEmails = new Set<string>();
     registeredStaff.forEach(s => s.email && allEmails.add(s.email));
@@ -711,7 +625,6 @@ export default function App() {
         onOpenAssignmentModal={() => setActiveTab('assignment')}
       />
 
-      {/* Mobile Admin Panel */}
       {isAdminPanelOpen && (
         <MobileAdminPanel
           isOpen={isAdminPanelOpen}
@@ -720,14 +633,11 @@ export default function App() {
           onSaveSettings={handleSaveSettings}
           users={uniqueUsers}
           tasks={tasks}
+          routineTasks={routineTasks}
           onTasksUpdate={setTasks}
         />
       )}
 
-      {/* Shared Modals for Mobile */}
-      {/* Modals for Mobile */}
-
-      {/* Modals for Mobile */}
       {isModalOpen && (
         <TaskModal
           task={selectedTask}
@@ -741,8 +651,6 @@ export default function App() {
         />
       )}
 
-
-      {/* DEVELOPMENT MODE INDICATOR */}
       <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
         <span>🛠️ GELİŞTİRME MODU</span>
       </div>
@@ -756,230 +664,188 @@ export default function App() {
         isOpen={isSidebarOpen}
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        isAdmin={hasAdminAccess}
+        isAdmin={!!hasAdminAccess}
         onLogout={handleSignOut}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 transition-all duration-300">
-        {/* DEVELOPMENT MODE INDICATOR */}
+
         <div className="fixed bottom-4 right-4 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
           <span>🛠️ GELİŞTİRME MODU</span>
         </div>
 
-
-
-        {/* Default Dashboard/Kanban View */}
-        {(activeTab === 'dashboard' || activeTab === 'kanban') && (
-          /* ... existing dashboard/kanban logic ... */
-          /* Wait, I can't wrap existing logic easily without `multi_replace` being tricky. */
-          /* The existing logic checks activeTab === 'dashboard' inside the return? */
-          /* Let's look at lines 836+ again. */
-          /* The logic was: <div className="flex-1 ..."> 
-               <Toolbar />
-               <div className="flex-1 ... overflow-hidden">
-                  {activeTab === 'dashboard' ? <Dashboard /> : <KanbanBoard />}
-               </div>
-             </div> */
-          /* I need to hijack this. */
-          /* If activeTab is assignment, I replace the whole inner content? Or just the dashboard part? */
-          /* AssignmentView seems to include its own header? Yes. */
-          /* So I should render it INSTEAD of the Toolbar+Content combo? */
-          /* Or inside the Content area? */
-          /* The Global Toolbar (Line 794) is generic. 'Onay Mühendislik'. */
-          /* AssignmentView has its own Header "Görev Dağıtımı". */
-          /* So I should render AssignmentView as a sibling to Toolbar? Or replace Toolbar? */
-          /* AssignmentView has full height. */
-          /* So if activeTab is 'assignment', I should hide the global toolbar. */
-          /* Current structure:
-             <Sidebar />
-             <div className="flex-1 flex flex-col ..."> 
-                 <Toolbar />
-                 <Content />
-             </div>
-          */
-          /* I will render AssignmentView taking up the full space of the right side? */
-          /* Yes. */
-
-          /* So I need to wrap the Toolbar + Content in a check for !assignment && !routine_pool */
-
-          /* This is getting complex for `replacements`. */
-          /* Let's do it simply: */
-          /* Replace the content rendering logic. */
-
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-100 relative">
-            {(activeTab === 'assignment' || activeTab === 'routine_pool') ? (
-              <>
-                {activeTab === 'assignment' && (
-                  <div className="relative h-full">
-                    <button onClick={() => setActiveTab('dashboard')} className="absolute top-4 right-4 z-50 p-2 bg-white/50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"><X className="w-6 h-6" /></button>
-                    <AssignmentView
-                      tasks={tasks}
-                      routineTasks={routineTasks}
-                      onAssignTask={handleAssignTask}
-                      onAssignRoutineTask={handleAssignRoutineTask}
-                      staffList={registeredStaff}
-                      pinnedStaff={appSettings.pinnedStaff || []}
-                      onAddStaff={handleAddStaff}
-                      onRemoveStaff={handleRemoveStaff}
-                      onTogglePinStaff={handleTogglePinStaff}
-                    />
-                  </div>
-                )}
-                {activeTab === 'routine_pool' && (
-                  <div className="relative h-full">
-                    <button onClick={() => setActiveTab('dashboard')} className="absolute top-4 right-4 z-50 p-2 bg-white/50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"><X className="w-6 h-6" /></button>
-                    <RoutineTasksView
-                      tasks={routineTasks}
-                      onAddTask={handleAddRoutineTask}
-                      onToggleTask={handleToggleRoutineTask}
-                      onDeleteTask={handleDeleteRoutineTask}
-                      onConvertTask={handleConvertRoutineTask}
-                      onUpdateTask={handleUpdateRoutineTask}
-                    />
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                {/* Global Toolbar */}
-                <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm shrink-0 z-10 w-full">
-                  <div className="flex items-center gap-4">
-                    {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
-                      <button onClick={() => setViewMode('dashboard')} className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1">
-                        <Layout className="w-4 h-4" /> Panel'e Dön
-                      </button>
-                    )}
-                    <div className="h-4 w-px bg-slate-300 mx-2" />
-                    <div>
-                      <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-slate-500">İş Takip V2</p>
-                        <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
-                      </div>
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-100 relative">
+          {(activeTab === 'assignment' || activeTab === 'routine_pool') ? (
+            <>
+              {activeTab === 'assignment' && (
+                <div className="relative h-full bg-white">
+                  <button onClick={() => setActiveTab('dashboard' as any)} className="absolute top-4 right-4 z-50 p-2 bg-white/50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"><X className="w-6 h-6" /></button>
+                  <AssignmentView
+                    tasks={tasks}
+                    routineTasks={routineTasks}
+                    onAssignTask={handleAssignTask}
+                    onAssignRoutineTask={handleAssignRoutineTask}
+                    staffList={registeredStaff}
+                    pinnedStaff={appSettings.pinnedStaff || []}
+                    onAddStaff={handleAddStaff}
+                    onRemoveStaff={handleRemoveStaff}
+                    onTogglePinStaff={handleTogglePinStaff}
+                  />
+                </div>
+              )}
+              {activeTab === 'routine_pool' && (
+                <div className="relative h-full bg-white">
+                  <button onClick={() => setActiveTab('dashboard' as any)} className="absolute top-4 right-4 z-50 p-2 bg-white/50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"><X className="w-6 h-6" /></button>
+                  <RoutineTasksView
+                    tasks={routineTasks}
+                    onAddTask={handleAddRoutineTask}
+                    onToggleTask={handleToggleRoutineTask}
+                    onDeleteTask={handleDeleteRoutineTask}
+                    onConvertTask={handleConvertRoutineTask}
+                    onUpdateTask={handleUpdateRoutineTask}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Global Toolbar */}
+              <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm shrink-0 z-10 w-full">
+                <div className="flex items-center gap-4">
+                  {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
+                    <button onClick={() => setViewMode('dashboard')} className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1">
+                      <Layout className="w-4 h-4" /> Panel'e Dön
+                    </button>
+                  )}
+                  <div className="h-4 w-px bg-slate-300 mx-2" />
+                  <div>
+                    <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-slate-500">İş Takip V2</p>
+                      <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex-1 max-w-md mx-6 flex justify-end">
-                    {/* Search Bar - Top Right Filter Request */}
-                    <div className="relative group w-full">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
-                        placeholder="Müşteri Ara..."
-                      />
-                      {searchTerm && (
-                        <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
+                <div className="flex-1 max-w-md mx-6 flex justify-end">
+                  <div className="relative group w-full">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                      </svg>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {/* VIEW TRIGGERS (NOW TABS) */}
-                    {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
-                      <button
-                        onClick={() => setActiveTab('routine_pool')}
-                        className={`bg-purple-600/10 hover:bg-purple-600/20 text-purple-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-purple-200 ${activeTab === 'routine_pool' ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
-                      >
-                        <Bell className="w-4 h-4" />
-                        Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks) ? routineTasks.filter(t => !t.isCompleted).length : visibleRoutineTasks.filter(t => !t.isCompleted).length})
-                      </button>
-                    )}
-                    {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
-                      <button
-                        onClick={() => setActiveTab('assignment')}
-                        className={`bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-blue-200 ${activeTab === 'assignment' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
-                      >
-                        <Users className="w-4 h-4" />
-                        Görev Dağıtımı
-                      </button>
-                    )}
-                    {(hasAdminAccess || userPermissions?.canAddCustomers) && (
-                      <button onClick={handleAddTaskClick} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20">
-                        <Plus className="w-4 h-4" />
-                        Yeni Müşteri
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
+                      placeholder="Müşteri Ara..."
+                    />
+                    {searchTerm && (
+                      <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                        <X className="w-4 h-4" />
                       </button>
                     )}
                   </div>
                 </div>
 
-                {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
-                  <Dashboard
-                    tasks={visibleTasks}
-                    routineTasks={routineTasks}
-                    onNavigate={handleDashboardNavigate}
-                    onTaskClick={handleTaskClick}
-                    onFilterMissing={handleFilterMissing}
-                    onOpenRoutineModal={() => setActiveTab('routine_pool')}
-                    onOpenAssignmentModal={() => setActiveTab('assignment')}
-                    onOpenNewCustomerModal={handleAddTaskClick}
-                  />
-                ) : (
-                  <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
-                    {viewMode === 'split' ? (
-                      <div className="flex-1 flex overflow-hidden">
-                        <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
-                          <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
-                            <span>✅ Hazır / Sorunsuz İşler</span>
-                            <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
-                          </div>
-                          <KanbanBoard
-                            tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
-                            routineTasks={[]}
-                            myTasks={[]}
-                            onTaskClick={handleTaskClick}
-                            onToggleRoutineTask={handleToggleRoutineTask}
-                            visibleColumns={boardFilter ? [boardFilter] : undefined}
-                            showRoutineColumn={false}
-                            staffName={userPermissions?.name}
-                            isCompact={true}
-                          />
+                <div className="flex items-center gap-3">
+                  {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
+                    <button
+                      onClick={() => setActiveTab('routine_pool' as any)}
+                      className={`bg-purple-600/10 hover:bg-purple-600/20 text-purple-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-purple-200 ${activeTab === 'routine_pool' ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
+                    >
+                      <Bell className="w-4 h-4" />
+                      Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks) ? routineTasks.filter(t => !t.isCompleted).length : visibleRoutineTasks.filter(t => !t.isCompleted).length})
+                    </button>
+                  )}
+                  {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
+                    <button
+                      onClick={() => setActiveTab('assignment' as any)}
+                      className={`bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-blue-200 ${activeTab === 'assignment' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                    >
+                      <Users className="w-4 h-4" />
+                      Görev Dağıtımı
+                    </button>
+                  )}
+                  {(hasAdminAccess || userPermissions?.canAddCustomers) && (
+                    <button onClick={handleAddTaskClick} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20">
+                      <Plus className="w-4 h-4" />
+                      Yeni Müşteri
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
+                <Dashboard
+                  tasks={visibleTasks}
+                  routineTasks={routineTasks}
+                  onNavigate={handleDashboardNavigate}
+                  onTaskClick={handleTaskClick}
+                  onFilterMissing={handleFilterMissing}
+                  onOpenRoutineModal={() => setActiveTab('routine_pool' as any)}
+                  onOpenAssignmentModal={() => setActiveTab('assignment' as any)}
+                  onOpenNewCustomerModal={handleAddTaskClick}
+                />
+              ) : (
+                <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
+                  {viewMode === 'split' ? (
+                    <div className="flex-1 flex overflow-hidden">
+                      <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
+                        <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
+                          <span>✅ Hazır / Sorunsuz İşler</span>
+                          <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
                         </div>
-                        <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
-                          <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-                            <span>⚠️ Eksiği Olan İşler</span>
-                            <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
-                          </div>
-                          <KanbanBoard
-                            tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
-                            routineTasks={[]}
-                            myTasks={[]}
-                            onTaskClick={handleTaskClick}
-                            onToggleRoutineTask={handleToggleRoutineTask}
-                            visibleColumns={boardFilter ? [boardFilter] : undefined}
-                            showRoutineColumn={false}
-                            staffName={userPermissions?.name}
-                            isCompact={true}
-                          />
-                        </div>
+                        <KanbanBoard
+                          tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
+                          routineTasks={[]}
+                          myTasks={[]}
+                          onTaskClick={handleTaskClick}
+                          onToggleRoutineTask={handleToggleRoutineTask}
+                          visibleColumns={boardFilter ? [boardFilter] : undefined}
+                          showRoutineColumn={false}
+                          staffName={userPermissions?.name}
+                          isCompact={true}
+                        />
                       </div>
-                    ) : (
-                      <KanbanBoard
-                        tasks={visibleTasks}
-                        routineTasks={visibleRoutineTasks}
-                        myTasks={[]}
-                        onTaskClick={handleTaskClick}
-                        onToggleRoutineTask={handleToggleRoutineTask}
-                        visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
-                        showRoutineColumn={!boardFilter && !hasAdminAccess}
-                        staffName={userPermissions?.name}
-                      />
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </main>
+                      <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
+                        <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
+                          <span>⚠️ Eksiği Olan İşler</span>
+                          <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
+                        </div>
+                        <KanbanBoard
+                          tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
+                          routineTasks={[]}
+                          myTasks={[]}
+                          onTaskClick={handleTaskClick}
+                          onToggleRoutineTask={handleToggleRoutineTask}
+                          visibleColumns={boardFilter ? [boardFilter] : undefined}
+                          showRoutineColumn={false}
+                          staffName={userPermissions?.name}
+                          isCompact={true}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <KanbanBoard
+                      tasks={visibleTasks}
+                      routineTasks={visibleRoutineTasks}
+                      myTasks={[]}
+                      onTaskClick={handleTaskClick}
+                      onToggleRoutineTask={handleToggleRoutineTask}
+                      visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
+                      showRoutineColumn={!boardFilter && !hasAdminAccess}
+                      staffName={userPermissions?.name}
+                    />
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </main>
 
       {isModalOpen && (
         <TaskModal
@@ -994,8 +860,6 @@ export default function App() {
         />
       )}
 
-      {/* Removed Modals */}
-
       {/* Admin Panel */}
       <AdminPanel
         isOpen={isAdminPanelOpen}
@@ -1007,18 +871,8 @@ export default function App() {
         routineTasks={routineTasks}
         onTasksUpdate={setTasks}
       />
-
-      {toast.visible && (
-        <div className="fixed bottom-4 right-4 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 animate-slide-up">
-          <div className="bg-emerald-500/10 p-2 rounded-full">
-            <Bell className="w-5 h-5 text-emerald-500" />
-          </div>
-          <span className="text-sm font-medium">{toast.message}</span>
-          <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
+
+export default App;
