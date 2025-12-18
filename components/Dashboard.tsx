@@ -16,6 +16,8 @@ interface DashboardProps {
     onOpenAssignmentModal: () => void;
     onOpenNewCustomerModal: () => void;
     onOpenFieldStaffModal: () => void;
+    currentUser?: { name: string; email: string };
+    userRole?: 'admin' | 'staff' | 'manager';
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -28,12 +30,31 @@ const Dashboard: React.FC<DashboardProps> = ({
     onOpenRoutineModal,
     onOpenAssignmentModal,
     onOpenNewCustomerModal,
-    onOpenFieldStaffModal
+    onOpenFieldStaffModal,
+    currentUser,
+    userRole
 }) => {
     const [filter, setFilter] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     // --- İstatistik Hesaplamaları ---
     const getCount = (status: TaskStatus) => tasks.filter(t => t.status === status).length;
+
+    // Helper for My Tasks Count
+    const getMyActiveTaskCount = () => {
+        if (!currentUser) return 0;
+        // Count Main Tasks assigned to me
+        const myTasks = tasks.filter(t =>
+            (t.assignee === currentUser.name || t.assigneeEmail === currentUser.email) &&
+            t.status !== TaskStatus.CHECK_COMPLETED &&
+            t.status !== TaskStatus.DEPOSIT_PAID
+        ).length;
+        // Count Routine Tasks assigned to me (uncompleted)
+        const myRoutine = routineTasks.filter(t =>
+            (t.assignee === currentUser.name || t.assigneeEmail === currentUser.email) &&
+            !t.isCompleted
+        ).length;
+        return myTasks + myRoutine;
+    };
 
     const cards = [
         {
@@ -63,6 +84,26 @@ const Dashboard: React.FC<DashboardProps> = ({
             color: 'text-indigo-500',
             borderColor: 'hover:border-indigo-500'
         },
+        // Role Based Card
+        userRole === 'admin' ? {
+            title: 'SAHADAKİ PERSONEL',
+            displayName: 'SAHADAKİ PERSONEL',
+            score: tasks.filter(t => t.assignee).length, // Count all assigned tasks
+            subText: 'Personel üzerindeki aktif işler',
+            action: onOpenFieldStaffModal, // Open Live Modal
+            color: 'text-orange-600',
+            borderColor: 'hover:border-orange-600',
+            status: 'FIELD_STAFF' as any
+        } : {
+            title: 'ATANAN İŞLERİM',
+            displayName: 'ATANAN İŞLERİM',
+            score: getMyActiveTaskCount(),
+            subText: 'Üzerimdeki aktif saha görevleri',
+            action: onOpenFieldStaffModal, // Opens same modal, but App.tsx will filter content
+            color: 'text-emerald-600',
+            borderColor: 'hover:border-emerald-600',
+            status: 'MY_TASKS' as any
+        },
         {
             title: 'GAZ AÇILDI',
             displayName: StatusLabels[TaskStatus.GAS_OPENED],
@@ -80,16 +121,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             status: TaskStatus.SERVICE_DIRECTED,
             color: 'text-purple-500',
             borderColor: 'hover:border-purple-500'
-        },
-        {
-            title: 'SAHADAKİ PERSONEL',
-            displayName: 'SAHADAKİ PERSONEL',
-            score: tasks.filter(t => t.assignee).length, // Count all assigned tasks
-            subText: 'Personel üzerindeki aktif işler',
-            action: onOpenFieldStaffModal, // Open Live Modal
-            color: 'text-orange-600',
-            borderColor: 'hover:border-orange-600',
-            status: 'FIELD_STAFF' as any
         },
     ];
 

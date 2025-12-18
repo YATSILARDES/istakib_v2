@@ -804,6 +804,8 @@ function App() {
                   onOpenAssignmentModal={() => setActiveTab('assignment' as any)}
                   onOpenNewCustomerModal={handleAddTaskClick}
                   onOpenFieldStaffModal={() => setIsFieldStaffModalOpen(true)}
+                  currentUser={userPermissions ? { name: userPermissions.name, email: userPermissions.email } : undefined}
+                  userRole={userPermissions?.role}
                 />
               ) : (
                 <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
@@ -895,7 +897,12 @@ function App() {
         onClose={() => setIsFieldStaffModalOpen(false)}
         tasks={tasks}
         routineTasks={routineTasks}
-        staffList={appSettings.staffList || []}
+        // If Admin, show all. If Staff, show only SELF.
+        staffList={(appSettings.staffList || []).filter(s => {
+          if (userPermissions?.role === 'admin') return true;
+          // Match by email or name
+          return s.email === user?.email || s.name === userPermissions?.name;
+        })}
         onUpdateTask={async (taskId, newStatus) => {
           await updateDoc(doc(db, 'tasks', taskId), {
             status: newStatus,
