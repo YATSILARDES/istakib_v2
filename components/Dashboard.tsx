@@ -164,11 +164,11 @@ const Dashboard: React.FC<DashboardProps> = ({
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
 
-                {/* 1. SECTION: QUICK ACTIONS & MAP (NEW) */}
-                <div className="grid grid-cols-1 gap-6">
+                {/* 1. SECTION: QUICK ACTIONS & PERSONAL NOTES */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[450px]">
 
-                    {/* Hızlı İşlemler (Tam Genişlik) */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
+                    {/* Left: Quick Actions Grid */}
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col">
                         <div className="mb-4">
                             <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                                 <Activity className="w-5 h-5 text-blue-500" />
@@ -177,22 +177,22 @@ const Dashboard: React.FC<DashboardProps> = ({
                             <p className="text-slate-400 text-xs mt-1">Sık kullanılan yönetici araçları</p>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <button onClick={onOpenNewCustomerModal} className="flex flex-col items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-6 rounded-xl transition-all border border-emerald-100 group">
+                        <div className="grid grid-cols-2 gap-4 flex-1">
+                            <button onClick={onOpenNewCustomerModal} className="flex flex-col items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-4 rounded-xl transition-all border border-emerald-100 group shadow-sm hover:shadow-md">
                                 <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <Plus className="w-6 h-6" />
                                 </div>
                                 <span className="font-bold text-sm">Yeni Müşteri</span>
                             </button>
 
-                            <button onClick={onOpenAssignmentModal} className="flex flex-col items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 p-6 rounded-xl transition-all border border-blue-100 group">
+                            <button onClick={onOpenAssignmentModal} className="flex flex-col items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 p-4 rounded-xl transition-all border border-blue-100 group shadow-sm hover:shadow-md">
                                 <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <Users className="w-6 h-6" />
                                 </div>
                                 <span className="font-bold text-sm">Görev Dağıtımı</span>
                             </button>
 
-                            <button onClick={onOpenRoutineModal} className="flex flex-col items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-600 p-6 rounded-xl transition-all border border-purple-100 group relative">
+                            <button onClick={onOpenRoutineModal} className="flex flex-col items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-600 p-4 rounded-xl transition-all border border-purple-100 group relative shadow-sm hover:shadow-md">
                                 <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <Bell className="w-6 h-6" />
                                 </div>
@@ -200,7 +200,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <span className="absolute top-2 right-2 bg-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
                             </button>
 
-                            <button className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 p-6 rounded-xl transition-all border border-slate-100 group">
+                            <button className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 p-4 rounded-xl transition-all border border-slate-100 group shadow-sm hover:shadow-md">
                                 <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <MoreHorizontal className="w-6 h-6" />
                                 </div>
@@ -208,6 +208,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </button>
                         </div>
                     </div>
+
+                    {/* Right: Personal Notes */}
+                    <PersonalNotes />
+
                 </div>
 
                 {/* 2. SECTION: STATS & UPDATES */}
