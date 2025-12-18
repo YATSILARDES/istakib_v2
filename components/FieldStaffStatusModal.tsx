@@ -25,6 +25,12 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 
     if (!isOpen) return null;
 
+    // --- Safety Checks ---
+    if (!tasks || !Array.isArray(tasks) || !routineTasks || !Array.isArray(routineTasks) || !staffList || !Array.isArray(staffList)) {
+        console.warn("FieldStaffStatusModal: Invalid props received", { tasks, routineTasks, staffList });
+        return null;
+    }
+
     // --- Date Helpers ---
     const getTaskDate = (t: any): Date => {
         try {
@@ -49,7 +55,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 
             return new Date();
         } catch (e) {
-            console.error("Date parse error", e);
+            console.error("Date parse error for task:", t, e);
             return new Date();
         }
     };
@@ -77,6 +83,15 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
         return d;
     };
 
+    // Safe formatting for locale
+    const safeFormatDate = (date: Date) => {
+        try {
+            return date.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'numeric' });
+        } catch (e) {
+            return date.toDateString(); // Fallback
+        }
+    };
+
     // --- Statistics Calculation for SUMMARY View ---
     const staffStats = useMemo(() => {
         const statsMap = new Map<string, {
@@ -87,43 +102,51 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
             completedCount: number;
         }>();
 
-        staffList.forEach(s => {
-            statsMap.set(s.name, {
-                name: s.name,
-                email: s.email,
-                activeTasks: [],
-                activeRoutine: [],
-                completedCount: 0
+        try {
+            staffList.forEach(s => {
+                if (s && s.name) {
+                    statsMap.set(s.name, {
+                        name: s.name,
+                        email: s.email || '',
+                        activeTasks: [],
+                        activeRoutine: [],
+                        completedCount: 0
+                    });
+                }
             });
-        });
 
-        // Add Active Main Tasks (Today + Overdue ONLY)
-        tasks.forEach(t => {
-            const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
-            if (t.assignee && isTaskActive) {
-                const date = getTaskDate(t);
-                // IF Today OR Overdue -> Show in Summary
-                if (isToday(date) || isOverdue(date)) {
-                    if (!statsMap.has(t.assignee)) {
-                        statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
+            // Add Active Main Tasks (Today + Overdue ONLY)
+            tasks.forEach(t => {
+                if (!t) return;
+                const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
+                if (t.assignee && isTaskActive) {
+                    const date = getTaskDate(t);
+                    // IF Today OR Overdue -> Show in Summary
+                    if (isToday(date) || isOverdue(date)) {
+                        if (!statsMap.has(t.assignee)) {
+                            statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
+                        }
+                        statsMap.get(t.assignee)!.activeTasks.push(t);
                     }
-                    statsMap.get(t.assignee)!.activeTasks.push(t);
                 }
-            }
-        });
+            });
 
-        // Add Active Routine Tasks (Today + Overdue ONLY)
-        routineTasks.forEach(t => {
-            if (t.assignee && !t.isCompleted) {
-                const date = getTaskDate(t);
-                if (isToday(date) || isOverdue(date)) {
-                    if (!statsMap.has(t.assignee)) {
-                        statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
+            // Add Active Routine Tasks (Today + Overdue ONLY)
+            routineTasks.forEach(t => {
+                if (!t) return;
+                if (t.assignee && !t.isCompleted) {
+                    const date = getTaskDate(t);
+                    if (isToday(date) || isOverdue(date)) {
+                        if (!statsMap.has(t.assignee)) {
+                            statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
+                        }
+                        statsMap.get(t.assignee)!.activeRoutine.push(t);
                     }
-                    statsMap.get(t.assignee)!.activeRoutine.push(t);
                 }
-            }
-        });
+            });
+        } catch (error) {
+            console.error("Error calculating staff stats:", error);
+        }
 
         return Array.from(statsMap.values()).sort((a, b) => {
             const totalA = a.activeTasks.length + a.activeRoutine.length;
@@ -148,7 +171,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
             d.setDate(startOfWeek.getDate() + i);
             days.push({
                 date: d,
-                label: d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'numeric' }),
+                label: safeFormatDate(d),
                 isToday: isToday(d),
                 tasks: [] as Task[],
                 routine: [] as RoutineTask[]
@@ -159,22 +182,26 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
         // We use "Effective Date" logic: Overdue tasks move to Today's column
         const staffName = staffList.find(s => s.email === staffEmail)?.name || '';
 
-        tasks.forEach(t => {
-            const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
-            if ((t.assigneeEmail === staffEmail || t.assignee === staffName) && isTaskActive) {
-                const effDate = getEffectiveDate(t);
-                const dayObj = days.find(day => day.date.getDate() === effDate.getDate() && day.date.getMonth() === effDate.getMonth());
-                if (dayObj) dayObj.tasks.push(t);
-            }
-        });
+        try {
+            tasks.forEach(t => {
+                const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
+                if ((t.assigneeEmail === staffEmail || t.assignee === staffName) && isTaskActive) {
+                    const effDate = getEffectiveDate(t);
+                    const dayObj = days.find(day => day.date.getDate() === effDate.getDate() && day.date.getMonth() === effDate.getMonth());
+                    if (dayObj) dayObj.tasks.push(t);
+                }
+            });
 
-        routineTasks.forEach(t => {
-            if ((t.assigneeEmail === staffEmail || t.assignee === staffName) && !t.isCompleted) {
-                const effDate = getEffectiveDate(t);
-                const dayObj = days.find(day => day.date.getDate() === effDate.getDate() && day.date.getMonth() === effDate.getMonth());
-                if (dayObj) dayObj.routine.push(t);
-            }
-        });
+            routineTasks.forEach(t => {
+                if ((t.assigneeEmail === staffEmail || t.assignee === staffName) && !t.isCompleted) {
+                    const effDate = getEffectiveDate(t);
+                    const dayObj = days.find(day => day.date.getDate() === effDate.getDate() && day.date.getMonth() === effDate.getMonth());
+                    if (dayObj) dayObj.routine.push(t);
+                }
+            });
+        } catch (error) {
+            console.error("Error calculating weekly data:", error);
+        }
 
         return { days, staffName };
     };
