@@ -35,57 +35,48 @@ const PersonalNotes: React.FC = () => {
     };
 
     return (
-        <div className="bg-[#fdfbf7] rounded-xl shadow-md border border-stone-200 h-full flex flex-col relative overflow-hidden">
-            {/* Notebook Header / Binding Visual */}
-            <div className="bg-stone-800 h-3 w-full absolute top-0 left-0 z-20 opacity-80" />
+        <div className="h-full flex flex-col">
+            <h3 className="font-bold text-slate-700 text-sm flex items-center gap-2 mb-3">
+                <StickyNote className="w-4 h-4 text-slate-400" />
+                Kişisel Notlarım
+            </h3>
 
-            <div className="p-4 pt-6 flex flex-col h-full relative z-10">
-                <h3 className="font-serif font-bold text-stone-700 text-lg flex items-center gap-2 mb-2 italic">
-                    <StickyNote className="w-5 h-5 text-stone-400" />
-                    Kişisel Notlarım
-                </h3>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col flex-1 overflow-hidden">
+                <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                    <form onSubmit={handleAdd} className="flex gap-2 relative group">
+                        <input
+                            type="text"
+                            value={newNote}
+                            onChange={(e) => setNewNote(e.target.value)}
+                            placeholder="Yeni not yazın..."
+                            className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all placeholder:text-slate-400 text-slate-700"
+                        />
+                        <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition-colors shadow-sm">
+                            <Plus className="w-3.5 h-3.5" />
+                        </button>
+                    </form>
+                </div>
 
-                <form onSubmit={handleAdd} className="flex gap-2 mb-2 relative group">
-                    <input
-                        type="text"
-                        value={newNote}
-                        onChange={(e) => setNewNote(e.target.value)}
-                        placeholder="Buraya not alın..."
-                        className="flex-1 bg-transparent border-b-2 border-stone-300 px-1 py-1 text-sm outline-none focus:border-stone-500 text-stone-700 placeholder:italic placeholder:text-stone-400 font-serif transition-all"
-                    />
-                    <button type="submit" className="text-stone-400 hover:text-stone-700 transition-colors p-1">
-                        <Plus className="w-5 h-5" />
-                    </button>
-                </form>
-
-                <div
-                    className="flex-1 overflow-y-auto custom-scrollbar pr-1"
-                    style={{
-                        backgroundImage: 'repeating-linear-gradient(transparent, transparent 31px, #e7e5e4 31px, #e7e5e4 32px)',
-                        backgroundAttachment: 'local',
-                        lineHeight: '32px'
-                    }}
-                >
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
                     {notes.length === 0 && (
-                        <div className="text-center text-stone-300 text-sm py-8 font-serif italic selection:bg-stone-100">
-                            Defter boş...
+                        <div className="text-center text-slate-400 text-xs py-8 italic flex flex-col items-center gap-2">
+                            <StickyNote className="w-8 h-8 text-slate-200" />
+                            Henüz not eklenmemiş.
                         </div>
                     )}
                     {notes.map((note, idx) => (
-                        <div key={idx} className="group relative pl-2 hover:bg-stone-50/50 transition-colors -mx-2 px-2 flex items-start justify-between min-h-[32px]">
-                            <p className="text-sm text-stone-700 font-serif leading-[32px] break-words w-full">{note}</p>
+                        <div key={idx} className="group bg-white border border-slate-100 p-2.5 rounded-lg flex items-start justify-between gap-2 hover:border-slate-300 hover:shadow-sm transition-all">
+                            <p className="text-xs text-slate-600 leading-relaxed font-medium break-words w-full">{note}</p>
                             <button
                                 onClick={() => handleDelete(idx)}
-                                className="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all absolute right-0 top-1 bg-[#fdfbf7] px-1"
+                                className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all shrink-0"
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     ))}
                 </div>
             </div>
-
-            {/* Paper Texture Overlay (optional subtle noise if needed, but simple color is clean) */}
         </div>
     );
 };

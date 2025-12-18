@@ -162,36 +162,36 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Main Content - No Scroll on outer container */}
-            <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
+            <div className="flex-1 flex flex-row p-4 gap-4 overflow-hidden">
 
-                {/* 1. ROW: Quick Actions & Personal Notes (Fixed Height ~220px) */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[220px] shrink-0">
+                {/* Left Column: Quick Actions & Stats */}
+                <div className="flex-1 flex flex-col gap-4 overflow-hidden">
 
-                    {/* Left: Quick Actions Grid */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col h-full">
-                        <div className="mb-2 shrink-0">
+                    {/* Quick Actions (Compact Row) */}
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 shrink-0">
+                        <div className="mb-3">
                             <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                                 <Activity className="w-4 h-4 text-blue-500" />
                                 Hızlı İşlemler
                             </h3>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
-                            <button onClick={onOpenNewCustomerModal} className="flex items-center gap-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 rounded-lg transition-all border border-emerald-100 group shadow-sm hover:shadow-md justify-start">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <button onClick={onOpenNewCustomerModal} className="flex items-center gap-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-3 rounded-lg transition-all border border-emerald-100 group shadow-sm hover:shadow-md justify-start">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
                                     <Plus className="w-5 h-5" />
                                 </div>
                                 <span className="font-bold text-xs text-left">Yeni Müşteri</span>
                             </button>
 
-                            <button onClick={onOpenAssignmentModal} className="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 rounded-lg transition-all border border-blue-100 group shadow-sm hover:shadow-md justify-start">
+                            <button onClick={onOpenAssignmentModal} className="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-3 rounded-lg transition-all border border-blue-100 group shadow-sm hover:shadow-md justify-start">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
                                     <Users className="w-5 h-5" />
                                 </div>
                                 <span className="font-bold text-xs text-left">Görev Dağıtımı</span>
                             </button>
 
-                            <button onClick={onOpenRoutineModal} className="flex items-center gap-3 bg-purple-50 hover:bg-purple-100 text-purple-600 px-4 rounded-lg transition-all border border-purple-100 group relative shadow-sm hover:shadow-md justify-start">
+                            <button onClick={onOpenRoutineModal} className="flex items-center gap-3 bg-purple-50 hover:bg-purple-100 text-purple-600 px-4 py-3 rounded-lg transition-all border border-purple-100 group relative shadow-sm hover:shadow-md justify-start">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
                                     <Bell className="w-5 h-5" />
                                 </div>
@@ -199,7 +199,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <span className="absolute top-2 right-2 bg-purple-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">3</span>
                             </button>
 
-                            <button className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 rounded-lg transition-all border border-slate-100 group shadow-sm hover:shadow-md justify-start">
+                            <button className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-3 rounded-lg transition-all border border-slate-100 group shadow-sm hover:shadow-md justify-start">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
                                     <MoreHorizontal className="w-5 h-5" />
                                 </div>
@@ -208,48 +208,48 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
                     </div>
 
-                    {/* Right: Personal Notes */}
-                    <div className="h-full">
-                        <PersonalNotes />
-                    </div>
-
-                </div>
-
-                {/* 2. ROW: Stats (Full Width now) */}
-                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {cards.map((card, idx) => {
-                            const isGasAlert = card.status === TaskStatus.GAS_OPENED && card.score > 0;
-                            return (
-                                <button
-                                    key={idx}
-                                    onClick={() => onNavigate(card.status)}
-                                    className={`${isGasAlert ? 'bg-red-50 animate-pulse ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white'} p-4 rounded-xl shadow-sm border-t-4 border-slate-100 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-28 relative overflow-hidden`}
-                                >
-                                    <div className="flex justify-between items-start w-full mb-1 z-10 relative">
-                                        <h3 className="font-bold text-slate-600 text-[10px] uppercase tracking-wider">{card.displayName}</h3>
-                                        {isGasAlert && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
-                                    </div>
-
-                                    <div className="flex items-end justify-between z-10 relative">
-                                        <span className={`text-3xl font-bold ${card.color}`}>
-                                            {card.score}
-                                        </span>
-                                        <div className={`p-1.5 rounded-full bg-slate-50 group-hover:bg-white transition-colors`}>
-                                            <Activity className={`w-4 h-4 ${card.color} opacity-50 group-hover:opacity-100`} />
+                    {/* Stats Grid (Scrollable) */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pb-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {cards.map((card, idx) => {
+                                const isGasAlert = card.status === TaskStatus.GAS_OPENED && card.score > 0;
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => onNavigate(card.status)}
+                                        className={`${isGasAlert ? 'bg-red-50 animate-pulse ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white'} p-4 rounded-xl shadow-sm border-t-4 border-slate-100 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-28 relative overflow-hidden`}
+                                    >
+                                        <div className="flex justify-between items-start w-full mb-1 z-10 relative">
+                                            <h3 className="font-bold text-slate-600 text-[10px] uppercase tracking-wider">{card.displayName}</h3>
+                                            {isGasAlert && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
                                         </div>
-                                    </div>
 
-                                    <p className="text-[10px] text-slate-400 font-medium relative z-10 mt-2 line-clamp-1">
-                                        {card.subText}
-                                    </p>
+                                        <div className="flex items-end justify-between z-10 relative">
+                                            <span className={`text-3xl font-bold ${card.color}`}>
+                                                {card.score}
+                                            </span>
+                                            <div className={`p-1.5 rounded-full bg-slate-50 group-hover:bg-white transition-colors`}>
+                                                <Activity className={`w-4 h-4 ${card.color} opacity-50 group-hover:opacity-100`} />
+                                            </div>
+                                        </div>
 
-                                    <Activity className="absolute -right-4 -bottom-4 w-24 h-24 text-slate-50 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0" />
-                                </button>
-                            );
-                        })}
+                                        <p className="text-[10px] text-slate-400 font-medium relative z-10 mt-2 line-clamp-1">
+                                            {card.subText}
+                                        </p>
+
+                                        <Activity className="absolute -right-4 -bottom-4 w-24 h-24 text-slate-50 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0" />
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
+
+                {/* Right Column: Personal Notes (Fixed Width, Full Height) */}
+                <div className="w-80 shrink-0 h-full">
+                    <PersonalNotes />
+                </div>
+
             </div>
         </div>
     );
