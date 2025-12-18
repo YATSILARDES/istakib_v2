@@ -167,7 +167,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, o
                     </div>
 
                     {/* Sahadaki Personel Widget (Map Preview) */}
-                    <div className="col-span-1 lg:col-span-2 bg-[#2c3e50] rounded-2xl p-0 shadow-lg border border-slate-700 overflow-hidden relative group">
+                    <div className="col-span-1 lg:col-span-2 bg-[#2c3e50] rounded-2xl p-0 shadow-lg border border-slate-700 overflow-hidden relative group min-h-[300px]">
                         {/* Fake Map Background */}
                         <div className="absolute inset-0 opacity-40 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/29.0,40.2,10,0/800x400@2x?access_token=pk.eyJ1IjoiY2FuZXJjZWxpayIsImEiOiJjbH...')] bg-cover bg-center transition-all group-hover:opacity-50 group-hover:scale-105 duration-1000"></div>
 

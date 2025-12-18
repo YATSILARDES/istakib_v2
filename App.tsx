@@ -60,6 +60,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [viewMode, setViewMode] = useState<'dashboard' | 'board' | 'split'>('dashboard');
   const [boardFilter, setBoardFilter] = useState<TaskStatus | undefined>(undefined);
+  const [isMissingFilterActive, setIsMissingFilterActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState(''); // NEW: Global Search
 
   // Handle Resize
@@ -604,6 +605,7 @@ export default function App() {
 
   const handleDashboardNavigate = (status?: TaskStatus) => {
     setBoardFilter(status);
+    setIsMissingFilterActive(false); // Reset missing filter when navigating from cards
     // Split View Logic for specific statuses
     if (status === TaskStatus.CHECK_COMPLETED || status === TaskStatus.DEPOSIT_PAID) {
       setViewMode('split');
@@ -614,9 +616,8 @@ export default function App() {
 
   const handleFilterMissing = () => {
     setBoardFilter(undefined);
-    setSearchTerm('eksik'); // Quick hack or proper filter? User asked specific view. 
-    // For now, let's use the search term 'missing' if we add a hidden field, or just filter in render.
-    // Better: Special mode
+    setSearchTerm(''); // Clear search term to show all missing
+    setIsMissingFilterActive(true); // Activate explicit filter
     setViewMode('board');
   };
 
@@ -633,6 +634,11 @@ export default function App() {
       (t.assignee && t.assignee.toLocaleLowerCase('tr').includes(lower)) ||
       (t.status && StatusLabels[t.status].toLocaleLowerCase('tr').includes(lower))
     );
+  }
+
+  // 1.5 Missing Filter (Specific)
+  if (isMissingFilterActive) {
+    visibleTasks = visibleTasks.filter(t => t.checkStatus === 'missing');
   }
 
   // 2. Permission Filter (Existing)
@@ -853,7 +859,7 @@ export default function App() {
 
             {viewMode === 'split' ? (
               <div className="flex-1 flex overflow-hidden">
-                <div className="flex-1 flex flex-col border-r border-slate-200 bg-emerald-50/30">
+                <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
                   <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
                     <span>✅ Hazır / Sorunsuz İşler</span>
                     <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
@@ -869,7 +875,7 @@ export default function App() {
                     staffName={userPermissions?.name}
                   />
                 </div>
-                <div className="flex-1 flex flex-col bg-red-50/30">
+                <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
                   <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
                     <span>⚠️ Eksiği Olan İşler</span>
                     <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
