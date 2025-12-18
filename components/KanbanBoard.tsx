@@ -12,6 +12,7 @@ interface KanbanBoardProps {
   showRoutineColumn?: boolean;
   myTasks?: Task[]; // Assigned Standard Tasks for the viewer
   staffName?: string; // Staff name for column header
+  isCompact?: boolean; // New prop for Split View
 }
 
 const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
@@ -34,7 +35,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   visibleColumns,
   showRoutineColumn = true,
   myTasks = [], // Destructure NEW prop
-  staffName // Destructure NEW prop
+  staffName, // Destructure NEW prop
+  isCompact = false
 }) => {
   // State to track search queries for each column
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
@@ -122,10 +124,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const { routine: filteredRoutine, standard: filteredStandard } = getFilteredPersonalTasks();
 
   return (
-    <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
-      <div className="flex gap-6 h-full min-w-[1500px]">
+    <div className={`flex-1 overflow-x-auto overflow-y-hidden ${isCompact ? 'p-2' : 'p-6'}`}>
+      <div className={`flex ${isCompact ? 'gap-3 min-w-full' : 'gap-6 min-w-[1500px]'} h-full transition-all`}>
         {showRoutineColumn && (
-          <div className="flex-1 flex flex-col min-w-[280px] bg-slate-100/80 rounded-2xl border border-slate-200 backdrop-blur-sm self-start max-h-full">
+          <div className={`flex-1 flex flex-col ${isCompact ? 'min-w-[200px]' : 'min-w-[280px]'} bg-slate-100/80 rounded-2xl border border-slate-200 backdrop-blur-sm self-start max-h-full`}>
             {/* Header */}
             <div className="p-4 border-b border-slate-200 bg-purple-500/5 flex items-center justify-between rounded-t-2xl">
               <div className="flex items-center gap-2 font-semibold text-purple-700">
@@ -259,7 +261,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           const searchTerm = searchTerms[status] || '';
 
           return (
-            <div key={status} className="flex-1 flex flex-col min-w-[280px] bg-slate-100/80 rounded-2xl border border-slate-200 backdrop-blur-sm">
+            <div key={status} className={`flex-1 flex flex-col ${isCompact ? 'min-w-[200px]' : 'min-w-[280px]'} bg-slate-100/80 rounded-2xl border border-slate-200 backdrop-blur-sm`}>
               {/* Column Header */}
               <div className="p-4 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2 font-semibold text-slate-700">

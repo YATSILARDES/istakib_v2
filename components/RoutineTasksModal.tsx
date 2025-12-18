@@ -136,10 +136,10 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
 
   // Helper: Render Task Card
   const renderTaskCard = (task: RoutineTask, isCompletedView: boolean) => (
-    <div key={task.id} className={`group flex items-start gap-3 border rounded-lg p-3 transition-all ${isCompletedView ? 'bg-slate-800/20 border-slate-700/50' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'} ${editingTaskId === task.id ? 'ring-2 ring-purple-500/50 border-purple-500/50' : ''}`}>
+    <div key={task.id} className={`group flex items-start gap-3 border rounded-lg p-3 transition-all ${isCompletedView ? 'bg-slate-100 border-slate-200 opacity-75' : 'bg-white border-slate-200 hover:border-purple-300 shadow-sm'} ${editingTaskId === task.id ? 'ring-2 ring-purple-500/50 border-purple-500/50' : ''}`}>
       <button
         onClick={() => onToggleTask(task.id)}
-        className={`mt-0.5 transition-colors ${isCompletedView ? 'text-emerald-500' : 'text-slate-400 hover:text-purple-400'}`}
+        className={`mt-0.5 transition-colors ${isCompletedView ? 'text-emerald-600' : 'text-slate-400 hover:text-purple-600'}`}
         title={isCompletedView ? "Tamamlanmadı yap" : "Tamamlandı işaretle"}
       >
         {isCompletedView ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
@@ -150,26 +150,26 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
         {(task.customerName || task.phoneNumber || task.address || task.district) && (
           <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5 text-xs ${isCompletedView ? 'opacity-70' : ''}`}>
             {task.customerName && (
-              <span className={`${isCompletedView ? 'text-slate-400' : 'text-blue-400'} flex items-center gap-1`}>
+              <span className={`${isCompletedView ? 'text-slate-500' : 'text-blue-600'} flex items-center gap-1`}>
                 <UserCircle className="w-3 h-3" /> {task.customerName}
               </span>
             )}
             {task.phoneNumber && (
               <a
                 href={`tel:${task.phoneNumber}`}
-                className={`${isCompletedView ? 'text-slate-400 hover:text-emerald-300' : 'text-emerald-400 hover:text-emerald-300'} flex items-center gap-1 hover:underline`}
+                className={`${isCompletedView ? 'text-slate-500 hover:text-emerald-600' : 'text-emerald-600 hover:text-emerald-700'} flex items-center gap-1 hover:underline`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <Phone className="w-3 h-3" /> {task.phoneNumber}
               </a>
             )}
             {task.district && (
-              <span className="bg-purple-900/30 text-purple-300 px-1.5 py-0.5 rounded border border-purple-800/30">
+              <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200">
                 {task.district}
               </span>
             )}
             {task.address && (
-              <span className={`${isCompletedView ? 'text-slate-400' : 'text-amber-400'} flex items-center gap-1`}>
+              <span className={`${isCompletedView ? 'text-slate-500' : 'text-amber-600'} flex items-center gap-1`}>
                 <MapPin className="w-3 h-3" /> {task.address}
               </span>
             )}
@@ -177,19 +177,19 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
         )}
 
         {/* Eksik İçeriği */}
-        <p className={`${isCompletedView ? 'text-slate-500 line-through' : 'text-slate-200'} text-sm leading-relaxed whitespace-pre-wrap break-all`}>{task.content}</p>
+        <p className={`${isCompletedView ? 'text-slate-500 line-through' : 'text-slate-700'} text-sm leading-relaxed whitespace-pre-wrap break-all`}>{task.content}</p>
 
         {/* Alt Bilgiler (Tarih, Atama vs) */}
         {!isCompletedView && (
           <div className="flex items-center gap-2 mt-1.5">
             {task.assignee ? (
-              <span className="text-xs bg-purple-900/30 text-purple-300 px-2 py-0.5 rounded border border-purple-800/50 flex items-center gap-1">
+              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded border border-purple-200 flex items-center gap-1">
                 <User className="w-3 h-3" /> {task.assignee}
               </span>
             ) : (
               <span className="text-[10px] text-slate-500 italic">Atanmadı</span>
             )}
-            <span className="text-[10px] text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-700/50">
+            <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
               {/* Display Date prominently */}
               {new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}
             </span>
@@ -198,13 +198,13 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
 
         {/* Dönüştürme UI ... */}
         {convertingTaskId === task.id ? (
-          <div className="mt-2 p-2 bg-slate-800 border border-slate-700 rounded-lg animate-in fade-in slide-in-from-top-1">
-            <p className="text-xs text-slate-300 mb-2 font-medium">Bu eksik için kart oluşturulacak:</p>
+          <div className="mt-2 p-2 bg-slate-50 border border-slate-200 rounded-lg animate-in fade-in slide-in-from-top-1">
+            <p className="text-xs text-slate-600 mb-2 font-medium">Bu eksik için kart oluşturulacak:</p>
             <div className="flex gap-2">
               <select
                 value={targetStatus}
                 onChange={(e) => setTargetStatus(e.target.value as TaskStatus)}
-                className="flex-1 bg-slate-900 border border-slate-600 rounded text-xs text-white px-2 py-1 outline-none focus:border-purple-500"
+                className="flex-1 bg-white border border-slate-300 rounded text-xs text-slate-800 px-2 py-1 outline-none focus:border-purple-500"
               >
                 {Object.entries(StatusLabels).map(([key, label]) => (
                   <option key={key} value={key}>{label}</option>
@@ -219,7 +219,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
               </button>
               <button
                 onClick={() => setConvertingTaskId(null)}
-                className="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded text-xs transition-colors"
+                className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-600 px-2 py-1 rounded text-xs transition-colors"
               >
                 İptal
               </button>
@@ -230,7 +230,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             {(task.customerName || task.phoneNumber) && (
               <button
                 onClick={() => handleStartConversion(task.id)}
-                className="text-[10px] flex items-center gap-1 text-slate-500 hover:text-blue-400 transition-colors border border-slate-700 hover:border-blue-400/50 px-2 py-1 rounded bg-slate-900/50"
+                className="text-[10px] flex items-center gap-1 text-slate-500 hover:text-blue-600 transition-colors border border-slate-200 hover:border-blue-300 px-2 py-1 rounded bg-slate-50"
                 title="Bu kişiyi ana listeye taşı"
               >
                 <ArrowRightCircle className="w-3 h-3" />
@@ -263,17 +263,17 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white border border-slate-200 w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between bg-slate-800">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
             <div className="bg-purple-600 p-2 rounded-lg">
               <CalendarCheck className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-semibold text-white">Eksikler Havuzu (Veri Girişi)</h2>
+            <h2 className="text-xl font-semibold text-slate-800">Eksikler Havuzu (Veri Girişi)</h2>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-2 transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -282,16 +282,16 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
         <div className="flex-1 overflow-hidden flex flex-col">
 
           {/* Add/Edit Task Form */}
-          <div className={`border-b border-slate-700 transition-colors ${editingTaskId ? 'bg-purple-900/10' : 'bg-slate-800/30'}`}>
+          <div className={`border-b border-slate-200 transition-colors ${editingTaskId ? 'bg-purple-50' : 'bg-slate-50'}`}>
 
             {/* Clickable Form Header */}
             <div
-              className="px-6 py-3 flex justify-between items-center cursor-pointer hover:bg-slate-800/50 transition-colors"
+              className="px-6 py-3 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors"
               onClick={() => setIsAddFormExpanded(!isAddFormExpanded)}
             >
               <div className="flex items-center gap-2">
-                {isAddFormExpanded ? <ChevronDown className="w-4 h-4 text-purple-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-                <h3 className="text-sm font-medium text-slate-300">
+                {isAddFormExpanded ? <ChevronDown className="w-4 h-4 text-purple-600" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                <h3 className="text-sm font-medium text-slate-700">
                   {editingTaskId ? 'Eksik Düzenleme Formu' : 'Yeni Eksik / Not Ekle'}
                 </h3>
               </div>
@@ -310,7 +310,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
             {isAddFormExpanded && (
               <div className="px-6 pb-6 pt-2 animate-in slide-in-from-top-2 fade-in duration-200">
                 <div className="mb-4">
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-slate-500">
                     {editingTaskId ? 'Mevcut eksik bilgisini güncelliyorsunuz.' : 'Buraya ekleyeceğiniz maddeler "Görev Dağıtımı" ekranında havuza düşecektir.'}
                   </p>
                 </div>
@@ -325,7 +325,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                         placeholder="Müşteri Adı Soyadı"
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-10 pr-4 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                        className="w-full bg-white border border-slate-300 rounded-lg pl-10 pr-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-400"
                       />
                     </div>
                     <div className="relative">
@@ -335,7 +335,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                         placeholder="Telefon Numarası"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-10 pr-4 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                        className="w-full bg-white border border-slate-300 rounded-lg pl-10 pr-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -349,7 +349,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                         placeholder="Adres"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-10 pr-9 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                        className="w-full bg-white border border-slate-300 rounded-lg pl-10 pr-9 py-2.5 text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-400"
                       />
                       <button
                         type="button"
@@ -366,14 +366,14 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                         placeholder="İlçe"
                         value={district}
                         onChange={(e) => setDistrict(e.target.value)}
-                        className="w-1/2 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                        className="w-1/2 bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-400"
                       />
                       <input
                         type="text"
                         placeholder="İl"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        className="w-1/2 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                        className="w-1/2 bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -381,7 +381,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                   {/* Konum Gösterimi */}
                   {locationCoordinates && (
                     <div className="flex items-center gap-2 mt-1 -mb-1">
-                      <span className="text-[10px] text-blue-400 flex items-center gap-1 bg-slate-800/50 px-2 py-0.5 rounded border border-blue-500/20">
+                      <span className="text-[10px] text-blue-600 flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-blue-200">
                         <MapPin className="w-3 h-3" /> Konum Eklendi
                       </span>
                       <button
@@ -401,7 +401,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                       type="date"
                       value={customDate}
                       onChange={(e) => setCustomDate(e.target.value)}
-                      className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500 accent-purple-500"
+                      className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-400 accent-purple-500"
                       title="Ekleme Tarihi (Boş bırakılırsa bugün alınır)"
                     />
                     <input
@@ -409,7 +409,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                       placeholder="Eksik malzeme, yapılacak tamirat veya not girin... *"
                       value={newTaskContent}
                       onChange={(e) => setNewTaskContent(e.target.value)}
-                      className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-500"
+                      className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-400"
                     />
                     <button
                       type="submit"
@@ -426,7 +426,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
           </div>
 
           {/* Navigation & Filters Header - Fixed layout to prevent overlap */}
-          <div className="flex flex-col flex-shrink-0 border-b border-slate-700 bg-slate-900 z-20 relative">
+          <div className="flex flex-col flex-shrink-0 border-b border-slate-200 bg-slate-50 z-20 relative">
             {/* Main Tabs */}
             <div className="px-6 mt-4 flex gap-4 overflow-x-auto no-scrollbar">
               <button
@@ -434,7 +434,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                 className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'pool' ? 'text-purple-400' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 Havuzdaki Eksikler
-                <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{poolTasks.length}</span>
+                <span className="ml-2 bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full">{poolTasks.length}</span>
                 {activeTab === 'pool' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500 rounded-t-full" />}
               </button>
               <button
@@ -442,7 +442,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                 className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'assigned' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 Atanan Eksikler
-                <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{assignedTasks.length}</span>
+                <span className="ml-2 bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full">{assignedTasks.length}</span>
                 {activeTab === 'assigned' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-t-full" />}
               </button>
               <button
@@ -450,19 +450,19 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
                 className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 Tamamlanan Eksikler
-                <span className="ml-2 bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded-full">{doneTasks.length}</span>
+                <span className="ml-2 bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full">{doneTasks.length}</span>
                 {activeTab === 'completed' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-t-full" />}
               </button>
             </div>
 
             {/* District Filter Chips (Only for Pool Tasks) */}
             {activeTab === 'pool' && uniqueDistricts.length > 1 && (
-              <div className="px-6 py-3 flex gap-2 overflow-x-auto no-scrollbar border-t border-slate-800 bg-slate-800/30">
+              <div className="px-6 py-3 flex gap-2 overflow-x-auto no-scrollbar border-t border-slate-200 bg-white">
                 {uniqueDistricts.map(dist => (
                   <button
                     key={dist}
                     onClick={() => setActiveDistrict(dist)}
-                    className={`text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap border ${activeDistrict === dist ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'}`}
+                    className={`text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap border ${activeDistrict === dist ? 'bg-purple-600 text-white border-purple-500' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 shadow-sm'}`}
                   >
                     {dist}
                   </button>
@@ -479,7 +479,7 @@ const RoutineTasksModal: React.FC<RoutineTasksModalProps> = ({
               <div className="space-y-2">
                 {filteredPoolTasks.length === 0 ? (
                   <div className="text-center py-10">
-                    <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-600">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
                       <CheckSquare className="w-8 h-8 opacity-50" />
                     </div>
                     <p className="text-slate-500 text-sm">

@@ -789,6 +789,7 @@ export default function App() {
         {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
           <Dashboard
             tasks={visibleTasks}
+            staffList={registeredStaff} // Pass real staff list
             onNavigate={handleDashboardNavigate}
             onTaskClick={handleTaskClick}
             onFilterMissing={handleFilterMissing}
@@ -876,6 +877,7 @@ export default function App() {
                     visibleColumns={boardFilter ? [boardFilter] : undefined}
                     showRoutineColumn={false}
                     staffName={userPermissions?.name}
+                    isCompact={true}
                   />
                 </div>
                 <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
@@ -892,6 +894,7 @@ export default function App() {
                     visibleColumns={boardFilter ? [boardFilter] : undefined}
                     showRoutineColumn={false}
                     staffName={userPermissions?.name}
+                    isCompact={true}
                   />
                 </div>
               </div>

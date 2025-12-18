@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { Task, TaskStatus, StatusLabels } from '@/types';
+import { Task, TaskStatus, StatusLabels, StaffMember } from '@/types';
 import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal } from 'lucide-react';
 // import InteractiveMap from './InteractiveMap'; // Later integration
 
 interface DashboardProps {
     tasks: Task[];
+    staffList: StaffMember[];
     onNavigate: (status?: TaskStatus) => void;
     onTaskClick: (task: Task) => void;
     onFilterMissing: () => void;
@@ -16,6 +17,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({
     tasks,
+    staffList,
     onNavigate,
     onTaskClick,
     onFilterMissing,
@@ -178,56 +180,45 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     {/* Sahadaki Personel Widget (Map Preview) */}
-                    <div className="col-span-1 lg:col-span-2 bg-[#2c3e50] rounded-2xl p-0 shadow-lg border border-slate-700 overflow-hidden relative group min-h-[300px]">
-                        {/* Fake Map Background */}
-                        <div className="absolute inset-0 opacity-40 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/29.0,40.2,10,0/800x400@2x?access_token=pk.eyJ1IjoiY2FuZXJjZWxpayIsImEiOiJjbH...')] bg-cover bg-center transition-all group-hover:opacity-50 group-hover:scale-105 duration-1000"></div>
+                    <div className="col-span-1 lg:col-span-2 bg-white rounded-2xl p-0 shadow-sm border border-slate-200 overflow-hidden relative group min-h-[300px]">
+                        {/* Map Background - Gradient Fallback */}
+                        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-100 via-slate-100 to-white"></div>
+                        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#94a3b8 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
                         {/* Overlay Content */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#2c3e50] via-transparent to-transparent z-10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/40 to-transparent z-10"></div>
 
                         <div className="relative z-20 p-6 h-full flex flex-col justify-between">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                                        <MapIcon className="w-5 h-5 text-emerald-400" />
-                                        Sahadaki Personel
+                                    <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                        <MapIcon className="w-5 h-5 text-blue-600" />
+                                        Personel Durumu
                                     </h3>
-                                    <p className="text-slate-300 text-xs mt-1">Canlı konum takibi ve rota durumu</p>
+                                    <p className="text-slate-500 text-xs mt-1">Kayıtlı personeller ve anlık durumları</p>
                                 </div>
-                                <button className="bg-white/10 hover:bg-white/20 hover:backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg border border-white/10 transition-all font-medium">
-                                    Haritayı Genişlet
-                                </button>
                             </div>
 
-                            {/* Online Staff List (Mock) */}
-                            <div className="flex items-center gap-4 mt-8">
-                                {/* Staff 1 */}
-                                <div className="flex items-center gap-3 bg-slate-800/80 backdrop-blur-md p-3 rounded-xl border border-white/5 transform hover:translate-y-[-2px] transition-transform cursor-pointer">
-                                    <div className="relative">
-                                        <div className="w-10 h-10 rounded-full bg-blue-500 overflow-hidden border-2 border-slate-700">
-                                            <img src="https://ui-avatars.com/api/?name=Ahmet+Y&background=random" alt="Ahmet" />
+                            {/* Real Staff List */}
+                            <div className="flex items-center gap-4 mt-8 overflow-x-auto pb-2 no-scrollbar">
+                                {staffList && staffList.length > 0 ? (
+                                    staffList.map((staff, index) => (
+                                        <div key={index} className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-sm min-w-[180px]">
+                                            <div className="relative">
+                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white shadow-sm text-blue-600 font-bold text-xs uppercase">
+                                                    {staff.name.substring(0, 2)}
+                                                </div>
+                                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-800 text-xs font-bold truncate max-w-[100px]">{staff.name}</p>
+                                                <p className="text-emerald-600 text-[10px]">Çevrimiçi</p>
+                                            </div>
                                         </div>
-                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-800 rounded-full animate-pulse"></div>
-                                    </div>
-                                    <div>
-                                        <p className="text-white text-xs font-bold">Ahmet Yılmaz</p>
-                                        <p className="text-emerald-400 text-[10px]">Nilüfer, Bursa</p>
-                                    </div>
-                                </div>
-
-                                {/* Staff 2 */}
-                                <div className="flex items-center gap-3 bg-slate-800/80 backdrop-blur-md p-3 rounded-xl border border-white/5 transform hover:translate-y-[-2px] transition-transform cursor-pointer">
-                                    <div className="relative">
-                                        <div className="w-10 h-10 rounded-full bg-purple-500 overflow-hidden border-2 border-slate-700">
-                                            <img src="https://ui-avatars.com/api/?name=Mehmet+K&background=random" alt="Mehmet" />
-                                        </div>
-                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-amber-500 border-2 border-slate-800 rounded-full"></div>
-                                    </div>
-                                    <div>
-                                        <p className="text-white text-xs font-bold">Mehmet Kaya</p>
-                                        <p className="text-amber-400 text-[10px]">Osmangazi, Bursa</p>
-                                    </div>
-                                </div>
+                                    ))
+                                ) : (
+                                    <div className="text-slate-400 text-sm italic">Henüz personel eklenmemiş.</div>
+                                )}
                             </div>
                         </div>
                     </div>
