@@ -15,6 +15,10 @@ import MobileAdminPanel from './components/MobileAdminPanel';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 
+// NEW VIEWS
+import AssignmentView from './components/AssignmentView';
+import RoutineTasksView from './components/RoutineTasksView';
+
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
 
 import { playNotificationSound } from './utils/notification_sound';
@@ -48,8 +52,7 @@ export default function App() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false); // Eksikler Modalı
-  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false); // Atama Modalı
+  // REMOVED: isRoutineModalOpen, isAssignmentModalOpen -> handled by activeTab
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
 
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
@@ -704,8 +707,8 @@ export default function App() {
         onAddTask={handleAddTaskClick}
         onToggleRoutineTask={handleToggleRoutineTask}
         onOpenAdmin={() => setIsAdminPanelOpen(true)}
-        onOpenRoutineModal={() => setIsRoutineModalOpen(true)}
-        onOpenAssignmentModal={() => setIsAssignmentModalOpen(true)}
+        onOpenRoutineModal={() => setActiveTab('routine_pool')}
+        onOpenAssignmentModal={() => setActiveTab('assignment')}
       />
 
       {/* Mobile Admin Panel */}
@@ -722,34 +725,7 @@ export default function App() {
       )}
 
       {/* Shared Modals for Mobile */}
-      {isRoutineModalOpen && (
-        <RoutineTasksModal
-          isOpen={isRoutineModalOpen}
-          onClose={() => setIsRoutineModalOpen(false)}
-          tasks={routineTasks}
-          onAddTask={handleAddRoutineTask}
-          onToggleTask={handleToggleRoutineTask}
-          onDeleteTask={handleDeleteRoutineTask}
-          onConvertTask={handleConvertRoutineTask}
-          onUpdateTask={handleUpdateRoutineTask}
-        />
-      )}
-
-      {isAssignmentModalOpen && (
-        <AssignmentModal
-          isOpen={isAssignmentModalOpen}
-          onClose={() => setIsAssignmentModalOpen(false)}
-          tasks={tasks}
-          routineTasks={routineTasks}
-          onAssignTask={handleAssignTask}
-          onAssignRoutineTask={handleAssignRoutineTask}
-          staffList={registeredStaff}
-          pinnedStaff={appSettings.pinnedStaff || []}
-          onAddStaff={handleAddStaff}
-          onRemoveStaff={handleRemoveStaff}
-          onTogglePinStaff={handleTogglePinStaff}
-        />
-      )}
+      {/* Modals for Mobile */}
 
       {/* Modals for Mobile */}
       {isModalOpen && (
@@ -791,137 +767,219 @@ export default function App() {
           <span>🛠️ GELİŞTİRME MODU</span>
         </div>
 
-        {/* Global Toolbar */}
-        <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm shrink-0 z-10 w-full">
-          <div className="flex items-center gap-4">
-            {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
-              <button onClick={() => setViewMode('dashboard')} className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1">
-                <Layout className="w-4 h-4" /> Panel'e Dön
-              </button>
-            )}
-            <div className="h-4 w-px bg-slate-300 mx-2" />
-            <div>
-              <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-slate-500">İş Takip V2</p>
-                <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="flex-1 max-w-md mx-6 flex justify-end">
-            {/* Search Bar - Top Right Filter Request */}
-            <div className="relative group w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
-                placeholder="Müşteri Ara..."
-              />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
-              <button onClick={() => setIsRoutineModalOpen(true)} className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30">
-                <Bell className="w-4 h-4" />
-                Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks) ? routineTasks.filter(t => !t.isCompleted).length : visibleRoutineTasks.filter(t => !t.isCompleted).length})
-              </button>
-            )}
-            {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
-              <button onClick={() => setIsAssignmentModalOpen(true)} className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30">
-                <Users className="w-4 h-4" />
-                Görev Dağıtımı
-              </button>
-            )}
-            {(hasAdminAccess || userPermissions?.canAddCustomers) && (
-              <button onClick={handleAddTaskClick} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20">
-                <Plus className="w-4 h-4" />
-                Yeni Müşteri
-              </button>
-            )}
-          </div>
-        </div>
+        {/* Default Dashboard/Kanban View */}
+        {(activeTab === 'dashboard' || activeTab === 'kanban') && (
+          /* ... existing dashboard/kanban logic ... */
+          /* Wait, I can't wrap existing logic easily without `multi_replace` being tricky. */
+          /* The existing logic checks activeTab === 'dashboard' inside the return? */
+          /* Let's look at lines 836+ again. */
+          /* The logic was: <div className="flex-1 ..."> 
+               <Toolbar />
+               <div className="flex-1 ... overflow-hidden">
+                  {activeTab === 'dashboard' ? <Dashboard /> : <KanbanBoard />}
+               </div>
+             </div> */
+          /* I need to hijack this. */
+          /* If activeTab is assignment, I replace the whole inner content? Or just the dashboard part? */
+          /* AssignmentView seems to include its own header? Yes. */
+          /* So I should render it INSTEAD of the Toolbar+Content combo? */
+          /* Or inside the Content area? */
+          /* The Global Toolbar (Line 794) is generic. 'Onay Mühendislik'. */
+          /* AssignmentView has its own Header "Görev Dağıtımı". */
+          /* So I should render AssignmentView as a sibling to Toolbar? Or replace Toolbar? */
+          /* AssignmentView has full height. */
+          /* So if activeTab is 'assignment', I should hide the global toolbar. */
+          /* Current structure:
+             <Sidebar />
+             <div className="flex-1 flex flex-col ..."> 
+                 <Toolbar />
+                 <Content />
+             </div>
+          */
+          /* I will render AssignmentView taking up the full space of the right side? */
+          /* Yes. */
 
-        {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
-          <Dashboard
-            tasks={visibleTasks}
-            routineTasks={routineTasks} // Pass routine tasks for "Recent Updates"
-            // staffList removed for map removal
-            onNavigate={handleDashboardNavigate}
-            onTaskClick={handleTaskClick}
-            onFilterMissing={handleFilterMissing}
-            onOpenRoutineModal={() => setIsRoutineModalOpen(true)}
-            onOpenAssignmentModal={() => setIsAssignmentModalOpen(true)}
-            onOpenNewCustomerModal={handleAddTaskClick}
-          />
-        ) : (
-          <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
-            {/* Toolbar Removed Logic Here */}
+          /* So I need to wrap the Toolbar + Content in a check for !assignment && !routine_pool */
 
-            {viewMode === 'split' ? (
-              <div className="flex-1 flex overflow-hidden">
-                <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
-                  <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
-                    <span>✅ Hazır / Sorunsuz İşler</span>
-                    <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
+          /* This is getting complex for `replacements`. */
+          /* Let's do it simply: */
+          /* Replace the content rendering logic. */
+
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-100 relative">
+            {(activeTab === 'assignment' || activeTab === 'routine_pool') ? (
+              <>
+                {activeTab === 'assignment' && (
+                  <div className="relative h-full">
+                    <button onClick={() => setActiveTab('dashboard')} className="absolute top-4 right-4 z-50 p-2 bg-white/50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"><X className="w-6 h-6" /></button>
+                    <AssignmentView
+                      tasks={tasks}
+                      routineTasks={routineTasks}
+                      onAssignTask={handleAssignTask}
+                      onAssignRoutineTask={handleAssignRoutineTask}
+                      staffList={registeredStaff}
+                      pinnedStaff={appSettings.pinnedStaff || []}
+                      onAddStaff={handleAddStaff}
+                      onRemoveStaff={handleRemoveStaff}
+                      onTogglePinStaff={handleTogglePinStaff}
+                    />
                   </div>
-                  <KanbanBoard
-                    tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
-                    routineTasks={[]}
-                    myTasks={[]}
-                    onTaskClick={handleTaskClick}
-                    onToggleRoutineTask={handleToggleRoutineTask}
-                    visibleColumns={boardFilter ? [boardFilter] : undefined}
-                    showRoutineColumn={false}
-                    staffName={userPermissions?.name}
-                    isCompact={true}
-                  />
-                </div>
-                <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
-                  <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-                    <span>⚠️ Eksiği Olan İşler</span>
-                    <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
+                )}
+                {activeTab === 'routine_pool' && (
+                  <div className="relative h-full">
+                    <button onClick={() => setActiveTab('dashboard')} className="absolute top-4 right-4 z-50 p-2 bg-white/50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"><X className="w-6 h-6" /></button>
+                    <RoutineTasksView
+                      tasks={routineTasks}
+                      onAddTask={handleAddRoutineTask}
+                      onToggleTask={handleToggleRoutineTask}
+                      onDeleteTask={handleDeleteRoutineTask}
+                      onConvertTask={handleConvertRoutineTask}
+                      onUpdateTask={handleUpdateRoutineTask}
+                    />
                   </div>
-                  <KanbanBoard
-                    tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
-                    routineTasks={[]}
-                    myTasks={[]}
-                    onTaskClick={handleTaskClick}
-                    onToggleRoutineTask={handleToggleRoutineTask}
-                    visibleColumns={boardFilter ? [boardFilter] : undefined}
-                    showRoutineColumn={false}
-                    staffName={userPermissions?.name}
-                    isCompact={true}
-                  />
-                </div>
-              </div>
+                )}
+              </>
             ) : (
-              <KanbanBoard
-                tasks={visibleTasks}
-                routineTasks={visibleRoutineTasks}
-                myTasks={[]}
-                onTaskClick={handleTaskClick}
-                onToggleRoutineTask={handleToggleRoutineTask}
-                visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
-                showRoutineColumn={!boardFilter && !hasAdminAccess}
-                staffName={userPermissions?.name}
-              />
+              <>
+                {/* Global Toolbar */}
+                <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm shrink-0 z-10 w-full">
+                  <div className="flex items-center gap-4">
+                    {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
+                      <button onClick={() => setViewMode('dashboard')} className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1">
+                        <Layout className="w-4 h-4" /> Panel'e Dön
+                      </button>
+                    )}
+                    <div className="h-4 w-px bg-slate-300 mx-2" />
+                    <div>
+                      <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-slate-500">İş Takip V2</p>
+                        <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 max-w-md mx-6 flex justify-end">
+                    {/* Search Bar - Top Right Filter Request */}
+                    <div className="relative group w-full">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
+                        placeholder="Müşteri Ara..."
+                      />
+                      {searchTerm && (
+                        <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* VIEW TRIGGERS (NOW TABS) */}
+                    {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
+                      <button
+                        onClick={() => setActiveTab('routine_pool')}
+                        className={`bg-purple-600/10 hover:bg-purple-600/20 text-purple-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-purple-200 ${activeTab === 'routine_pool' ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
+                      >
+                        <Bell className="w-4 h-4" />
+                        Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks) ? routineTasks.filter(t => !t.isCompleted).length : visibleRoutineTasks.filter(t => !t.isCompleted).length})
+                      </button>
+                    )}
+                    {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
+                      <button
+                        onClick={() => setActiveTab('assignment')}
+                        className={`bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-blue-200 ${activeTab === 'assignment' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                      >
+                        <Users className="w-4 h-4" />
+                        Görev Dağıtımı
+                      </button>
+                    )}
+                    {(hasAdminAccess || userPermissions?.canAddCustomers) && (
+                      <button onClick={handleAddTaskClick} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20">
+                        <Plus className="w-4 h-4" />
+                        Yeni Müşteri
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
+                  <Dashboard
+                    tasks={visibleTasks}
+                    routineTasks={routineTasks}
+                    onNavigate={handleDashboardNavigate}
+                    onTaskClick={handleTaskClick}
+                    onFilterMissing={handleFilterMissing}
+                    onOpenRoutineModal={() => setActiveTab('routine_pool')}
+                    onOpenAssignmentModal={() => setActiveTab('assignment')}
+                    onOpenNewCustomerModal={handleAddTaskClick}
+                  />
+                ) : (
+                  <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
+                    {viewMode === 'split' ? (
+                      <div className="flex-1 flex overflow-hidden">
+                        <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
+                          <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
+                            <span>✅ Hazır / Sorunsuz İşler</span>
+                            <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
+                          </div>
+                          <KanbanBoard
+                            tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
+                            routineTasks={[]}
+                            myTasks={[]}
+                            onTaskClick={handleTaskClick}
+                            onToggleRoutineTask={handleToggleRoutineTask}
+                            visibleColumns={boardFilter ? [boardFilter] : undefined}
+                            showRoutineColumn={false}
+                            staffName={userPermissions?.name}
+                            isCompact={true}
+                          />
+                        </div>
+                        <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
+                          <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
+                            <span>⚠️ Eksiği Olan İşler</span>
+                            <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
+                          </div>
+                          <KanbanBoard
+                            tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
+                            routineTasks={[]}
+                            myTasks={[]}
+                            onTaskClick={handleTaskClick}
+                            onToggleRoutineTask={handleToggleRoutineTask}
+                            visibleColumns={boardFilter ? [boardFilter] : undefined}
+                            showRoutineColumn={false}
+                            staffName={userPermissions?.name}
+                            isCompact={true}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <KanbanBoard
+                        tasks={visibleTasks}
+                        routineTasks={visibleRoutineTasks}
+                        myTasks={[]}
+                        onTaskClick={handleTaskClick}
+                        onToggleRoutineTask={handleToggleRoutineTask}
+                        visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
+                        showRoutineColumn={!boardFilter && !hasAdminAccess}
+                        staffName={userPermissions?.name}
+                      />
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
-        )}
-      </main>
+        </main>
 
       {isModalOpen && (
         <TaskModal
@@ -936,34 +994,7 @@ export default function App() {
         />
       )}
 
-      {isRoutineModalOpen && (
-        <RoutineTasksModal
-          isOpen={isRoutineModalOpen}
-          onClose={() => setIsRoutineModalOpen(false)}
-          tasks={routineTasks}
-          onAddTask={handleAddRoutineTask}
-          onToggleTask={handleToggleRoutineTask}
-          onDeleteTask={handleDeleteRoutineTask}
-          onConvertTask={handleConvertRoutineTask}
-          onUpdateTask={handleUpdateRoutineTask}
-        />
-      )}
-
-      {isAssignmentModalOpen && (
-        <AssignmentModal
-          isOpen={isAssignmentModalOpen}
-          onClose={() => setIsAssignmentModalOpen(false)}
-          tasks={tasks}
-          routineTasks={routineTasks}
-          onAssignTask={handleAssignTask}
-          onAssignRoutineTask={handleAssignRoutineTask}
-          staffList={registeredStaff}
-          pinnedStaff={appSettings.pinnedStaff || []}
-          onAddStaff={handleAddStaff}
-          onRemoveStaff={handleRemoveStaff}
-          onTogglePinStaff={handleTogglePinStaff}
-        />
-      )}
+      {/* Removed Modals */}
 
       {/* Admin Panel */}
       <AdminPanel
