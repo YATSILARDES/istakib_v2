@@ -568,9 +568,12 @@ function App() {
 
   // 2. Permission Filter
   let visibleRoutineTasks: RoutineTask[] = [];
-  const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
+  // FIX: Case-insensitive email check for Admin
+  const normalizedEmail = user.email ? user.email.toLowerCase() : '';
+  const isAdmin = normalizedEmail && ADMIN_EMAILS.includes(normalizedEmail);
   const isManager = userPermissions?.role === 'manager';
   const hasAdminAccess = isAdmin || isManager;
+
 
   if (hasAdminAccess) {
     visibleRoutineTasks = routineTasks;
