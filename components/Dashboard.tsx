@@ -9,9 +9,20 @@ interface DashboardProps {
     onNavigate: (status?: TaskStatus) => void;
     onTaskClick: (task: Task) => void;
     onFilterMissing: () => void;
+    onOpenRoutineModal: () => void;
+    onOpenAssignmentModal: () => void;
+    onOpenNewCustomerModal: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, onFilterMissing }) => {
+const Dashboard: React.FC<DashboardProps> = ({
+    tasks,
+    onNavigate,
+    onTaskClick,
+    onFilterMissing,
+    onOpenRoutineModal,
+    onOpenAssignmentModal,
+    onOpenNewCustomerModal
+}) => {
     const [filter, setFilter] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     // --- İstatistik Hesaplamaları ---
@@ -135,21 +146,21 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, o
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
-                            <button className="flex flex-col items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-4 rounded-xl transition-all border border-emerald-100 group">
+                            <button onClick={onOpenNewCustomerModal} className="flex flex-col items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-4 rounded-xl transition-all border border-emerald-100 group">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <Plus className="w-5 h-5" />
                                 </div>
                                 <span className="font-bold text-xs">Yeni Müşteri</span>
                             </button>
 
-                            <button className="flex flex-col items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 p-4 rounded-xl transition-all border border-blue-100 group">
+                            <button onClick={onOpenAssignmentModal} className="flex flex-col items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 p-4 rounded-xl transition-all border border-blue-100 group">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <Users className="w-5 h-5" />
                                 </div>
                                 <span className="font-bold text-xs">Görev Dağıtımı</span>
                             </button>
 
-                            <button className="flex flex-col items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-600 p-4 rounded-xl transition-all border border-purple-100 group relative">
+                            <button onClick={onOpenRoutineModal} className="flex flex-col items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-600 p-4 rounded-xl transition-all border border-purple-100 group relative">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <Bell className="w-5 h-5" />
                                 </div>

@@ -792,6 +792,9 @@ export default function App() {
             onNavigate={handleDashboardNavigate}
             onTaskClick={handleTaskClick}
             onFilterMissing={handleFilterMissing}
+            onOpenRoutineModal={() => setIsRoutineModalOpen(true)}
+            onOpenAssignmentModal={() => setIsAssignmentModalOpen(true)}
+            onOpenNewCustomerModal={handleAddTaskClick}
           />
         ) : (
           <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
