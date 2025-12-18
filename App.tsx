@@ -693,6 +693,12 @@ export default function App() {
             existingTasks={tasks}
           />
         )}
+
+
+        {/* DEVELOPMENT MODE INDICATOR */}
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
+          <span>🛠️ GELİŞTİRME MODU</span>
+        </div>
       </>
     );
   }
@@ -716,8 +722,12 @@ export default function App() {
             <Layout className="w-5 h-5 text-white" />
           </div>
           <div>
+
             <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
-            <p className="text-xs text-slate-500">İş Takip V2</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-slate-500">İş Takip V2</p>
+              <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
+            </div>
           </div>
         </div>
 
