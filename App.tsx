@@ -798,7 +798,8 @@ export default function App() {
                       <Layout className="w-4 h-4" /> Panel'e Dön
                     </button>
                   )}
-                  <div className="h-4 w-px bg-slate-300 mx-2"          <div>
+                  <div className="h-4 w-px bg-slate-300 mx-2" />
+                  <div>
                     <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
                     <div className="flex items-center gap-2">
                       <p className="text-xs text-slate-500">İş Takip V2</p>
@@ -833,127 +834,123 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">x] text-slate-500 px-1 border border-slate-700 rounded">
-                  {userPermissions.role === 'admin' ? 'ADMIN' : (userPermissions.role === 'manager' ? 'YÖNETİCİ' : `STAFF: ${userPermissions.name}`)}
-                </span>
+
+
+                <div className="flex items-center gap-3">
+                  {/* Eksikler Havuzu - Admin veya Yetkili */}
+                  {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
+                    <button
+                      onClick={() => setIsRoutineModalOpen(true)}
+                      className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
+                    >
+                      <Bell className="w-4 h-4" />
+                      Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks)
+                        ? routineTasks.filter(t => !t.isCompleted).length
+                        : visibleRoutineTasks.filter(t => !t.isCompleted).length})
+                      {/* Badge mantığı: Admin/Havuz yetkilisi tümünü görür, diğerleri sadece kendisininkini */}
+                    </button>
                   )}
-              </h2>
 
-              <div className="flex items-center gap-3">
-                {/* Eksikler Havuzu - Admin veya Yetkili */}
-                {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
-                  <button
-                    onClick={() => setIsRoutineModalOpen(true)}
-                    className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
-                  >
-                    <Bell className="w-4 h-4" />
-                    Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks)
-                      ? routineTasks.filter(t => !t.isCompleted).length
-                      : visibleRoutineTasks.filter(t => !t.isCompleted).length})
-                    {/* Badge mantığı: Admin/Havuz yetkilisi tümünü görür, diğerleri sadece kendisininkini */}
-                  </button>
-                )}
+                  {/* Görev Dağıtımı - Admin veya Yetkili */}
+                  {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
+                    <button
+                      onClick={() => setIsAssignmentModalOpen(true)}
+                      className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
+                    >
+                      <Users className="w-4 h-4" />
+                      Görev Dağıtımı
+                    </button>
+                  )}
 
-                {/* Görev Dağıtımı - Admin veya Yetkili */}
-                {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
-                  <button
-                    onClick={() => setIsAssignmentModalOpen(true)}
-                    className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
-                  >
-                    <Users className="w-4 h-4" />
-                    Görev Dağıtımı
-                  </button>
-                )}
-
-                {/* Müşteri Ekle - Admin veya Yetkili */}
-                {(hasAdminAccess || userPermissions?.canAddCustomers) && (
-                  <button
-                    onClick={handleAddTaskClick}
-                    className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Yeni Müşteri
-                  </button>
-                )}
+                  {/* Müşteri Ekle - Admin veya Yetkili */}
+                  {(hasAdminAccess || userPermissions?.canAddCustomers) && (
+                    <button
+                      onClick={handleAddTaskClick}
+                      className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Yeni Müşteri
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-            </div>
 
-              </div >
 
-      {/* View Logic: Split vs Normal Board */ }
-    {
-      viewMode === 'split' ? (
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left Col: Clean Tasks */}
-          <div className="flex-1 flex flex-col border-r border-slate-200 bg-emerald-50/30">
-            <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
-              <span>✅ Hazır / Sorunsuz İşler</span>
-              <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
-            </div>
-            <KanbanBoard
-              tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
-              routineTasks={[]} // No routines in split view
-              myTasks={[]}
-              onTaskClick={handleTaskClick}
-              onToggleRoutineTask={handleToggleRoutineTask}
-              visibleColumns={boardFilter ? [boardFilter] : undefined} // Only show relevant column
-              showRoutineColumn={false}
-              staffName={userPermissions?.name}
-            />
-          </div>
 
-          {/* Right Col: Missing Tasks */}
-          <div className="flex-1 flex flex-col bg-red-50/30">
-            <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-              <span>⚠️ Eksiği Olan İşler</span>
-              <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
-            </div>
-            <KanbanBoard
-              tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
-              routineTasks={[]}
-              myTasks={[]}
-              onTaskClick={handleTaskClick}
-              onToggleRoutineTask={handleToggleRoutineTask}
-              visibleColumns={boardFilter ? [boardFilter] : undefined}
-              showRoutineColumn={false}
-              staffName={userPermissions?.name}
-            />
-          </div>
-        </div>
-      ) : (
-      /* Normal Single Board */
-      <KanbanBoard
-        tasks={visibleTasks}
-        routineTasks={visibleRoutineTasks}
-        myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []}
-        onTaskClick={handleTaskClick}
-        onToggleRoutineTask={handleToggleRoutineTask}
-        visibleColumns={userPermissions?.allowedColumns}
-        showRoutineColumn={!hasAdminAccess}
-        staffName={userPermissions?.name}
-      />
+      {/* View Logic: Split vs Normal Board */}
+          {
+            viewMode === 'split' ? (
+              <div className="flex-1 flex overflow-hidden">
+                {/* Left Col: Clean Tasks */}
+                <div className="flex-1 flex flex-col border-r border-slate-200 bg-emerald-50/30">
+                  <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
+                    <span>✅ Hazır / Sorunsuz İşler</span>
+                    <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
+                  </div>
+                  <KanbanBoard
+                    tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
+                    routineTasks={[]} // No routines in split view
+                    myTasks={[]}
+                    onTaskClick={handleTaskClick}
+                    onToggleRoutineTask={handleToggleRoutineTask}
+                    visibleColumns={boardFilter ? [boardFilter] : undefined} // Only show relevant column
+                    showRoutineColumn={false}
+                    staffName={userPermissions?.name}
+                  />
+                </div>
+
+                {/* Right Col: Missing Tasks */}
+                <div className="flex-1 flex flex-col bg-red-50/30">
+                  <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
+                    <span>⚠️ Eksiği Olan İşler</span>
+                    <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
+                  </div>
+                  <KanbanBoard
+                    tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
+                    routineTasks={[]}
+                    myTasks={[]}
+                    onTaskClick={handleTaskClick}
+                    onToggleRoutineTask={handleToggleRoutineTask}
+                    visibleColumns={boardFilter ? [boardFilter] : undefined}
+                    showRoutineColumn={false}
+                    staffName={userPermissions?.name}
+                  />
+                </div>
+              </div>
+            ) : (
+              /* Normal Single Board */
+              <KanbanBoard
+                tasks={visibleTasks}
+                routineTasks={visibleRoutineTasks}
+                myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []}
+                onTaskClick={handleTaskClick}
+                onToggleRoutineTask={handleToggleRoutineTask}
+                visibleColumns={userPermissions?.allowedColumns}
+                showRoutineColumn={!hasAdminAccess}
+                staffName={userPermissions?.name}
+              />
+            )
+          }
+      </div >
     )
-    }
-            </div >
-        )
-}
+  }
       </main >
 
-  {/* Modals */ }
+    {/* Modals */ }
 {
-  isModalOpen && (
-    <TaskModal
-      task={selectedTask}
-      onClose={() => setIsModalOpen(false)}
-      onSave={handleSaveTask}
-      onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
-      isOpen={isModalOpen}
-      nextOrderNumber={tasks.length + 1}
-      isAdmin={isAdmin}
-      existingTasks={tasks}
-    />
-  )
+      isModalOpen && (
+      <TaskModal
+        task={selectedTask}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveTask}
+        onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
+        isOpen={isModalOpen}
+        nextOrderNumber={tasks.length + 1}
+        isAdmin={isAdmin}
+        existingTasks={tasks}
+      />
+    )
 }
 
 {
@@ -1002,7 +999,6 @@ export default function App() {
     routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
     const uniqueUsers = Array.from(allEmails).filter(Boolean);
     console.log("AdminPanel Users List:", uniqueUsers);
-    return uniqueUsers;
     return uniqueUsers;
   })()}
   tasks={tasks}

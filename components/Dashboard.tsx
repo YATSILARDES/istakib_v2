@@ -1,4 +1,4 @@
-```
+
 import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels } from '@/types';
 import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal } from 'lucide-react';
@@ -120,28 +120,28 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, o
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                
+
                 {/* 1. SECTION: QUICK ACTIONS & MAP (NEW) */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
+
                     {/* Hızlı İşlemler */}
                     <div className="col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
-                         <div className="mb-4">
+                        <div className="mb-4">
                             <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                                 <Activity className="w-5 h-5 text-blue-500" />
                                 Hızlı İşlemler
                             </h3>
                             <p className="text-slate-400 text-xs mt-1">Sık kullanılan yönetici araçları</p>
-                         </div>
-                         
-                         <div className="grid grid-cols-2 gap-3">
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
                             <button className="flex flex-col items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-4 rounded-xl transition-all border border-emerald-100 group">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <Plus className="w-5 h-5" />
                                 </div>
                                 <span className="font-bold text-xs">Yeni Müşteri</span>
                             </button>
-                            
+
                             <button className="flex flex-col items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 p-4 rounded-xl transition-all border border-blue-100 group">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <Users className="w-5 h-5" />
@@ -157,68 +157,68 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, o
                                 <span className="absolute top-2 right-2 bg-purple-500 text-white text-[10px] font-bold px-1.5 rounded-full">3</span>
                             </button>
 
-                             <button className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 p-4 rounded-xl transition-all border border-slate-100 group">
+                            <button className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 p-4 rounded-xl transition-all border border-slate-100 group">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                     <MoreHorizontal className="w-5 h-5" />
                                 </div>
                                 <span className="font-bold text-xs">Diğer</span>
                             </button>
-                         </div>
+                        </div>
                     </div>
 
                     {/* Sahadaki Personel Widget (Map Preview) */}
                     <div className="col-span-1 lg:col-span-2 bg-[#2c3e50] rounded-2xl p-0 shadow-lg border border-slate-700 overflow-hidden relative group">
                         {/* Fake Map Background */}
-                         <div className="absolute inset-0 opacity-40 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/29.0,40.2,10,0/800x400@2x?access_token=pk.eyJ1IjoiY2FuZXJjZWxpayIsImEiOiJjbH...')] bg-cover bg-center transition-all group-hover:opacity-50 group-hover:scale-105 duration-1000"></div>
-                         
-                         {/* Overlay Content */}
-                         <div className="absolute inset-0 bg-gradient-to-r from-[#2c3e50] via-transparent to-transparent z-10"></div>
+                        <div className="absolute inset-0 opacity-40 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/29.0,40.2,10,0/800x400@2x?access_token=pk.eyJ1IjoiY2FuZXJjZWxpayIsImEiOiJjbH...')] bg-cover bg-center transition-all group-hover:opacity-50 group-hover:scale-105 duration-1000"></div>
 
-                         <div className="relative z-20 p-6 h-full flex flex-col justify-between">
-                             <div className="flex justify-between items-start">
-                                 <div>
-                                     <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                                         <MapIcon className="w-5 h-5 text-emerald-400" />
-                                         Sahadaki Personel
-                                     </h3>
-                                     <p className="text-slate-300 text-xs mt-1">Canlı konum takibi ve rota durumu</p>
-                                 </div>
-                                 <button className="bg-white/10 hover:bg-white/20 hover:backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg border border-white/10 transition-all font-medium">
-                                     Haritayı Genişlet
-                                 </button>
-                             </div>
+                        {/* Overlay Content */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#2c3e50] via-transparent to-transparent z-10"></div>
 
-                             {/* Online Staff List (Mock) */}
-                             <div className="flex items-center gap-4 mt-8">
-                                 {/* Staff 1 */}
-                                 <div className="flex items-center gap-3 bg-slate-800/80 backdrop-blur-md p-3 rounded-xl border border-white/5 transform hover:translate-y-[-2px] transition-transform cursor-pointer">
-                                     <div className="relative">
-                                         <div className="w-10 h-10 rounded-full bg-blue-500 overflow-hidden border-2 border-slate-700">
+                        <div className="relative z-20 p-6 h-full flex flex-col justify-between">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                                        <MapIcon className="w-5 h-5 text-emerald-400" />
+                                        Sahadaki Personel
+                                    </h3>
+                                    <p className="text-slate-300 text-xs mt-1">Canlı konum takibi ve rota durumu</p>
+                                </div>
+                                <button className="bg-white/10 hover:bg-white/20 hover:backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg border border-white/10 transition-all font-medium">
+                                    Haritayı Genişlet
+                                </button>
+                            </div>
+
+                            {/* Online Staff List (Mock) */}
+                            <div className="flex items-center gap-4 mt-8">
+                                {/* Staff 1 */}
+                                <div className="flex items-center gap-3 bg-slate-800/80 backdrop-blur-md p-3 rounded-xl border border-white/5 transform hover:translate-y-[-2px] transition-transform cursor-pointer">
+                                    <div className="relative">
+                                        <div className="w-10 h-10 rounded-full bg-blue-500 overflow-hidden border-2 border-slate-700">
                                             <img src="https://ui-avatars.com/api/?name=Ahmet+Y&background=random" alt="Ahmet" />
-                                         </div>
-                                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-800 rounded-full animate-pulse"></div>
-                                     </div>
-                                     <div>
-                                         <p className="text-white text-xs font-bold">Ahmet Yılmaz</p>
-                                         <p className="text-emerald-400 text-[10px]">Nilüfer, Bursa</p>
-                                     </div>
-                                 </div>
+                                        </div>
+                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-800 rounded-full animate-pulse"></div>
+                                    </div>
+                                    <div>
+                                        <p className="text-white text-xs font-bold">Ahmet Yılmaz</p>
+                                        <p className="text-emerald-400 text-[10px]">Nilüfer, Bursa</p>
+                                    </div>
+                                </div>
 
-                                 {/* Staff 2 */}
-                                 <div className="flex items-center gap-3 bg-slate-800/80 backdrop-blur-md p-3 rounded-xl border border-white/5 transform hover:translate-y-[-2px] transition-transform cursor-pointer">
-                                     <div className="relative">
-                                         <div className="w-10 h-10 rounded-full bg-purple-500 overflow-hidden border-2 border-slate-700">
+                                {/* Staff 2 */}
+                                <div className="flex items-center gap-3 bg-slate-800/80 backdrop-blur-md p-3 rounded-xl border border-white/5 transform hover:translate-y-[-2px] transition-transform cursor-pointer">
+                                    <div className="relative">
+                                        <div className="w-10 h-10 rounded-full bg-purple-500 overflow-hidden border-2 border-slate-700">
                                             <img src="https://ui-avatars.com/api/?name=Mehmet+K&background=random" alt="Mehmet" />
-                                         </div>
-                                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-amber-500 border-2 border-slate-800 rounded-full"></div>
-                                     </div>
-                                     <div>
-                                         <p className="text-white text-xs font-bold">Mehmet Kaya</p>
-                                         <p className="text-amber-400 text-[10px]">Osmangazi, Bursa</p>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
+                                        </div>
+                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-amber-500 border-2 border-slate-800 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <p className="text-white text-xs font-bold">Mehmet Kaya</p>
+                                        <p className="text-amber-400 text-[10px]">Osmangazi, Bursa</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -235,7 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, o
                                     <button
                                         key={idx}
                                         onClick={() => onNavigate(card.status)}
-                                        className={`${ isGasAlert ? 'bg-red-50 animate-pulse ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white' } p - 6 rounded - lg shadow - sm border - t - 4 border - slate - 100 ${ card.borderColor } hover: shadow - md transition - all text - left flex flex - col justify - between group h - 36 relative overflow - hidden`}
+                                        className={`${isGasAlert ? 'bg-red-50 animate-pulse ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white'} p-6 rounded-lg shadow-sm border-t-4 border-slate-100 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-36 relative overflow-hidden`}
                                     >
                                         <div className="flex justify-between items-start w-full mb-2 z-10 relative">
                                             <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider">{card.displayName}</h3>
@@ -243,11 +243,11 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, o
                                         </div>
 
                                         <div className="flex items-end justify-between z-10 relative">
-                                            <span className={`text - 4xl font - bold ${ card.color } `}>
+                                            <span className={`text-4xl font-bold ${card.color}`}>
                                                 {card.score}
                                             </span>
-                                            <div className={`p - 2 rounded - full bg - slate - 50 group - hover: bg - white transition - colors`}>
-                                                <Activity className={`w - 5 h - 5 ${ card.color } opacity - 50 group - hover: opacity - 100`} />
+                                            <div className={`p-2 rounded-full bg-slate-50 group-hover:bg-white transition-colors`}>
+                                                <Activity className={`w-5 h-5 ${card.color} opacity-50 group-hover:opacity-100`} />
                                             </div>
                                         </div>
 
@@ -302,19 +302,19 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, o
                                 <div className="flex bg-slate-200 rounded-lg p-1 gap-1">
                                     <button
                                         onClick={() => setFilter('daily')}
-                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${ filter === 'daily' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700' } `}
+                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${filter === 'daily' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'} `}
                                     >
                                         Günlük
                                     </button>
                                     <button
                                         onClick={() => setFilter('weekly')}
-                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${ filter === 'weekly' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700' } `}
+                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${filter === 'weekly' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'} `}
                                     >
                                         Haftalık
                                     </button>
                                     <button
                                         onClick={() => setFilter('monthly')}
-                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${ filter === 'monthly' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700' } `}
+                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${filter === 'monthly' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'} `}
                                     >
                                         Aylık
                                     </button>
