@@ -793,7 +793,43 @@ function App() {
                 </div>
               </div>
 
-              {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
+              {activeTab === 'assignment' ? (
+                <AssignmentView
+                  tasks={activeTasks}
+                  routineTasks={routineTasks}
+                  onAssignTask={handleAssignTask}
+                  onAssignRoutineTask={handleAssignRoutineTask}
+                  staffList={
+                    userPermissions?.role === 'admin'
+                      ? appSettings.staffList || []
+                      : (appSettings.staffList || []).filter(s => s.email === user?.email)
+                  }
+                  pinnedStaff={appSettings.pinnedStaff || []}
+                  onAddStaff={(name, email) => {
+                    const newList = [...(appSettings.staffList || []), { name, email }];
+                    setAppSettings(prev => ({ ...prev, staffList: newList }));
+                  }}
+                  onRemoveStaff={(name) => {
+                    const newList = (appSettings.staffList || []).filter(s => s.name !== name);
+                    setAppSettings(prev => ({ ...prev, staffList: newList }));
+                  }}
+                  onTogglePinStaff={(name) => {
+                    const currentPinned = appSettings.pinnedStaff || [];
+                    const newPinned = currentPinned.includes(name)
+                      ? currentPinned.filter(n => n !== name)
+                      : [...currentPinned, name];
+                    setAppSettings(prev => ({ ...prev, pinnedStaff: newPinned }));
+                  }}
+                />
+              ) : activeTab === 'routine_pool' ? (
+                <RoutineTasksView
+                  tasks={routineTasks}
+                  onToggleRoutineTask={handleToggleRoutineTask}
+                  onDeleteRoutineTask={handleDeleteRoutineTask}
+                  onAddRoutineTask={handleAddRoutineTask}
+                  onUpdateRoutineTask={handleUpdateRoutineTask}
+                />
+              ) : activeTab === 'dashboard' && viewMode === 'dashboard' ? (
                 <Dashboard
                   tasks={visibleTasks}
                   routineTasks={routineTasks}
