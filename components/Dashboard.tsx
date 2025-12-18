@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask } from '@/types';
 import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal } from 'lucide-react';
+import PersonalNotes from './PersonalNotes';
 // import InteractiveMap from './InteractiveMap'; // Later integration
 
 interface DashboardProps {
