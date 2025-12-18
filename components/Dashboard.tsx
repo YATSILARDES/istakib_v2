@@ -150,7 +150,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     const recentUpdates = filteredUpdates.slice(0, 10);
 
     return (
-    return (
         <div className="flex flex-col h-full overflow-hidden bg-slate-100">
 
             {/* Breadcrumb Bar - Compact */}
