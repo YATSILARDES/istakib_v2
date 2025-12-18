@@ -8,9 +8,19 @@ interface FieldStaffModalProps {
     tasks: Task[];
     routineTasks: RoutineTask[];
     staffList: StaffMember[];
+    onUpdateTask: (taskId: string, newStatus: TaskStatus) => void;
+    onToggleRoutineTask: (taskId: string, currentStatus: boolean) => void;
 }
 
-const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({ isOpen, onClose, tasks, routineTasks, staffList }) => {
+const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
+    isOpen,
+    onClose,
+    tasks,
+    routineTasks,
+    staffList,
+    onUpdateTask,
+    onToggleRoutineTask
+}) => {
     if (!isOpen) return null;
 
     // --- Statistics Calculation ---
@@ -37,7 +47,10 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({ isOpen, onClose
 
         // Process Tasks
         tasks.forEach(t => {
-            if (t.assignee) {
+            // Filter: Must be assigned AND NOT Completed (Check Completed or Deposit Paid)
+            const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
+
+            if (t.assignee && isTaskActive) {
                 if (!statsMap.has(t.assignee)) {
                     statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
                 }
@@ -148,12 +161,21 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({ isOpen, onClose
                                                             <div className="w-1 h-1 bg-purple-400 rounded-full" /> Eksikler ({staff.activeRoutine.length})
                                                         </div>
                                                         {staff.activeRoutine.map(t => (
-                                                            <div key={t.id} className="bg-purple-50 border border-purple-100 p-2.5 rounded-xl flex flex-col gap-1 hover:bg-purple-100 transition-colors">
-                                                                <div className="flex justify-between items-start">
-                                                                    <span className="font-bold text-xs text-purple-900 line-clamp-1">{t.customerName || 'İsimsiz Müşteri'}</span>
-                                                                    {t.district && <span className="text-[9px] bg-white/50 px-1.5 py-0.5 rounded text-purple-700 font-bold">{t.district}</span>}
+                                                            <div key={t.id} className="bg-purple-50 border border-purple-100 p-2.5 rounded-xl flex flex-row gap-2 hover:bg-purple-100 transition-colors group/item">
+                                                                <button
+                                                                    onClick={() => onToggleRoutineTask(t.id, t.isCompleted)}
+                                                                    className="mt-0.5 w-5 h-5 rounded border border-purple-300 bg-white flex items-center justify-center hover:bg-purple-500 hover:border-purple-500 hover:text-white transition-colors shrink-0"
+                                                                    title="Tamamlandı İşaretle"
+                                                                >
+                                                                    <CheckCircle2 className="w-3.5 h-3.5 opacity-0 group-hover/item:opacity-100" />
+                                                                </button>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex justify-between items-start">
+                                                                        <span className="font-bold text-xs text-purple-900 line-clamp-1">{t.customerName || 'İsimsiz Müşteri'}</span>
+                                                                        {t.district && <span className="text-[9px] bg-white/50 px-1.5 py-0.5 rounded text-purple-700 font-bold">{t.district}</span>}
+                                                                    </div>
+                                                                    <p className="text-[10px] text-purple-800/80 line-clamp-1">{t.content}</p>
                                                                 </div>
-                                                                <p className="text-[10px] text-purple-800/80 line-clamp-1">{t.content}</p>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -166,18 +188,27 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({ isOpen, onClose
                                                             <div className="w-1 h-1 bg-blue-400 rounded-full" /> Ana İşler ({staff.activeTasks.length})
                                                         </div>
                                                         {staff.activeTasks.map(t => (
-                                                            <div key={t.id} className="bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm hover:border-blue-300 transition-colors group/task">
-                                                                <div className="flex justify-between items-start mb-1">
-                                                                    <div className="flex items-center gap-1">
-                                                                        <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 rounded">#{t.orderNumber}</span>
-                                                                        <span className="text-xs font-bold text-slate-700">{t.title}</span>
+                                                            <div key={t.id} className="bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm hover:border-blue-300 transition-colors group/task flex flex-col gap-2">
+                                                                <div>
+                                                                    <div className="flex justify-between items-start mb-1">
+                                                                        <div className="flex items-center gap-1">
+                                                                            <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 rounded">#{t.orderNumber}</span>
+                                                                            <span className="text-xs font-bold text-slate-700">{t.title}</span>
+                                                                        </div>
+                                                                        <div className={`w-2 h-2 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
                                                                     </div>
-                                                                    <div className={`w-2 h-2 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
+                                                                    <div className="flex items-center justify-between text-[10px]">
+                                                                        <span className="text-slate-500">{StatusLabels[t.status]}</span>
+                                                                        {t.district && <span className="font-medium text-slate-400">{t.district}</span>}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex items-center justify-between text-[10px]">
-                                                                    <span className="text-slate-500">{StatusLabels[t.status]}</span>
-                                                                    {t.district && <span className="font-medium text-slate-400">{t.district}</span>}
-                                                                </div>
+
+                                                                <button
+                                                                    onClick={() => onUpdateTask(t.id, TaskStatus.CHECK_COMPLETED)}
+                                                                    className="w-full py-1.5 bg-slate-50 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-slate-100 hover:border-emerald-200 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-1 opacity-0 group-hover/task:opacity-100"
+                                                                >
+                                                                    <CheckCircle2 className="w-3 h-3" /> Kontrol Edildi (Bitir)
+                                                                </button>
                                                             </div>
                                                         ))}
                                                     </div>

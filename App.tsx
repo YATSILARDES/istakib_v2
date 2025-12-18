@@ -896,6 +896,21 @@ function App() {
         tasks={tasks}
         routineTasks={routineTasks}
         staffList={appSettings.staffList || []}
+        onUpdateTask={async (taskId, newStatus) => {
+          await updateDoc(doc(db, 'tasks', taskId), {
+            status: newStatus,
+            updatedAt: serverTimestamp(),
+            lastUpdatedBy: user?.email || 'Admin',
+            // If moving to COMPLETED, should we set activeDate?
+            isCheckVerified: newStatus === TaskStatus.CHECK_COMPLETED
+          });
+        }}
+        onToggleRoutineTask={async (taskId, currentStatus) => {
+          await updateDoc(doc(db, 'routine_tasks', taskId), {
+            isCompleted: !currentStatus,
+            completedAt: !currentStatus ? serverTimestamp() : null
+          });
+        }}
       />
     </div >
   );
