@@ -826,98 +826,99 @@ export default function App() {
                   )}
                 </div>
               </div>
-
-              {/* Kanban Board */}
-              <KanbanBoard
-                tasks={visibleTasks} // Filtrelenmiş görevler (Board Sütunları için)
-                routineTasks={visibleRoutineTasks} // Personel Eksik Listesi (Staff için)
-                myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []} // Personel Kendi Standart İşleri
-                onTaskClick={handleTaskClick}
-                onToggleRoutineTask={handleToggleRoutineTask}
-                visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü
-                showRoutineColumn={!hasAdminAccess} // Admin/Manager için bu sütunu gizle
-                staffName={userPermissions?.name} // [NEW] Sütun başlığı için isim
-              />
             </div>
-        )}
-          </main>
 
-      {/* Modals */}
-        {isModalOpen && (
-          <TaskModal
-            task={selectedTask}
-            onClose={() => setIsModalOpen(false)}
-            onSave={handleSaveTask}
-            onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
-            isOpen={isModalOpen}
-            nextOrderNumber={tasks.length + 1}
-            isAdmin={isAdmin}
-            existingTasks={tasks}
-          />
-        )}
-
-        {isRoutineModalOpen && (
-          <RoutineTasksModal
-            isOpen={isRoutineModalOpen}
-            onClose={() => setIsRoutineModalOpen(false)}
-            tasks={routineTasks}
-            onAddTask={handleAddRoutineTask}
-            onToggleTask={handleToggleRoutineTask}
-            onDeleteTask={handleDeleteRoutineTask}
-            onConvertTask={handleConvertRoutineTask}
-            onUpdateTask={handleUpdateRoutineTask}
-          />
-        )}
-
-        {isAssignmentModalOpen && (
-          <AssignmentModal
-            isOpen={isAssignmentModalOpen}
-            onClose={() => setIsAssignmentModalOpen(false)}
-            tasks={tasks}
-            routineTasks={routineTasks}
-            onAssignTask={handleAssignTask}
-            onAssignRoutineTask={handleAssignRoutineTask}
-            staffList={registeredStaff}
-            pinnedStaff={appSettings.pinnedStaff || []}
-            onAddStaff={handleAddStaff}
-            onRemoveStaff={handleRemoveStaff}
-            onTogglePinStaff={handleTogglePinStaff}
-          />
-        )}
-
-        {/* Admin Panel Modal */}
-        <AdminPanel
-          isOpen={isAdminPanelOpen}
-          onClose={() => setIsAdminPanelOpen(false)}
-          initialSettings={appSettings}
-          onSaveSettings={handleSaveSettings}
-          users={(() => {
-            const allEmails = new Set<string>();
-            registeredStaff.forEach(s => s.email && allEmails.add(s.email));
-            tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
-            routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
-            const uniqueUsers = Array.from(allEmails).filter(Boolean);
-            console.log("AdminPanel Users List:", uniqueUsers);
-            return uniqueUsers;
-            return uniqueUsers;
-          })()}
-          tasks={tasks}
-          routineTasks={routineTasks}
-          onTasksUpdate={setTasks}
-        />
-
-        {/* Toast Notification */}
-        {toast.visible && (
-          <div className="fixed bottom-4 right-4 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 animate-slide-up">
-            <div className="bg-emerald-500/10 p-2 rounded-full">
-              <Bell className="w-5 h-5 text-emerald-500" />
-            </div>
-            <span className="text-sm font-medium">{toast.message}</span>
-            <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
-              <X className="w-4 h-4" />
-            </button>
+            {/* Kanban Board */}
+            <KanbanBoard
+              tasks={visibleTasks} // Filtrelenmiş görevler (Board Sütunları için)
+              routineTasks={visibleRoutineTasks} // Personel Eksik Listesi (Staff için)
+              myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []} // Personel Kendi Standart İşleri
+              onTaskClick={handleTaskClick}
+              onToggleRoutineTask={handleToggleRoutineTask}
+              visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü
+              showRoutineColumn={!hasAdminAccess} // Admin/Manager için bu sütunu gizle
+              staffName={userPermissions?.name} // [NEW] Sütun başlığı için isim
+            />
           </div>
         )}
+      </main>
+
+      {/* Modals */}
+      {isModalOpen && (
+        <TaskModal
+          task={selectedTask}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveTask}
+          onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
+          isOpen={isModalOpen}
+          nextOrderNumber={tasks.length + 1}
+          isAdmin={isAdmin}
+          existingTasks={tasks}
+        />
+      )}
+
+      {isRoutineModalOpen && (
+        <RoutineTasksModal
+          isOpen={isRoutineModalOpen}
+          onClose={() => setIsRoutineModalOpen(false)}
+          tasks={routineTasks}
+          onAddTask={handleAddRoutineTask}
+          onToggleTask={handleToggleRoutineTask}
+          onDeleteTask={handleDeleteRoutineTask}
+          onConvertTask={handleConvertRoutineTask}
+          onUpdateTask={handleUpdateRoutineTask}
+        />
+      )}
+
+      {isAssignmentModalOpen && (
+        <AssignmentModal
+          isOpen={isAssignmentModalOpen}
+          onClose={() => setIsAssignmentModalOpen(false)}
+          tasks={tasks}
+          routineTasks={routineTasks}
+          onAssignTask={handleAssignTask}
+          onAssignRoutineTask={handleAssignRoutineTask}
+          staffList={registeredStaff}
+          pinnedStaff={appSettings.pinnedStaff || []}
+          onAddStaff={handleAddStaff}
+          onRemoveStaff={handleRemoveStaff}
+          onTogglePinStaff={handleTogglePinStaff}
+        />
+      )}
+
+      {/* Admin Panel Modal */}
+      <AdminPanel
+        isOpen={isAdminPanelOpen}
+        onClose={() => setIsAdminPanelOpen(false)}
+        initialSettings={appSettings}
+        onSaveSettings={handleSaveSettings}
+        users={(() => {
+          const allEmails = new Set<string>();
+          registeredStaff.forEach(s => s.email && allEmails.add(s.email));
+          tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+          routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+          const uniqueUsers = Array.from(allEmails).filter(Boolean);
+          console.log("AdminPanel Users List:", uniqueUsers);
+          return uniqueUsers;
+          return uniqueUsers;
+        })()}
+        tasks={tasks}
+        routineTasks={routineTasks}
+        onTasksUpdate={setTasks}
+      />
+
+      {/* Toast Notification */}
+      {toast.visible && (
+        <div className="fixed bottom-4 right-4 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 animate-slide-up">
+          <div className="bg-emerald-500/10 p-2 rounded-full">
+            <Bell className="w-5 h-5 text-emerald-500" />
+          </div>
+          <span className="text-sm font-medium">{toast.message}</span>
+          <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Task, TaskStatus, StatusLabels } from '../types';
+import { Task, TaskStatus, StatusLabels } from '@/types';
 import { ChevronRight, Home, Activity, Clock } from 'lucide-react';
 
 interface DashboardProps {
