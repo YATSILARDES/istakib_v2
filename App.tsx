@@ -742,7 +742,7 @@ export default function App() {
               onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
               isOpen={isModalOpen}
               nextOrderNumber={tasks.length + 1}
-              isAdmin={isAdmin}
+              isAdmin={!!isAdmin}
               existingTasks={tasks}
             />
           )}
@@ -874,152 +874,152 @@ export default function App() {
                   )}
                 </div>
               </div>
+
+
+
+
+              {/* View Logic: Split vs Normal Board */}
+              {
+                viewMode === 'split' ? (
+                  <div className="flex-1 flex overflow-hidden">
+                    {/* Left Col: Clean Tasks */}
+                    <div className="flex-1 flex flex-col border-r border-slate-200 bg-emerald-50/30">
+                      <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
+                        <span>✅ Hazır / Sorunsuz İşler</span>
+                        <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
+                      </div>
+                      <KanbanBoard
+                        tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
+                        routineTasks={[]} // No routines in split view
+                        myTasks={[]}
+                        onTaskClick={handleTaskClick}
+                        onToggleRoutineTask={handleToggleRoutineTask}
+                        visibleColumns={boardFilter ? [boardFilter] : undefined} // Only show relevant column
+                        showRoutineColumn={false}
+                        staffName={userPermissions?.name}
+                      />
+                    </div>
+
+                    {/* Right Col: Missing Tasks */}
+                    <div className="flex-1 flex flex-col bg-red-50/30">
+                      <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
+                        <span>⚠️ Eksiği Olan İşler</span>
+                        <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
+                      </div>
+                      <KanbanBoard
+                        tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
+                        routineTasks={[]}
+                        myTasks={[]}
+                        onTaskClick={handleTaskClick}
+                        onToggleRoutineTask={handleToggleRoutineTask}
+                        visibleColumns={boardFilter ? [boardFilter] : undefined}
+                        showRoutineColumn={false}
+                        staffName={userPermissions?.name}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* Normal Single Board */
+                  <KanbanBoard
+                    tasks={visibleTasks}
+                    routineTasks={visibleRoutineTasks}
+                    myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []}
+                    onTaskClick={handleTaskClick}
+                    onToggleRoutineTask={handleToggleRoutineTask}
+                    visibleColumns={userPermissions?.allowedColumns}
+                    showRoutineColumn={!hasAdminAccess}
+                    staffName={userPermissions?.name}
+                  />
+                )
+              }
             </div>
-
-
-
-      {/* View Logic: Split vs Normal Board */}
-          {
-            viewMode === 'split' ? (
-              <div className="flex-1 flex overflow-hidden">
-                {/* Left Col: Clean Tasks */}
-                <div className="flex-1 flex flex-col border-r border-slate-200 bg-emerald-50/30">
-                  <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
-                    <span>✅ Hazır / Sorunsuz İşler</span>
-                    <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
-                  </div>
-                  <KanbanBoard
-                    tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
-                    routineTasks={[]} // No routines in split view
-                    myTasks={[]}
-                    onTaskClick={handleTaskClick}
-                    onToggleRoutineTask={handleToggleRoutineTask}
-                    visibleColumns={boardFilter ? [boardFilter] : undefined} // Only show relevant column
-                    showRoutineColumn={false}
-                    staffName={userPermissions?.name}
-                  />
-                </div>
-
-                {/* Right Col: Missing Tasks */}
-                <div className="flex-1 flex flex-col bg-red-50/30">
-                  <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-                    <span>⚠️ Eksiği Olan İşler</span>
-                    <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
-                  </div>
-                  <KanbanBoard
-                    tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
-                    routineTasks={[]}
-                    myTasks={[]}
-                    onTaskClick={handleTaskClick}
-                    onToggleRoutineTask={handleToggleRoutineTask}
-                    visibleColumns={boardFilter ? [boardFilter] : undefined}
-                    showRoutineColumn={false}
-                    staffName={userPermissions?.name}
-                  />
-                </div>
-              </div>
-            ) : (
-              /* Normal Single Board */
-              <KanbanBoard
-                tasks={visibleTasks}
-                routineTasks={visibleRoutineTasks}
-                myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []}
-                onTaskClick={handleTaskClick}
-                onToggleRoutineTask={handleToggleRoutineTask}
-                visibleColumns={userPermissions?.allowedColumns}
-                showRoutineColumn={!hasAdminAccess}
-                staffName={userPermissions?.name}
-              />
-            )
+          )
           }
-      </div >
-    )
-  }
-      </main >
+        </main >
 
-    {/* Modals */ }
-{
-      isModalOpen && (
-      <TaskModal
-        task={selectedTask}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveTask}
-        onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
-        isOpen={isModalOpen}
-        nextOrderNumber={tasks.length + 1}
-        isAdmin={isAdmin}
-        existingTasks={tasks}
-      />
-    )
-}
+        {/* Modals */}
+        {
+          isModalOpen && (
+            <TaskModal
+              task={selectedTask}
+              onClose={() => setIsModalOpen(false)}
+              onSave={handleSaveTask}
+              onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
+              isOpen={isModalOpen}
+              nextOrderNumber={tasks.length + 1}
+              isAdmin={!!isAdmin}
+              existingTasks={tasks}
+            />
+          )
+        }
 
-{
-  isRoutineModalOpen && (
-    <RoutineTasksModal
-      isOpen={isRoutineModalOpen}
-      onClose={() => setIsRoutineModalOpen(false)}
-      tasks={routineTasks}
-      onAddTask={handleAddRoutineTask}
-      onToggleTask={handleToggleRoutineTask}
-      onDeleteTask={handleDeleteRoutineTask}
-      onConvertTask={handleConvertRoutineTask}
-      onUpdateTask={handleUpdateRoutineTask}
-    />
-  )
-}
+        {
+          isRoutineModalOpen && (
+            <RoutineTasksModal
+              isOpen={isRoutineModalOpen}
+              onClose={() => setIsRoutineModalOpen(false)}
+              tasks={routineTasks}
+              onAddTask={handleAddRoutineTask}
+              onToggleTask={handleToggleRoutineTask}
+              onDeleteTask={handleDeleteRoutineTask}
+              onConvertTask={handleConvertRoutineTask}
+              onUpdateTask={handleUpdateRoutineTask}
+            />
+          )
+        }
 
-{
-  isAssignmentModalOpen && (
-    <AssignmentModal
-      isOpen={isAssignmentModalOpen}
-      onClose={() => setIsAssignmentModalOpen(false)}
-      tasks={tasks}
-      routineTasks={routineTasks}
-      onAssignTask={handleAssignTask}
-      onAssignRoutineTask={handleAssignRoutineTask}
-      staffList={registeredStaff}
-      pinnedStaff={appSettings.pinnedStaff || []}
-      onAddStaff={handleAddStaff}
-      onRemoveStaff={handleRemoveStaff}
-      onTogglePinStaff={handleTogglePinStaff}
-    />
-  )
-}
+        {
+          isAssignmentModalOpen && (
+            <AssignmentModal
+              isOpen={isAssignmentModalOpen}
+              onClose={() => setIsAssignmentModalOpen(false)}
+              tasks={tasks}
+              routineTasks={routineTasks}
+              onAssignTask={handleAssignTask}
+              onAssignRoutineTask={handleAssignRoutineTask}
+              staffList={registeredStaff}
+              pinnedStaff={appSettings.pinnedStaff || []}
+              onAddStaff={handleAddStaff}
+              onRemoveStaff={handleRemoveStaff}
+              onTogglePinStaff={handleTogglePinStaff}
+            />
+          )
+        }
 
-{/* Admin Panel Modal */ }
-<AdminPanel
-  isOpen={isAdminPanelOpen}
-  onClose={() => setIsAdminPanelOpen(false)}
-  initialSettings={appSettings}
-  onSaveSettings={handleSaveSettings}
-  users={(() => {
-    const allEmails = new Set<string>();
-    registeredStaff.forEach(s => s.email && allEmails.add(s.email));
-    tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
-    routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
-    const uniqueUsers = Array.from(allEmails).filter(Boolean);
-    console.log("AdminPanel Users List:", uniqueUsers);
-    return uniqueUsers;
-  })()}
-  tasks={tasks}
-  routineTasks={routineTasks}
-  onTasksUpdate={setTasks}
-/>
+        {/* Admin Panel Modal */}
+        <AdminPanel
+          isOpen={isAdminPanelOpen}
+          onClose={() => setIsAdminPanelOpen(false)}
+          initialSettings={appSettings}
+          onSaveSettings={handleSaveSettings}
+          users={(() => {
+            const allEmails = new Set<string>();
+            registeredStaff.forEach(s => s.email && allEmails.add(s.email));
+            tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+            routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+            const uniqueUsers = Array.from(allEmails).filter(Boolean);
+            console.log("AdminPanel Users List:", uniqueUsers);
+            return uniqueUsers;
+          })()}
+          tasks={tasks}
+          routineTasks={routineTasks}
+          onTasksUpdate={setTasks}
+        />
 
-{/* Toast Notification */ }
-{
-  toast.visible && (
-    <div className="fixed bottom-4 right-4 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 animate-slide-up">
-      <div className="bg-emerald-500/10 p-2 rounded-full">
-        <Bell className="w-5 h-5 text-emerald-500" />
+        {/* Toast Notification */}
+        {
+          toast.visible && (
+            <div className="fixed bottom-4 right-4 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 animate-slide-up">
+              <div className="bg-emerald-500/10 p-2 rounded-full">
+                <Bell className="w-5 h-5 text-emerald-500" />
+              </div>
+              <span className="text-sm font-medium">{toast.message}</span>
+              <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )
+        }
       </div>
-      <span className="text-sm font-medium">{toast.message}</span>
-      <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  )
-}
-    </div >
-  );
-}
+    );
+  }
