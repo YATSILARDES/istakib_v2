@@ -58,8 +58,9 @@ export default function App() {
 
   // Dashboard & Navigation State
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [viewMode, setViewMode] = useState<'dashboard' | 'board'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'board' | 'split'>('dashboard');
   const [boardFilter, setBoardFilter] = useState<TaskStatus | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState(''); // NEW: Global Search
 
   // Handle Resize
   useEffect(() => {
@@ -603,322 +604,426 @@ export default function App() {
 
   const handleDashboardNavigate = (status?: TaskStatus) => {
     setBoardFilter(status);
-    setViewMode('board');
+    // Split View Logic for specific statuses
+    if (status === TaskStatus.CHECK_COMPLETED || status === TaskStatus.DEPOSIT_PAID) {
+      setViewMode('split');
+    } else {
+      setViewMode('board');
+    }
   };
 
   const handleFilterMissing = () => {
-    // setBoardFilter(undefined); // Missing filter logic needed? 
-    // KanbanBoard doesn't support 'missing' prop directly yet, but we can filter visibleTasks.
-    // For now, let's just switch to board.
+    setBoardFilter(undefined);
+    setSearchTerm('eksik'); // Quick hack or proper filter? User asked specific view. 
+    // For now, let's use the search term 'missing' if we add a hidden field, or just filter in render.
+    // Better: Special mode
     setViewMode('board');
-    // TODO: Implement specific 'missing' filter in KanbanBoard or filter 'visibleTasks' here.
   };
 
   // FiltrelemeLogic
-  let visibleTasks: Task[] = [];
-  let visibleRoutineTasks: RoutineTask[] = [];
-  const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
-  const isManager = userPermissions?.role === 'manager';
-  const hasAdminAccess = isAdmin || isManager;
+  let visibleTasks: Task[] = tasks;
 
-  if (hasAdminAccess) {
-    visibleTasks = tasks;
-    visibleRoutineTasks = routineTasks;
-  } else if (!userPermissions) {
-    visibleTasks = [];
-    visibleRoutineTasks = [];
-  } else {
-    const myName = userPermissions.name;
-    const myEmail = userPermissions.email;
-    const canSeePool = userPermissions.canAccessRoutineTasks;
-    const allowedColumns = userPermissions.allowedColumns || [];
-    visibleTasks = tasks.filter(t => allowedColumns.includes(t.status));
-    visibleRoutineTasks = routineTasks.filter(t => {
-      const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
-      const nameMatch = myName && t.assignee === myName;
-      const isUnassigned = (!t.assignee || t.assignee.trim() === '') && !t.assigneeEmail;
-      return emailMatch || nameMatch;
-    });
+  // 1. Global Search Filter
+  if (searchTerm) {
+    const lower = searchTerm.toLocaleLowerCase('tr');
+    visibleTasks = visibleTasks.filter(t =>
+      t.title.toLocaleLowerCase('tr').includes(lower) ||
+      (t.jobDescription && t.jobDescription.toLocaleLowerCase('tr').includes(lower)) ||
+      (t.address && t.address.toLocaleLowerCase('tr').includes(lower)) ||
+      (t.assignee && t.assignee.toLocaleLowerCase('tr').includes(lower)) ||
+      (t.status && StatusLabels[t.status].toLocaleLowerCase('tr').includes(lower))
+    );
   }
 
-  // RETURN RENDER
-  // Pre-calculate users for Admin Panels (Mobile & Desktop)
-  const uniqueUsers = (() => {
+  // 2. Permission Filter (Existing)
+  visibleTasks = visibleTasks.filter(task => {
+    let visibleRoutineTasks: RoutineTask[] = [];
+    const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
+    const isManager = userPermissions?.role === 'manager';
+    const hasAdminAccess = isAdmin || isManager;
+
+    if (hasAdminAccess) {
+      visibleTasks = tasks;
+      visibleRoutineTasks = routineTasks;
+    } else if (!userPermissions) {
+      visibleTasks = [];
+      visibleRoutineTasks = [];
+    } else {
+      const myName = userPermissions.name;
+      const myEmail = userPermissions.email;
+      const canSeePool = userPermissions.canAccessRoutineTasks;
+      const allowedColumns = userPermissions.allowedColumns || [];
+      visibleTasks = tasks.filter(t => allowedColumns.includes(t.status));
+      visibleRoutineTasks = routineTasks.filter(t => {
+        const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
+        const nameMatch = myName && t.assignee === myName;
+        const isUnassigned = (!t.assignee || t.assignee.trim() === '') && !t.assigneeEmail;
+        return emailMatch || nameMatch;
+      });
+    }
+
+    // RETURN RENDER
+    // Pre-calculate users for Admin Panels (Mobile & Desktop)
+    const uniqueUsers = (() => {
+      const allEmails = new Set<string>();
+      registeredStaff.forEach(s => s.email && allEmails.add(s.email));
+      tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+      routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
+      return Array.from(allEmails).filter(Boolean);
+    })();
+
+    if (isMobile) {
+
+      return (
+        <>
+          <MobileLayout
+            user={user}
+            userPermissions={userPermissions}
+            tasks={tasks}
+            routineTasks={routineTasks}
+            onSignOut={handleSignOut}
+            onTaskClick={handleTaskClick}
+            onAddTask={handleAddTaskClick}
+            onToggleRoutineTask={handleToggleRoutineTask}
+            onOpenAdmin={() => setIsAdminPanelOpen(true)}
+            onOpenRoutineModal={() => setIsRoutineModalOpen(true)}
+            onOpenAssignmentModal={() => setIsAssignmentModalOpen(true)}
+          />
+
+          {/* Mobile Admin Panel */}
+          {isAdminPanelOpen && (
+            <MobileAdminPanel
+              isOpen={isAdminPanelOpen}
+              onClose={() => setIsAdminPanelOpen(false)}
+              initialSettings={appSettings}
+              onSaveSettings={handleSaveSettings}
+              users={uniqueUsers}
+              tasks={tasks}
+              onTasksUpdate={setTasks}
+            />
+          )}
+
+          {/* Shared Modals for Mobile */}
+          {isRoutineModalOpen && (
+            <RoutineTasksModal
+              isOpen={isRoutineModalOpen}
+              onClose={() => setIsRoutineModalOpen(false)}
+              tasks={routineTasks}
+              onAddTask={handleAddRoutineTask}
+              onToggleTask={handleToggleRoutineTask}
+              onDeleteTask={handleDeleteRoutineTask}
+              onConvertTask={handleConvertRoutineTask}
+              onUpdateTask={handleUpdateRoutineTask}
+            />
+          )}
+
+          {isAssignmentModalOpen && (
+            <AssignmentModal
+              isOpen={isAssignmentModalOpen}
+              onClose={() => setIsAssignmentModalOpen(false)}
+              tasks={tasks}
+              routineTasks={routineTasks}
+              onAssignTask={handleAssignTask}
+              onAssignRoutineTask={handleAssignRoutineTask}
+              staffList={registeredStaff}
+              pinnedStaff={appSettings.pinnedStaff || []}
+              onAddStaff={handleAddStaff}
+              onRemoveStaff={handleRemoveStaff}
+              onTogglePinStaff={handleTogglePinStaff}
+            />
+          )}
+
+          {/* Modals for Mobile */}
+          {isModalOpen && (
+            <TaskModal
+              task={selectedTask}
+              onClose={() => setIsModalOpen(false)}
+              onSave={handleSaveTask}
+              onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
+              isOpen={isModalOpen}
+              nextOrderNumber={tasks.length + 1}
+              isAdmin={isAdmin}
+              existingTasks={tasks}
+            />
+          )}
+
+
+          {/* DEVELOPMENT MODE INDICATOR */}
+          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
+            <span>🛠️ GELİŞTİRME MODU</span>
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <div className="flex h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-500/30 overflow-hidden">
+
+        {/* Sidebar */}
+        <Sidebar
+          isOpen={isSidebarOpen}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          isAdmin={hasAdminAccess}
+          onLogout={handleSignOut}
+        />
+
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 transition-all duration-300">
+
+          {/* DEVELOPMENT MODE INDICATOR (Keeping it) */}
+          <div className="fixed bottom-4 right-4 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
+            <span>🛠️ GELİŞTİRME MODU</span>
+          </div>
+
+          {/* Content Render Logic */}
+          {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
+            <Dashboard
+              tasks={visibleTasks} // Pass permissions-filtered tasks
+              onNavigate={handleDashboardNavigate}
+              onTaskClick={handleTaskClick}
+              onFilterMissing={handleFilterMissing}
+            />
+          ) : (
+            /* Kanban Board View */
+            <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
+              {/* Toolbar */}
+              <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm shrink-0 z-10">
+                <div className="flex items-center gap-4">
+                  {activeTab === 'dashboard' && (
+                    <button
+                      onClick={() => setViewMode('dashboard')}
+                      className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1"
+                    >
+                      <Layout className="w-4 h-4" /> Panel'e Dön
+                    </button>
+                  )}
+                  <div className="h-4 w-px bg-slate-300 mx-2"          <div>
+                    <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-slate-500">İş Takip V2</p>
+                      <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Global Search Bar */}
+                <div className="flex-1 max-w-md mx-6">
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
+                      placeholder="Müşteri, iş, adres veya personel ara..."
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">x] text-slate-500 px-1 border border-slate-700 rounded">
+                  {userPermissions.role === 'admin' ? 'ADMIN' : (userPermissions.role === 'manager' ? 'YÖNETİCİ' : `STAFF: ${userPermissions.name}`)}
+                </span>
+                  )}
+              </h2>
+
+              <div className="flex items-center gap-3">
+                {/* Eksikler Havuzu - Admin veya Yetkili */}
+                {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
+                  <button
+                    onClick={() => setIsRoutineModalOpen(true)}
+                    className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
+                  >
+                    <Bell className="w-4 h-4" />
+                    Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks)
+                      ? routineTasks.filter(t => !t.isCompleted).length
+                      : visibleRoutineTasks.filter(t => !t.isCompleted).length})
+                    {/* Badge mantığı: Admin/Havuz yetkilisi tümünü görür, diğerleri sadece kendisininkini */}
+                  </button>
+                )}
+
+                {/* Görev Dağıtımı - Admin veya Yetkili */}
+                {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
+                  <button
+                    onClick={() => setIsAssignmentModalOpen(true)}
+                    className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
+                  >
+                    <Users className="w-4 h-4" />
+                    Görev Dağıtımı
+                  </button>
+                )}
+
+                {/* Müşteri Ekle - Admin veya Yetkili */}
+                {(hasAdminAccess || userPermissions?.canAddCustomers) && (
+                  <button
+                    onClick={handleAddTaskClick}
+                    className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Yeni Müşteri
+                  </button>
+                )}
+              </div>
+            </div>
+            </div>
+
+              </div >
+
+      {/* View Logic: Split vs Normal Board */ }
+    {
+      viewMode === 'split' ? (
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Col: Clean Tasks */}
+          <div className="flex-1 flex flex-col border-r border-slate-200 bg-emerald-50/30">
+            <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
+              <span>✅ Hazır / Sorunsuz İşler</span>
+              <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
+            </div>
+            <KanbanBoard
+              tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
+              routineTasks={[]} // No routines in split view
+              myTasks={[]}
+              onTaskClick={handleTaskClick}
+              onToggleRoutineTask={handleToggleRoutineTask}
+              visibleColumns={boardFilter ? [boardFilter] : undefined} // Only show relevant column
+              showRoutineColumn={false}
+              staffName={userPermissions?.name}
+            />
+          </div>
+
+          {/* Right Col: Missing Tasks */}
+          <div className="flex-1 flex flex-col bg-red-50/30">
+            <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
+              <span>⚠️ Eksiği Olan İşler</span>
+              <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
+            </div>
+            <KanbanBoard
+              tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
+              routineTasks={[]}
+              myTasks={[]}
+              onTaskClick={handleTaskClick}
+              onToggleRoutineTask={handleToggleRoutineTask}
+              visibleColumns={boardFilter ? [boardFilter] : undefined}
+              showRoutineColumn={false}
+              staffName={userPermissions?.name}
+            />
+          </div>
+        </div>
+      ) : (
+      /* Normal Single Board */
+      <KanbanBoard
+        tasks={visibleTasks}
+        routineTasks={visibleRoutineTasks}
+        myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []}
+        onTaskClick={handleTaskClick}
+        onToggleRoutineTask={handleToggleRoutineTask}
+        visibleColumns={userPermissions?.allowedColumns}
+        showRoutineColumn={!hasAdminAccess}
+        staffName={userPermissions?.name}
+      />
+    )
+    }
+            </div >
+        )
+}
+      </main >
+
+  {/* Modals */ }
+{
+  isModalOpen && (
+    <TaskModal
+      task={selectedTask}
+      onClose={() => setIsModalOpen(false)}
+      onSave={handleSaveTask}
+      onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
+      isOpen={isModalOpen}
+      nextOrderNumber={tasks.length + 1}
+      isAdmin={isAdmin}
+      existingTasks={tasks}
+    />
+  )
+}
+
+{
+  isRoutineModalOpen && (
+    <RoutineTasksModal
+      isOpen={isRoutineModalOpen}
+      onClose={() => setIsRoutineModalOpen(false)}
+      tasks={routineTasks}
+      onAddTask={handleAddRoutineTask}
+      onToggleTask={handleToggleRoutineTask}
+      onDeleteTask={handleDeleteRoutineTask}
+      onConvertTask={handleConvertRoutineTask}
+      onUpdateTask={handleUpdateRoutineTask}
+    />
+  )
+}
+
+{
+  isAssignmentModalOpen && (
+    <AssignmentModal
+      isOpen={isAssignmentModalOpen}
+      onClose={() => setIsAssignmentModalOpen(false)}
+      tasks={tasks}
+      routineTasks={routineTasks}
+      onAssignTask={handleAssignTask}
+      onAssignRoutineTask={handleAssignRoutineTask}
+      staffList={registeredStaff}
+      pinnedStaff={appSettings.pinnedStaff || []}
+      onAddStaff={handleAddStaff}
+      onRemoveStaff={handleRemoveStaff}
+      onTogglePinStaff={handleTogglePinStaff}
+    />
+  )
+}
+
+{/* Admin Panel Modal */ }
+<AdminPanel
+  isOpen={isAdminPanelOpen}
+  onClose={() => setIsAdminPanelOpen(false)}
+  initialSettings={appSettings}
+  onSaveSettings={handleSaveSettings}
+  users={(() => {
     const allEmails = new Set<string>();
     registeredStaff.forEach(s => s.email && allEmails.add(s.email));
     tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
     routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
-    return Array.from(allEmails).filter(Boolean);
-  })();
+    const uniqueUsers = Array.from(allEmails).filter(Boolean);
+    console.log("AdminPanel Users List:", uniqueUsers);
+    return uniqueUsers;
+    return uniqueUsers;
+  })()}
+  tasks={tasks}
+  routineTasks={routineTasks}
+  onTasksUpdate={setTasks}
+/>
 
-  if (isMobile) {
-
-    return (
-      <>
-        <MobileLayout
-          user={user}
-          userPermissions={userPermissions}
-          tasks={tasks}
-          routineTasks={routineTasks}
-          onSignOut={handleSignOut}
-          onTaskClick={handleTaskClick}
-          onAddTask={handleAddTaskClick}
-          onToggleRoutineTask={handleToggleRoutineTask}
-          onOpenAdmin={() => setIsAdminPanelOpen(true)}
-          onOpenRoutineModal={() => setIsRoutineModalOpen(true)}
-          onOpenAssignmentModal={() => setIsAssignmentModalOpen(true)}
-        />
-
-        {/* Mobile Admin Panel */}
-        {isAdminPanelOpen && (
-          <MobileAdminPanel
-            isOpen={isAdminPanelOpen}
-            onClose={() => setIsAdminPanelOpen(false)}
-            initialSettings={appSettings}
-            onSaveSettings={handleSaveSettings}
-            users={uniqueUsers}
-            tasks={tasks}
-            onTasksUpdate={setTasks}
-          />
-        )}
-
-        {/* Shared Modals for Mobile */}
-        {isRoutineModalOpen && (
-          <RoutineTasksModal
-            isOpen={isRoutineModalOpen}
-            onClose={() => setIsRoutineModalOpen(false)}
-            tasks={routineTasks}
-            onAddTask={handleAddRoutineTask}
-            onToggleTask={handleToggleRoutineTask}
-            onDeleteTask={handleDeleteRoutineTask}
-            onConvertTask={handleConvertRoutineTask}
-            onUpdateTask={handleUpdateRoutineTask}
-          />
-        )}
-
-        {isAssignmentModalOpen && (
-          <AssignmentModal
-            isOpen={isAssignmentModalOpen}
-            onClose={() => setIsAssignmentModalOpen(false)}
-            tasks={tasks}
-            routineTasks={routineTasks}
-            onAssignTask={handleAssignTask}
-            onAssignRoutineTask={handleAssignRoutineTask}
-            staffList={registeredStaff}
-            pinnedStaff={appSettings.pinnedStaff || []}
-            onAddStaff={handleAddStaff}
-            onRemoveStaff={handleRemoveStaff}
-            onTogglePinStaff={handleTogglePinStaff}
-          />
-        )}
-
-        {/* Modals for Mobile */}
-        {isModalOpen && (
-          <TaskModal
-            task={selectedTask}
-            onClose={() => setIsModalOpen(false)}
-            onSave={handleSaveTask}
-            onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
-            isOpen={isModalOpen}
-            nextOrderNumber={tasks.length + 1}
-            isAdmin={isAdmin}
-            existingTasks={tasks}
-          />
-        )}
-
-
-        {/* DEVELOPMENT MODE INDICATOR */}
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
-          <span>🛠️ GELİŞTİRME MODU</span>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <div className="flex h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-500/30 overflow-hidden">
-
-      {/* Sidebar */}
-      <Sidebar
-        isOpen={isSidebarOpen}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        isAdmin={hasAdminAccess}
-        onLogout={handleSignOut}
-      />
-
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 transition-all duration-300">
-
-        {/* DEVELOPMENT MODE INDICATOR (Keeping it) */}
-        <div className="fixed bottom-4 right-4 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
-          <span>🛠️ GELİŞTİRME MODU</span>
-        </div>
-
-        {/* Content Render Logic */}
-        {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
-          <Dashboard
-            tasks={visibleTasks} // Pass permissions-filtered tasks
-            onNavigate={handleDashboardNavigate}
-            onTaskClick={handleTaskClick}
-            onFilterMissing={handleFilterMissing}
-          />
-        ) : (
-          /* Kanban Board View */
-          <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
-            {/* Toolbar */}
-            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm shrink-0 z-10">
-              <div className="flex items-center gap-4">
-                {activeTab === 'dashboard' && (
-                  <button
-                    onClick={() => setViewMode('dashboard')}
-                    className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1"
-                  >
-                    <Layout className="w-4 h-4" /> Panel'e Dön
-                  </button>
-                )}
-                <div className="h-4 w-px bg-slate-300 mx-2" />
-                <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
-                  Günlük Operasyon
-                  <span className="text-xs text-red-500 font-bold border border-red-500 px-1 rounded">(V3.0 YENİ)</span>
-                  {userPermissions && (
-                    <span className="text-[10px] text-slate-500 px-1 border border-slate-700 rounded">
-                      {userPermissions.role === 'admin' ? 'ADMIN' : (userPermissions.role === 'manager' ? 'YÖNETİCİ' : `STAFF: ${userPermissions.name}`)}
-                    </span>
-                  )}
-                </h2>
-
-                <div className="flex items-center gap-3">
-                  {/* Eksikler Havuzu - Admin veya Yetkili */}
-                  {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
-                    <button
-                      onClick={() => setIsRoutineModalOpen(true)}
-                      className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30"
-                    >
-                      <Bell className="w-4 h-4" />
-                      Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks)
-                        ? routineTasks.filter(t => !t.isCompleted).length
-                        : visibleRoutineTasks.filter(t => !t.isCompleted).length})
-                      {/* Badge mantığı: Admin/Havuz yetkilisi tümünü görür, diğerleri sadece kendisininkini */}
-                    </button>
-                  )}
-
-                  {/* Görev Dağıtımı - Admin veya Yetkili */}
-                  {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
-                    <button
-                      onClick={() => setIsAssignmentModalOpen(true)}
-                      className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30"
-                    >
-                      <Users className="w-4 h-4" />
-                      Görev Dağıtımı
-                    </button>
-                  )}
-
-                  {/* Müşteri Ekle - Admin veya Yetkili */}
-                  {(hasAdminAccess || userPermissions?.canAddCustomers) && (
-                    <button
-                      onClick={handleAddTaskClick}
-                      className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Yeni Müşteri
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Kanban Board */}
-            <KanbanBoard
-              tasks={visibleTasks} // Filtrelenmiş görevler (Board Sütunları için)
-              routineTasks={visibleRoutineTasks} // Personel Eksik Listesi (Staff için)
-              myTasks={!hasAdminAccess && userPermissions ? tasks.filter(t => t.assignee && userPermissions.name && t.assignee.toLocaleLowerCase('tr').trim() === userPermissions.name.toLocaleLowerCase('tr').trim() && t.status !== TaskStatus.CHECK_COMPLETED) : []} // Personel Kendi Standart İşleri
-              onTaskClick={handleTaskClick}
-              onToggleRoutineTask={handleToggleRoutineTask}
-              visibleColumns={userPermissions?.allowedColumns} // Sütun görünürlüğü
-              showRoutineColumn={!hasAdminAccess} // Admin/Manager için bu sütunu gizle
-              staffName={userPermissions?.name} // [NEW] Sütun başlığı için isim
-            />
-          </div>
-        )}
-      </main>
-
-      {/* Modals */}
-      {isModalOpen && (
-        <TaskModal
-          task={selectedTask}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSaveTask}
-          onDelete={selectedTask ? () => handleDeleteTask(selectedTask.id) : undefined}
-          isOpen={isModalOpen}
-          nextOrderNumber={tasks.length + 1}
-          isAdmin={isAdmin}
-          existingTasks={tasks}
-        />
-      )}
-
-      {isRoutineModalOpen && (
-        <RoutineTasksModal
-          isOpen={isRoutineModalOpen}
-          onClose={() => setIsRoutineModalOpen(false)}
-          tasks={routineTasks}
-          onAddTask={handleAddRoutineTask}
-          onToggleTask={handleToggleRoutineTask}
-          onDeleteTask={handleDeleteRoutineTask}
-          onConvertTask={handleConvertRoutineTask}
-          onUpdateTask={handleUpdateRoutineTask}
-        />
-      )}
-
-      {isAssignmentModalOpen && (
-        <AssignmentModal
-          isOpen={isAssignmentModalOpen}
-          onClose={() => setIsAssignmentModalOpen(false)}
-          tasks={tasks}
-          routineTasks={routineTasks}
-          onAssignTask={handleAssignTask}
-          onAssignRoutineTask={handleAssignRoutineTask}
-          staffList={registeredStaff}
-          pinnedStaff={appSettings.pinnedStaff || []}
-          onAddStaff={handleAddStaff}
-          onRemoveStaff={handleRemoveStaff}
-          onTogglePinStaff={handleTogglePinStaff}
-        />
-      )}
-
-      {/* Admin Panel Modal */}
-      <AdminPanel
-        isOpen={isAdminPanelOpen}
-        onClose={() => setIsAdminPanelOpen(false)}
-        initialSettings={appSettings}
-        onSaveSettings={handleSaveSettings}
-        users={(() => {
-          const allEmails = new Set<string>();
-          registeredStaff.forEach(s => s.email && allEmails.add(s.email));
-          tasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
-          routineTasks.forEach(t => t.assigneeEmail && allEmails.add(t.assigneeEmail));
-          const uniqueUsers = Array.from(allEmails).filter(Boolean);
-          console.log("AdminPanel Users List:", uniqueUsers);
-          return uniqueUsers;
-          return uniqueUsers;
-        })()}
-        tasks={tasks}
-        routineTasks={routineTasks}
-        onTasksUpdate={setTasks}
-      />
-
-      {/* Toast Notification */}
-      {toast.visible && (
-        <div className="fixed bottom-4 right-4 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 animate-slide-up">
-          <div className="bg-emerald-500/10 p-2 rounded-full">
-            <Bell className="w-5 h-5 text-emerald-500" />
-          </div>
-          <span className="text-sm font-medium">{toast.message}</span>
-          <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+{/* Toast Notification */ }
+{
+  toast.visible && (
+    <div className="fixed bottom-4 right-4 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 animate-slide-up">
+      <div className="bg-emerald-500/10 p-2 rounded-full">
+        <Bell className="w-5 h-5 text-emerald-500" />
+      </div>
+      <span className="text-sm font-medium">{toast.message}</span>
+      <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
+        <X className="w-4 h-4" />
+      </button>
     </div>
+  )
+}
+    </div >
   );
 }
