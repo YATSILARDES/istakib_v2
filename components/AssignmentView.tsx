@@ -279,16 +279,16 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         <div className="text-center py-8 text-slate-400 text-xs italic">Listelenecek iş yok.</div>
                                     ) : (
                                         filteredMainTasks.map(task => (
-                                            <div key={task.id} className="bg-white border border-slate-100 hover:border-blue-300 rounded-xl p-3 shadow-sm transition-all hover:shadow-md group flex items-center justify-between">
+                                            <div key={task.id} className="bg-slate-50 border-2 border-slate-300 hover:border-blue-500 rounded-xl p-3 shadow-md transition-all hover:shadow-lg group flex items-center justify-between">
                                                 <div>
                                                     <div className="font-bold text-slate-700 text-sm flex items-center gap-2">
                                                         <span className="bg-slate-100 text-slate-500 px-1.5 rounded text-[10px]">#{task.orderNumber}</span>
                                                         {task.title}
                                                     </div>
-                                                    {task.jobDescription && <div className="text-[11px] text-slate-400 mt-0.5 italic">{task.jobDescription}</div>}
+                                                    {task.jobDescription && <div className="text-[11px] text-slate-500 mt-0.5 italic">{task.jobDescription}</div>}
                                                     <div className="flex items-center gap-2 mt-1.5">
                                                         {task.district && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded font-medium">{task.district}</span>}
-                                                        <span className="text-[10px] text-slate-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> {task.address}</span>
+                                                        <span className="text-[10px] text-slate-600 flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400" /> {task.address}</span>
                                                     </div>
                                                 </div>
 
@@ -350,7 +350,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         <div className="text-center py-8 text-slate-400 text-xs italic">Listelenecek eksik yok.</div>
                                     ) : (
                                         filteredRoutineTasks.map(task => (
-                                            <div key={task.id} className="bg-white border border-slate-100 hover:border-purple-300 rounded-xl p-3 shadow-sm transition-all hover:shadow-md group flex items-start justify-between">
+                                            <div key={task.id} className="bg-slate-50 border-2 border-slate-300 hover:border-purple-500 rounded-xl p-3 shadow-md transition-all hover:shadow-lg group flex items-start justify-between">
                                                 <div className="flex-1">
                                                     {(task.customerName || task.phoneNumber) && (
                                                         <div className="flex items-center gap-2 mb-1">
