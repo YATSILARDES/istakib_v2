@@ -795,7 +795,7 @@ function App() {
 
               {activeTab === 'assignment' ? (
                 <AssignmentView
-                  tasks={activeTasks}
+                  tasks={tasks}
                   routineTasks={routineTasks}
                   onAssignTask={handleAssignTask}
                   onAssignRoutineTask={handleAssignRoutineTask}
@@ -824,10 +824,39 @@ function App() {
               ) : activeTab === 'routine_pool' ? (
                 <RoutineTasksView
                   tasks={routineTasks}
-                  onToggleRoutineTask={handleToggleRoutineTask}
-                  onDeleteRoutineTask={handleDeleteRoutineTask}
-                  onAddRoutineTask={handleAddRoutineTask}
-                  onUpdateRoutineTask={handleUpdateRoutineTask}
+                  onToggleTask={handleToggleRoutineTask}
+                  onDeleteTask={handleDeleteRoutineTask}
+                  onAddTask={handleAddRoutineTask}
+                  onUpdateTask={handleUpdateRoutineTask}
+                  onConvertTask={async (taskId, targetStatus) => {
+                    // Simple conversion implementation
+                    const task = routineTasks.find(t => t.id === taskId);
+                    if (!task) return;
+
+                    // 1. Add to main tasks
+                    const newTask = {
+                      title: task.content,
+                      status: targetStatus,
+                      orderNumber: tasks.length + 1,
+                      createdAt: serverTimestamp(),
+                      updatedAt: serverTimestamp(),
+                      createdBy: user?.email || 'System',
+                      // Map other fields
+                      customerName: task.customerName,
+                      phone: task.phoneNumber,
+                      address: task.address,
+                      district: task.district,
+                      city: task.city,
+                      locationCoordinates: task.locationCoordinates
+                    };
+                    await addDoc(collection(db, 'tasks'), newTask);
+
+                    // 2. Mark routine task as completed
+                    await updateDoc(doc(db, 'routine_tasks', task.id), {
+                      isCompleted: true,
+                      completedAt: serverTimestamp()
+                    });
+                  }}
                 />
               ) : activeTab === 'dashboard' && viewMode === 'dashboard' ? (
                 <Dashboard
