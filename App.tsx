@@ -26,7 +26,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, order
 import { getToken, onMessage } from 'firebase/messaging';
 import { messaging } from './src/firebase';
 
-const ADMIN_EMAILS = ['canercelik1994@gmail.com', 'admin@onaymuhendislik.com', 'demo@onay.com'];
+const ADMIN_EMAILS = ['canercelik1994@gmail.com', 'admin@onaymuhendislik.com', 'demo@onay.com', 'caner192@hotmail.com'];
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
