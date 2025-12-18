@@ -791,11 +791,74 @@ export default function App() {
           <span>🛠️ GELİŞTİRME MODU</span>
         </div>
 
+        {/* Global Toolbar */}
+        <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm shrink-0 z-10 w-full">
+          <div className="flex items-center gap-4">
+            {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
+              <button onClick={() => setViewMode('dashboard')} className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1">
+                <Layout className="w-4 h-4" /> Panel'e Dön
+              </button>
+            )}
+            <div className="h-4 w-px bg-slate-300 mx-2" />
+            <div>
+              <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-slate-500">İş Takip V2</p>
+                <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 max-w-md mx-6 flex justify-end">
+            {/* Search Bar - Top Right Filter Request */}
+            <div className="relative group w-full">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
+                placeholder="Müşteri Ara..."
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
+              <button onClick={() => setIsRoutineModalOpen(true)} className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30">
+                <Bell className="w-4 h-4" />
+                Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks) ? routineTasks.filter(t => !t.isCompleted).length : visibleRoutineTasks.filter(t => !t.isCompleted).length})
+              </button>
+            )}
+            {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
+              <button onClick={() => setIsAssignmentModalOpen(true)} className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30">
+                <Users className="w-4 h-4" />
+                Görev Dağıtımı
+              </button>
+            )}
+            {(hasAdminAccess || userPermissions?.canAddCustomers) && (
+              <button onClick={handleAddTaskClick} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20">
+                <Plus className="w-4 h-4" />
+                Yeni Müşteri
+              </button>
+            )}
+          </div>
+        </div>
+
         {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
           <Dashboard
             tasks={visibleTasks}
             routineTasks={routineTasks} // Pass routine tasks for "Recent Updates"
-            staffList={registeredStaff} // Pass real staff list
+            // staffList removed for map removal
             onNavigate={handleDashboardNavigate}
             onTaskClick={handleTaskClick}
             onFilterMissing={handleFilterMissing}
@@ -805,67 +868,7 @@ export default function App() {
           />
         ) : (
           <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
-            {/* Toolbar */}
-            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm shrink-0 z-10">
-              <div className="flex items-center gap-4">
-                {activeTab === 'dashboard' && (
-                  <button onClick={() => setViewMode('dashboard')} className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1">
-                    <Layout className="w-4 h-4" /> Panel'e Dön
-                  </button>
-                )}
-                <div className="h-4 w-px bg-slate-300 mx-2" />
-                <div>
-                  <h1 className="font-bold text-lg tracking-tight text-slate-800">ONAY MÜHENDİSLİK</h1>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-slate-500">İş Takip V2</p>
-                    <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 max-w-md mx-6">
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
-                    placeholder="Müşteri, iş, adres veya personel ara..."
-                  />
-                  {searchTerm && (
-                    <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {(isAdmin || userPermissions?.canAccessRoutineTasks) && (
-                  <button onClick={() => setIsRoutineModalOpen(true)} className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-purple-600/30">
-                    <Bell className="w-4 h-4" />
-                    Eksikler Havuzu ({(hasAdminAccess || userPermissions?.canAccessRoutineTasks) ? routineTasks.filter(t => !t.isCompleted).length : visibleRoutineTasks.filter(t => !t.isCompleted).length})
-                  </button>
-                )}
-                {(hasAdminAccess || userPermissions?.canAccessAssignment) && (
-                  <button onClick={() => setIsAssignmentModalOpen(true)} className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all border border-blue-600/30">
-                    <Users className="w-4 h-4" />
-                    Görev Dağıtımı
-                  </button>
-                )}
-                {(hasAdminAccess || userPermissions?.canAddCustomers) && (
-                  <button onClick={handleAddTaskClick} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20">
-                    <Plus className="w-4 h-4" />
-                    Yeni Müşteri
-                  </button>
-                )}
-              </div>
-            </div>
+            {/* Toolbar Removed Logic Here */}
 
             {viewMode === 'split' ? (
               <div className="flex-1 flex overflow-hidden">

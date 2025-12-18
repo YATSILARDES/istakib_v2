@@ -6,8 +6,8 @@ import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon,
 
 interface DashboardProps {
     tasks: Task[];
-    routineTasks: RoutineTask[]; // New prop
-    staffList: StaffMember[];
+    routineTasks: RoutineTask[];
+    // staffList removed
     onNavigate: (status?: TaskStatus) => void;
     onTaskClick: (task: Task) => void;
     onFilterMissing: () => void;
@@ -19,7 +19,7 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({
     tasks,
     routineTasks,
-    staffList,
+    // staffList removed
     onNavigate,
     onTaskClick,
     onFilterMissing,
@@ -164,10 +164,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
 
                 {/* 1. SECTION: QUICK ACTIONS & MAP (NEW) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6">
 
-                    {/* Hızlı İşlemler */}
-                    <div className="col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
+                    {/* Hızlı İşlemler (Tam Genişlik) */}
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
                         <div className="mb-4">
                             <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                                 <Activity className="w-5 h-5 text-blue-500" />
@@ -176,79 +176,35 @@ const Dashboard: React.FC<DashboardProps> = ({
                             <p className="text-slate-400 text-xs mt-1">Sık kullanılan yönetici araçları</p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <button onClick={onOpenNewCustomerModal} className="flex flex-col items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-4 rounded-xl transition-all border border-emerald-100 group">
-                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                    <Plus className="w-5 h-5" />
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <button onClick={onOpenNewCustomerModal} className="flex flex-col items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-6 rounded-xl transition-all border border-emerald-100 group">
+                                <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                    <Plus className="w-6 h-6" />
                                 </div>
-                                <span className="font-bold text-xs">Yeni Müşteri</span>
+                                <span className="font-bold text-sm">Yeni Müşteri</span>
                             </button>
 
-                            <button onClick={onOpenAssignmentModal} className="flex flex-col items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 p-4 rounded-xl transition-all border border-blue-100 group">
-                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                    <Users className="w-5 h-5" />
+                            <button onClick={onOpenAssignmentModal} className="flex flex-col items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 p-6 rounded-xl transition-all border border-blue-100 group">
+                                <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                    <Users className="w-6 h-6" />
                                 </div>
-                                <span className="font-bold text-xs">Görev Dağıtımı</span>
+                                <span className="font-bold text-sm">Görev Dağıtımı</span>
                             </button>
 
-                            <button onClick={onOpenRoutineModal} className="flex flex-col items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-600 p-4 rounded-xl transition-all border border-purple-100 group relative">
-                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                    <Bell className="w-5 h-5" />
+                            <button onClick={onOpenRoutineModal} className="flex flex-col items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-600 p-6 rounded-xl transition-all border border-purple-100 group relative">
+                                <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                    <Bell className="w-6 h-6" />
                                 </div>
-                                <span className="font-bold text-xs">Eksikler Havuzu</span>
-                                <span className="absolute top-2 right-2 bg-purple-500 text-white text-[10px] font-bold px-1.5 rounded-full">3</span>
+                                <span className="font-bold text-sm">Eksikler Havuzu</span>
+                                <span className="absolute top-2 right-2 bg-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
                             </button>
 
-                            <button className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 p-4 rounded-xl transition-all border border-slate-100 group">
-                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                    <MoreHorizontal className="w-5 h-5" />
+                            <button className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 p-6 rounded-xl transition-all border border-slate-100 group">
+                                <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                    <MoreHorizontal className="w-6 h-6" />
                                 </div>
-                                <span className="font-bold text-xs">Diğer</span>
+                                <span className="font-bold text-sm">Diğer</span>
                             </button>
-                        </div>
-                    </div>
-
-                    {/* Sahadaki Personel Widget (Map Preview) */}
-                    <div className="col-span-1 lg:col-span-2 bg-slate-900 rounded-2xl p-0 shadow-lg border border-slate-800 overflow-hidden relative group min-h-[300px]">
-                        {/* Map Background - Dark Style Pattern for better contrast */}
-                        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#4b5563_1px,transparent_1px)] [background-size:16px_16px]"></div>
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-transparent to-slate-900/50"></div>
-
-                        {/* Overlay Content */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/40 to-transparent z-10"></div>
-
-                        <div className="relative z-20 p-6 h-full flex flex-col justify-between">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                                        <MapIcon className="w-5 h-5 text-blue-600" />
-                                        Personel Durumu
-                                    </h3>
-                                    <p className="text-slate-500 text-xs mt-1">Kayıtlı personeller ve anlık durumları</p>
-                                </div>
-                            </div>
-
-                            {/* Real Staff List */}
-                            <div className="flex items-center gap-4 mt-8 overflow-x-auto pb-2 no-scrollbar">
-                                {staffList && staffList.length > 0 ? (
-                                    staffList.map((staff, index) => (
-                                        <div key={index} className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-sm min-w-[180px]">
-                                            <div className="relative">
-                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white shadow-sm text-blue-600 font-bold text-xs uppercase">
-                                                    {staff.name.substring(0, 2)}
-                                                </div>
-                                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
-                                            </div>
-                                            <div>
-                                                <p className="text-slate-800 text-xs font-bold truncate max-w-[100px]">{staff.name}</p>
-                                                <p className="text-emerald-600 text-[10px]">Çevrimiçi</p>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-slate-400 text-sm italic">Henüz personel eklenmemiş.</div>
-                                )}
-                            </div>
                         </div>
                     </div>
                 </div>
