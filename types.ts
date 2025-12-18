@@ -45,6 +45,7 @@ export interface Task {
   createdBy?: string;
   lastUpdatedBy?: string;
   createdAt?: any;
+  updatedAt?: any; // Son Güncelleme
   scheduledDate?: any; // Atanan Tarih (Firestore Timestamp)
   isCheckVerified?: boolean;
   isProjectDrawn?: boolean; // Proje Çizildi Durumu
@@ -101,4 +102,5 @@ export interface RoutineTask {
   district?: string; // İlçe
   city?: string; // İl
   scheduledDate?: any; // Yeni: Planlanan Tarih
+  completedAt?: any; // Tamamlanma Zamanı
 }

@@ -393,7 +393,11 @@ export default function App() {
       const task = routineTasks.find(t => t.id === taskId);
       if (task) {
         const taskRef = doc(db, 'routine_tasks', taskId);
-        await updateDoc(taskRef, { isCompleted: !task.isCompleted });
+        const newIsCompleted = !task.isCompleted;
+        await updateDoc(taskRef, {
+          isCompleted: newIsCompleted,
+          completedAt: newIsCompleted ? serverTimestamp() : null
+        });
       }
     } catch (e) {
       console.error("Toggle routine error:", e);
@@ -611,6 +615,7 @@ export default function App() {
       setViewMode('split');
     } else {
       setViewMode('board');
+      // Single Column View is handled by KanbanBoard receiving boardFilter logic
     }
   };
 
@@ -789,6 +794,7 @@ export default function App() {
         {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
           <Dashboard
             tasks={visibleTasks}
+            routineTasks={routineTasks} // Pass routine tasks for "Recent Updates"
             staffList={registeredStaff} // Pass real staff list
             onNavigate={handleDashboardNavigate}
             onTaskClick={handleTaskClick}
@@ -905,8 +911,8 @@ export default function App() {
                 myTasks={[]}
                 onTaskClick={handleTaskClick}
                 onToggleRoutineTask={handleToggleRoutineTask}
-                visibleColumns={userPermissions?.allowedColumns}
-                showRoutineColumn={!hasAdminAccess}
+                visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
+                showRoutineColumn={!boardFilter && !hasAdminAccess}
                 staffName={userPermissions?.name}
               />
             )}

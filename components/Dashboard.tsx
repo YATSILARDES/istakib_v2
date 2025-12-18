@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { Task, TaskStatus, StatusLabels, StaffMember } from '@/types';
+import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask } from '@/types';
 import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal } from 'lucide-react';
 // import InteractiveMap from './InteractiveMap'; // Later integration
 
 interface DashboardProps {
     tasks: Task[];
+    routineTasks: RoutineTask[]; // New prop
     staffList: StaffMember[];
     onNavigate: (status?: TaskStatus) => void;
     onTaskClick: (task: Task) => void;
@@ -17,6 +18,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({
     tasks,
+    routineTasks,
     staffList,
     onNavigate,
     onTaskClick,
@@ -79,45 +81,72 @@ const Dashboard: React.FC<DashboardProps> = ({
     ];
 
     // Filtreleme Mantığı (Son Güncellemeler için)
-    const filteredUpdates = tasks.filter(task => {
-        // Şartlar:
-        // 1. "Tamamlanan eksikler" -> checkStatus === 'clean' (Eksiği giderilmiş/temiz)
-        // 2. "Tamamlanan saha görevleri" -> GAS_OPENED veya SERVICE_DIRECTED aşamasına gelmiş
-        const isRelevant = (task.checkStatus === 'clean') ||
-            (task.status === TaskStatus.GAS_OPENED) ||
-            (task.status === TaskStatus.SERVICE_DIRECTED);
-
-        // Basit olması adına son işlemlerde tüm hareketleri gösterelim mi?
-        // Referans kod isRelevant filtresi kullanmış. Aynen alıyorum.
-        if (!isRelevant) return false;
-
-        const taskDate = task.createdAt?.seconds ? new Date(task.createdAt.seconds * 1000) : new Date(task.date || '');
+    // Filtreleme Mantığı (Son Güncellemeler için)
+    const filteredUpdates = React.useMemo(() => {
         const now = new Date();
         now.setHours(0, 0, 0, 0);
-        const taskDay = new Date(taskDate);
-        taskDay.setHours(0, 0, 0, 0);
 
-        const diffTime = Math.abs(now.getTime() - taskDay.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        // 1. Routine Tasks (Check for completedAt or generic createdAt if today)
+        const relevantRoutine = routineTasks.filter(t => {
+            if (!t.isCompleted) return false;
+            // Check completedAt first, fallback to createdAt (but createdAt is creation, not completion)
+            // If completedAt is missing, we might assume it's old or check createdAt just in case created&done today.
+            const dateRef = t.completedAt?.seconds ? new Date(t.completedAt.seconds * 1000) :
+                (t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000) : new Date(t.createdAt));
 
-        if (filter === 'daily') {
-            return taskDay.getTime() === now.getTime();
-        } else if (filter === 'weekly') {
-            return diffDays <= 7;
-        } else if (filter === 'monthly') {
-            return diffDays <= 30;
-        }
-        return true;
-    });
+            const day = new Date(dateRef);
+            day.setHours(0, 0, 0, 0);
+            return day.getTime() === now.getTime();
+        }).map(t => ({ ...t, type: 'routine' }));
 
-    // Son Güncellemeler (Filtrelenmiş ve Sıralanmış)
-    const recentUpdates = [...filteredUpdates]
-        .sort((a, b) => {
-            const dateA = a.createdAt?.seconds ? new Date(a.createdAt.seconds * 1000) : new Date(a.date || '');
-            const dateB = b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000) : new Date(b.date || '');
-            return dateB.getTime() - dateA.getTime();
-        })
-        .slice(0, 10);
+        // 2. Field Tasks (GAS_OPENED, SERVICE_DIRECTED, CHECK_COMPLETED)
+        // Check updatedAt or createdAt if today
+        const relevantTasks = tasks.filter(t => {
+            const isFieldDone = (t.status === TaskStatus.GAS_OPENED) ||
+                (t.status === TaskStatus.SERVICE_DIRECTED) ||
+                (t.status === TaskStatus.CHECK_COMPLETED); // Maybe check completed too?
+
+            if (!isFieldDone) return false;
+
+            const dateRef = t.updatedAt?.seconds ? new Date(t.updatedAt.seconds * 1000) :
+                (t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000) : new Date(t.date || ''));
+
+            const day = new Date(dateRef);
+            day.setHours(0, 0, 0, 0);
+            return day.getTime() === now.getTime();
+        }).map(t => ({ ...t, type: 'task' }));
+
+        const combined = [...relevantRoutine, ...relevantTasks];
+
+        // Apply Time Filter (Daily/Weekly/Monthly) - Though logic above enforced Today for Daily.
+        // Let's refine: The above logic enforces TODAY.
+        // If filter is Weekly/Monthly, we should relax the date check above.
+
+        return combined.filter(item => {
+            const dateRef = (item as any).completedAt?.seconds ? new Date((item as any).completedAt.seconds * 1000) :
+                (item as any).updatedAt?.seconds ? new Date((item as any).updatedAt.seconds * 1000) :
+                    ((item as any).createdAt?.seconds ? new Date((item as any).createdAt.seconds * 1000) : new Date((item as any).createdAt || (item as any).date));
+
+            const itemDay = new Date(dateRef);
+            itemDay.setHours(0, 0, 0, 0);
+
+            const diffTime = Math.abs(now.getTime() - itemDay.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (filter === 'daily') return diffDays <= 1; // Include today
+            if (filter === 'weekly') return diffDays <= 7;
+            if (filter === 'monthly') return diffDays <= 30;
+            return true;
+        }).sort((a, b) => {
+            // Sort by latest date
+            const dateA = (a as any).completedAt?.seconds || (a as any).updatedAt?.seconds || (a as any).createdAt?.seconds || 0;
+            const dateB = (b as any).completedAt?.seconds || (b as any).updatedAt?.seconds || (b as any).createdAt?.seconds || 0;
+            return dateB - dateA;
+        });
+
+    }, [tasks, routineTasks, filter]);
+
+    const recentUpdates = filteredUpdates.slice(0, 10);
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-slate-100">
@@ -180,10 +209,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     {/* Sahadaki Personel Widget (Map Preview) */}
-                    <div className="col-span-1 lg:col-span-2 bg-white rounded-2xl p-0 shadow-sm border border-slate-200 overflow-hidden relative group min-h-[300px]">
-                        {/* Map Background - Gradient Fallback */}
-                        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-100 via-slate-100 to-white"></div>
-                        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#94a3b8 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                    <div className="col-span-1 lg:col-span-2 bg-slate-900 rounded-2xl p-0 shadow-lg border border-slate-800 overflow-hidden relative group min-h-[300px]">
+                        {/* Map Background - Dark Style Pattern for better contrast */}
+                        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#4b5563_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-transparent to-slate-900/50"></div>
 
                         {/* Overlay Content */}
                         <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/40 to-transparent z-10"></div>
@@ -324,22 +353,27 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
 
                             <div className="overflow-y-auto p-2 space-y-2 custom-scrollbar flex-1">
-                                {recentUpdates.length > 0 ? recentUpdates.map((task) => (
+                                {recentUpdates.length > 0 ? recentUpdates.map((item: any) => (
                                     <div
-                                        key={task.id}
-                                        onClick={() => onTaskClick(task)}
+                                        key={item.id}
+                                        onClick={() => item.type === 'task' ? onTaskClick(item) : onOpenRoutineModal()} // If routine, open modal?
                                         className="group bg-white p-3 rounded-lg border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all cursor-pointer"
                                     >
                                         <div className="flex justify-between items-start mb-1">
-                                            <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">#{task.orderNumber}</span>
+                                            {item.type === 'task' ? (
+                                                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">#{item.orderNumber}</span>
+                                            ) : (
+                                                <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">Eksik</span>
+                                            )}
                                             <span className="text-[10px] text-slate-400">
-                                                {new Date(task.date || task.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString('tr-TR')}
+                                                {new Date((item.completedAt?.seconds || item.updatedAt?.seconds || item.createdAt?.seconds) * 1000 || Date.now()).toLocaleDateString('tr-TR')}
                                             </span>
                                         </div>
-                                        <h4 className="font-bold text-sm text-slate-700 group-hover:text-blue-600 transition-colors line-clamp-1">{task.title}</h4>
+                                        <h4 className="font-bold text-sm text-slate-700 group-hover:text-blue-600 transition-colors line-clamp-1">{item.title || item.content}</h4>
                                         <div className="flex items-center justify-between mt-1">
-                                            <p className="text-xs text-slate-500 line-clamp-1">{StatusLabels[task.status]}</p>
-                                            {task.checkStatus === 'clean' && <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 rounded">Temiz</span>}
+                                            <p className="text-xs text-slate-500 line-clamp-1">{item.status ? StatusLabels[item.status] : 'Tamamlanan Eksik'}</p>
+                                            {item.checkStatus === 'clean' && <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 rounded">Temiz</span>}
+                                            {item.isCompleted && <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 rounded">Yapıldı</span>}
                                         </div>
                                     </div>
                                 )) : (
