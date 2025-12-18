@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, Loader2 } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -36,6 +36,7 @@ function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [routineTasks, setRoutineTasks] = useState<RoutineTask[]>([]);
   const [userPermissions, setUserPermissions] = useState<UserPermission | null>(null);
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
 
   // UI State
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -214,6 +215,10 @@ function App() {
 
     // PERMISSIONS LOGIC
     let unsubPerm = () => { };
+
+    // Start loading
+    setPermissionsLoading(true);
+
     if (user && user.email) {
       const emailLower = user.email.toLowerCase();
       if (ADMIN_EMAILS.includes(emailLower)) {
@@ -226,8 +231,9 @@ function App() {
           canAccessAssignment: true,
           canAddCustomers: true
         });
+        setPermissionsLoading(false);
       } else {
-        const emailLower = user.email.toLowerCase();
+        // Reuse emailLower
         unsubPerm = onSnapshot(doc(db, 'permissions', emailLower), (docSnap) => {
           if (docSnap.exists()) {
             setUserPermissions(docSnap.data() as UserPermission);
@@ -242,8 +248,14 @@ function App() {
               canAccessAssignment: false
             });
           }
+          setPermissionsLoading(false);
+        }, (error) => {
+          console.error("Permission fetch error:", error);
+          setPermissionsLoading(false);
         });
       }
+    } else {
+      setPermissionsLoading(false);
     }
 
     return () => {
@@ -510,6 +522,13 @@ function App() {
   if (loading) return <div className="h-screen bg-slate-900 flex items-center justify-center text-white">Yükleniyor...</div>;
   if (!user) return <Login />;
 
+  if (permissionsLoading) {
+    return <div className="h-screen bg-slate-900 flex items-center justify-center text-white flex-col gap-4">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      <div>Yetkiler Kontrol Ediliyor...</div>
+    </div>;
+  }
+
   // Benzersiz Personel Listesi
   const registeredStaff = appSettings.staffList || [];
   const taskAssignees = [...tasks, ...routineTasks].map(t => t.assignee).filter(Boolean) as string[];
@@ -680,7 +699,7 @@ function App() {
       <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 transition-all duration-300">
 
         <div className="fixed bottom-4 right-4 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
-          <span>🛠️ GELİŞTİRME MODU | Tasks: {tasks.length} | Admin: {hasAdminAccess ? 'Yes' : 'No'} | Filtered: {visibleTasks.length}</span>
+          <span>🛠️ GELİŞTİRME MODU | Tasks: {tasks.length} | User: {user?.email} | Admin: {hasAdminAccess ? 'Yes' : 'No'} | Role: {userPermissions?.role || 'None'}</span>
         </div>
 
         <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-100 relative">
