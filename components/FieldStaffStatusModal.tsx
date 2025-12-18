@@ -26,10 +26,32 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
     if (!isOpen) return null;
 
     // --- Date Helpers ---
-    const getTaskDate = (t: any) => {
-        if (t.scheduledDate) return new Date(t.scheduledDate.seconds * 1000);
-        if (t.createdAt) return new Date(t.createdAt.seconds * 1000);
-        return new Date(); // Fallback to today
+    const getTaskDate = (t: any): Date => {
+        try {
+            // Priority: Scheduled Date -> Created At -> Now
+            const source = t.scheduledDate || t.createdAt;
+            if (!source) return new Date();
+
+            // Firestore Timestamp ?
+            if (source.seconds) return new Date(source.seconds * 1000);
+
+            // JavaScript Date ?
+            if (source instanceof Date) return source;
+
+            // String (ISO) ?
+            if (typeof source === 'string') {
+                const d = new Date(source);
+                if (!isNaN(d.getTime())) return d;
+            }
+
+            // Number (possiby timestamp millis?)
+            if (typeof source === 'number') return new Date(source);
+
+            return new Date();
+        } catch (e) {
+            console.error("Date parse error", e);
+            return new Date();
+        }
     };
 
     const isToday = (date: Date) => {
