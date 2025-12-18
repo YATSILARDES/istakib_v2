@@ -10,6 +10,7 @@ interface FieldStaffModalProps {
     staffList: StaffMember[];
     onUpdateTask: (taskId: string, newStatus: TaskStatus) => void;
     onToggleRoutineTask: (taskId: string, currentStatus: boolean) => void;
+    onTaskClick: (task: Task) => void;
 }
 
 const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
@@ -19,9 +20,64 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
     routineTasks,
     staffList,
     onUpdateTask,
-    onToggleRoutineTask
+    onToggleRoutineTask,
+    onTaskClick
 }) => {
     const [selectedStaffEmail, setSelectedStaffEmail] = React.useState<string | null>(null);
+
+    // ... (rest of Date Helpers and Hooks remain unchanged until render)
+
+    // ... (Inside renderContent / Weekly View)
+    {/* Main Tasks */ }
+    {
+        day.tasks.map(t => (
+            <div
+                key={t.id}
+                onClick={() => onTaskClick(t)}
+                className="bg-slate-50 border border-slate-200 p-2 rounded-lg group/task cursor-pointer hover:border-orange-300 hover:shadow-md transition-all active:scale-95"
+            >
+                <div className="flex justify-between items-start mb-1">
+                    <span className="text-[9px] font-bold bg-white border border-slate-100 px-1 rounded text-slate-500">#{t.orderNumber}</span>
+                    <div className={`w-1.5 h-1.5 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500' : 'bg-blue-500'}`} />
+                </div>
+                <div className="text-[10px] font-bold text-slate-700 mb-1">{t.title}</div>
+                <div className="text-[9px] text-slate-500 truncate">{t.district}</div>
+            </div>
+        ))
+    }
+
+    // ... (Inside renderContent / Summary View)
+    {/* Main Tasks Section */ }
+    {
+        staff.activeTasks.length > 0 && (
+            <div className="space-y-2">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1 flex items-center gap-1">
+                    <div className="w-1 h-1 bg-blue-400 rounded-full" /> Ana İşler ({staff.activeTasks.length})
+                </div>
+                {staff.activeTasks.map(t => (
+                    <div
+                        key={t.id}
+                        onClick={() => onTaskClick(t)}
+                        className="bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm hover:border-orange-300 transition-all group/task flex flex-col gap-2 cursor-pointer hover:shadow-md active:scale-95"
+                    >
+                        <div>
+                            <div className="flex justify-between items-start mb-1">
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 rounded">#{t.orderNumber}</span>
+                                    <span className="text-xs font-bold text-slate-700">{t.title}</span>
+                                </div>
+                                <div className={`w-2 h-2 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
+                            </div>
+                            <div className="flex items-center justify-between text-[10px]">
+                                <span className="text-slate-500">{StatusLabels[t.status]}</span>
+                                {t.district && <span className="font-medium text-slate-400">{t.district}</span>}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )
+    }
 
     // --- Date Helpers (Moved up to be available for useMemo) ---
     const getTaskDate = (t: any): Date => {
@@ -274,20 +330,17 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 
                                         {/* Main Tasks */}
                                         {day.tasks.map(t => (
-                                            <div key={t.id} className="bg-slate-50 border border-slate-200 p-2 rounded-lg group/task">
+                                            <div
+                                                key={t.id}
+                                                onClick={() => onTaskClick(t)}
+                                                className="bg-slate-50 border border-slate-200 p-2 rounded-lg group/task cursor-pointer hover:border-orange-300 hover:shadow-md transition-all active:scale-95"
+                                            >
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className="text-[9px] font-bold bg-white border border-slate-100 px-1 rounded text-slate-500">#{t.orderNumber}</span>
                                                     <div className={`w-1.5 h-1.5 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500' : 'bg-blue-500'}`} />
                                                 </div>
                                                 <div className="text-[10px] font-bold text-slate-700 mb-1">{t.title}</div>
-                                                <div className="text-[9px] text-slate-500 mb-2 truncate">{t.district}</div>
-
-                                                <button
-                                                    onClick={() => onUpdateTask(t.id, TaskStatus.CHECK_COMPLETED)}
-                                                    className="w-full py-1 bg-white hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-slate-100 hover:border-emerald-200 rounded text-[9px] font-bold transition-all flex items-center justify-center opacity-0 group-hover/task:opacity-100"
-                                                >
-                                                    Bitir
-                                                </button>
+                                                <div className="text-[9px] text-slate-500 truncate">{t.district}</div>
                                             </div>
                                         ))}
 
@@ -378,7 +431,11 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                         <div className="w-1 h-1 bg-blue-400 rounded-full" /> Ana İşler ({staff.activeTasks.length})
                                                     </div>
                                                     {staff.activeTasks.map(t => (
-                                                        <div key={t.id} className="bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm hover:border-blue-300 transition-colors group/task flex flex-col gap-2">
+                                                        <div
+                                                            key={t.id}
+                                                            onClick={() => onTaskClick(t)}
+                                                            className="bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm hover:border-orange-300 transition-colors group/task flex flex-col gap-2 cursor-pointer hover:shadow-md active:scale-95"
+                                                        >
                                                             <div>
                                                                 <div className="flex justify-between items-start mb-1">
                                                                     <div className="flex items-center gap-1">
@@ -392,13 +449,6 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                                     {t.district && <span className="font-medium text-slate-400">{t.district}</span>}
                                                                 </div>
                                                             </div>
-
-                                                            <button
-                                                                onClick={() => onUpdateTask(t.id, TaskStatus.CHECK_COMPLETED)}
-                                                                className="w-full py-1.5 bg-slate-50 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-slate-100 hover:border-emerald-200 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-1 opacity-0 group-hover/task:opacity-100"
-                                                            >
-                                                                <CheckCircle2 className="w-3 h-3" /> Kontrol Edildi (Bitir)
-                                                            </button>
                                                         </div>
                                                     ))}
                                                 </div>

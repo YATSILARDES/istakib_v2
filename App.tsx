@@ -919,6 +919,10 @@ function App() {
             completedAt: !currentStatus ? serverTimestamp() : null
           });
         }}
+        onTaskClick={(task) => {
+          setSelectedTask(task);
+          setIsTaskModalOpen(true);
+        }}
       />
     </div >
   );
