@@ -150,206 +150,156 @@ const Dashboard: React.FC<DashboardProps> = ({
     const recentUpdates = filteredUpdates.slice(0, 10);
 
     return (
+    return (
         <div className="flex flex-col h-full overflow-hidden bg-slate-100">
 
-            {/* Breadcrumb Bar */}
-            <div className="bg-[#2c3e50] border-b border-[#34495e] px-6 py-3 flex items-center gap-2 text-sm text-slate-400 mb-6 shadow-md">
-                <span className="font-bold text-white text-lg mr-4">Genel Bakış</span>
-                <div className="w-px h-5 bg-[#34495e] mx-2" />
-                <Home className="w-4 h-4" />
-                <ChevronRight className="w-4 h-4" />
-                <span className="font-semibold text-white">Dashboard</span>
+            {/* Breadcrumb Bar - Compact */}
+            <div className="bg-[#2c3e50] border-b border-[#34495e] px-4 py-2 flex items-center gap-2 text-xs text-slate-400 shrink-0 shadow-sm">
+                <span className="font-bold text-white text-base mr-4">Genel Bakış</span>
+                <div className="w-px h-4 bg-[#34495e] mx-2" />
+                <Home className="w-3 h-3" />
+                <ChevronRight className="w-3 h-3" />
                 <span className="font-semibold text-white">Dashboard</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            {/* Main Content - No Scroll on outer container */}
+            <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
 
-                {/* 1. SECTION: QUICK ACTIONS & PERSONAL NOTES */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[450px]">
+                {/* 1. ROW: Quick Actions & Personal Notes (Fixed Height ~220px) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[220px] shrink-0">
 
                     {/* Left: Quick Actions Grid */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col">
-                        <div className="mb-4">
-                            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-blue-500" />
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col h-full">
+                        <div className="mb-2 shrink-0">
+                            <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <Activity className="w-4 h-4 text-blue-500" />
                                 Hızlı İşlemler
                             </h3>
-                            <p className="text-slate-400 text-xs mt-1">Sık kullanılan yönetici araçları</p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 flex-1">
-                            <button onClick={onOpenNewCustomerModal} className="flex flex-col items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-4 rounded-xl transition-all border border-emerald-100 group shadow-sm hover:shadow-md">
-                                <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                    <Plus className="w-6 h-6" />
+                        <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
+                            <button onClick={onOpenNewCustomerModal} className="flex items-center gap-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 rounded-lg transition-all border border-emerald-100 group shadow-sm hover:shadow-md justify-start">
+                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                    <Plus className="w-5 h-5" />
                                 </div>
-                                <span className="font-bold text-sm">Yeni Müşteri</span>
+                                <span className="font-bold text-xs text-left">Yeni Müşteri</span>
                             </button>
 
-                            <button onClick={onOpenAssignmentModal} className="flex flex-col items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 p-4 rounded-xl transition-all border border-blue-100 group shadow-sm hover:shadow-md">
-                                <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                    <Users className="w-6 h-6" />
+                            <button onClick={onOpenAssignmentModal} className="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 rounded-lg transition-all border border-blue-100 group shadow-sm hover:shadow-md justify-start">
+                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                    <Users className="w-5 h-5" />
                                 </div>
-                                <span className="font-bold text-sm">Görev Dağıtımı</span>
+                                <span className="font-bold text-xs text-left">Görev Dağıtımı</span>
                             </button>
 
-                            <button onClick={onOpenRoutineModal} className="flex flex-col items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-600 p-4 rounded-xl transition-all border border-purple-100 group relative shadow-sm hover:shadow-md">
-                                <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                    <Bell className="w-6 h-6" />
+                            <button onClick={onOpenRoutineModal} className="flex items-center gap-3 bg-purple-50 hover:bg-purple-100 text-purple-600 px-4 rounded-lg transition-all border border-purple-100 group relative shadow-sm hover:shadow-md justify-start">
+                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                    <Bell className="w-5 h-5" />
                                 </div>
-                                <span className="font-bold text-sm">Eksikler Havuzu</span>
-                                <span className="absolute top-2 right-2 bg-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
+                                <span className="font-bold text-xs text-left">Eksikler Havuzu</span>
+                                <span className="absolute top-2 right-2 bg-purple-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">3</span>
                             </button>
 
-                            <button className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 p-4 rounded-xl transition-all border border-slate-100 group shadow-sm hover:shadow-md">
-                                <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                    <MoreHorizontal className="w-6 h-6" />
+                            <button className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 rounded-lg transition-all border border-slate-100 group shadow-sm hover:shadow-md justify-start">
+                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                    <MoreHorizontal className="w-5 h-5" />
                                 </div>
-                                <span className="font-bold text-sm">Diğer</span>
+                                <span className="font-bold text-xs text-left">Diğer İşlemler</span>
                             </button>
                         </div>
                     </div>
 
                     {/* Right: Personal Notes */}
-                    <PersonalNotes />
+                    <div className="h-full">
+                        <PersonalNotes />
+                    </div>
 
                 </div>
 
-                {/* 2. SECTION: STATS & UPDATES */}
-                <div className="flex flex-col lg:flex-row gap-6">
+                {/* 2. ROW: Stats & Updates (Flex to fill remaining height) */}
+                <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
 
-                    {/* Sol Kolon: Kartlar */}
-                    <div className="flex-1">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* .. existing cards code .. */}
+                    {/* Left: Stats Cards Grid */}
+                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
                             {cards.map((card, idx) => {
                                 const isGasAlert = card.status === TaskStatus.GAS_OPENED && card.score > 0;
                                 return (
                                     <button
                                         key={idx}
                                         onClick={() => onNavigate(card.status)}
-                                        className={`${isGasAlert ? 'bg-red-50 animate-pulse ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white'} p-6 rounded-lg shadow-sm border-t-4 border-slate-100 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-36 relative overflow-hidden`}
+                                        className={`${isGasAlert ? 'bg-red-50 animate-pulse ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white'} p-4 rounded-xl shadow-sm border-t-4 border-slate-100 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-28 relative overflow-hidden`}
                                     >
-                                        <div className="flex justify-between items-start w-full mb-2 z-10 relative">
-                                            <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider">{card.displayName}</h3>
-                                            {isGasAlert && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}
+                                        <div className="flex justify-between items-start w-full mb-1 z-10 relative">
+                                            <h3 className="font-bold text-slate-600 text-[10px] uppercase tracking-wider">{card.displayName}</h3>
+                                            {isGasAlert && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
                                         </div>
 
                                         <div className="flex items-end justify-between z-10 relative">
-                                            <span className={`text-4xl font-bold ${card.color}`}>
+                                            <span className={`text-3xl font-bold ${card.color}`}>
                                                 {card.score}
                                             </span>
-                                            <div className={`p-2 rounded-full bg-slate-50 group-hover:bg-white transition-colors`}>
-                                                <Activity className={`w-5 h-5 ${card.color} opacity-50 group-hover:opacity-100`} />
+                                            <div className={`p-1.5 rounded-full bg-slate-50 group-hover:bg-white transition-colors`}>
+                                                <Activity className={`w-4 h-4 ${card.color} opacity-50 group-hover:opacity-100`} />
                                             </div>
                                         </div>
 
-                                        <div className="w-full h-px bg-slate-100 my-3 relative z-10" />
-
-                                        <p className="text-[11px] text-slate-400 font-medium relative z-10">
+                                        <p className="text-[10px] text-slate-400 font-medium relative z-10 mt-2 line-clamp-1">
                                             {card.subText}
                                         </p>
 
-                                        {/* Decorative Background Icon */}
-                                        <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-slate-50 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0" />
+                                        <Activity className="absolute -right-4 -bottom-4 w-24 h-24 text-slate-50 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0" />
                                     </button>
                                 );
                             })}
-
-                            {/* Eksiği Olan İşler Kartı */}
-                            <button
-                                onClick={onFilterMissing}
-                                className="bg-white p-6 rounded-lg shadow-sm border-t-4 border-slate-100 hover:border-red-500 hover:shadow-md transition-all text-left flex flex-col justify-between group h-36 relative overflow-hidden"
-                            >
-                                <div className="flex justify-between items-start w-full mb-2 z-10 relative">
-                                    <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider">Eksiği Olan İşler</h3>
-                                </div>
-                                <div className="flex items-end justify-between z-10 relative">
-                                    <span className="text-4xl font-bold text-red-500">
-                                        {tasks.filter(t => t.checkStatus === 'missing').length}
-                                    </span>
-                                    <div className="p-2 rounded-full bg-slate-50 group-hover:bg-white transition-colors">
-                                        <Activity className="w-5 h-5 text-red-500 opacity-50 group-hover:opacity-100" />
-                                    </div>
-                                </div>
-                                <div className="w-full h-px bg-slate-100 my-3 relative z-10" />
-                                <p className="text-[11px] text-slate-400 font-medium relative z-10">
-                                    Müdahale gereken dosyalar
-                                </p>
-                                <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-slate-50 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0" />
-                            </button>
-
                         </div>
                     </div>
 
-                    {/* Sağ Kolon: Son Güncellemeler */}
-                    <div className="w-full lg:w-96 flex flex-col gap-6">
-                        <div className="bg-white rounded-lg shadow-sm p-0 overflow-hidden border border-slate-100 h-full max-h-[600px] flex flex-col">
-                            <div className="p-4 border-b border-slate-100 flex flex-col gap-3 bg-slate-50/50">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-slate-400" />
-                                        Son Güncellemeler
-                                    </h3>
-                                </div>
-                                <div className="flex bg-slate-200 rounded-lg p-1 gap-1">
-                                    <button
-                                        onClick={() => setFilter('daily')}
-                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${filter === 'daily' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'} `}
-                                    >
-                                        Günlük
-                                    </button>
-                                    <button
-                                        onClick={() => setFilter('weekly')}
-                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${filter === 'weekly' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'} `}
-                                    >
-                                        Haftalık
-                                    </button>
-                                    <button
-                                        onClick={() => setFilter('monthly')}
-                                        className={`flex - 1 py - 1 text - [10px] font - bold rounded - md transition - all ${filter === 'monthly' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'} `}
-                                    >
-                                        Aylık
-                                    </button>
+                    {/* Right: Updates (Fixed Width, Full Height) */}
+                    <div className="w-full lg:w-80 shrink-0 h-full flex flex-col">
+                        <div className="bg-white rounded-xl shadow-sm p-0 overflow-hidden border border-slate-100 h-full flex flex-col">
+                            <div className="p-3 border-b border-slate-100 flex flex-col gap-2 bg-slate-50/50 shrink-0">
+                                <h3 className="font-bold text-slate-700 flex items-center gap-2 text-xs">
+                                    <Clock className="w-3 h-3 text-slate-400" />
+                                    Son Güncellemeler
+                                </h3>
+                                <div className="flex bg-slate-200 rounded-lg p-0.5 gap-0.5">
+                                    {['daily', 'weekly', 'monthly'].map((f) => (
+                                        <button
+                                            key={f}
+                                            onClick={() => setFilter(f as any)}
+                                            className={`flex-1 py-0.5 text-[9px] font-bold rounded-md transition-all ${filter === f ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        >
+                                            {f === 'daily' ? 'Günlük' : f === 'weekly' ? 'Haftalık' : 'Aylık'}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
-                            <div className="overflow-y-auto p-2 space-y-2 custom-scrollbar flex-1">
+                            <div className="overflow-y-auto p-2 space-y-2 custom-scrollbar flex-1 min-h-0">
                                 {recentUpdates.length > 0 ? recentUpdates.map((item: any) => (
                                     <div
                                         key={item.id}
-                                        onClick={() => item.type === 'task' ? onTaskClick(item) : onOpenRoutineModal()} // If routine, open modal?
-                                        className="group bg-white p-3 rounded-lg border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all cursor-pointer"
+                                        onClick={() => item.type === 'task' ? onTaskClick(item) : onOpenRoutineModal()}
+                                        className="group bg-white p-2 rounded-lg border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all cursor-pointer"
                                     >
-                                        <div className="flex justify-between items-start mb-1">
-                                            {item.type === 'task' ? (
-                                                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">#{item.orderNumber}</span>
-                                            ) : (
-                                                <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">Eksik</span>
-                                            )}
-                                            <span className="text-[10px] text-slate-400">
+                                        <div className="flex justify-between items-start mb-0.5">
+                                            <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${item.type === 'task' ? 'text-slate-500 bg-slate-100' : 'text-purple-600 bg-purple-50'}`}>
+                                                {item.type === 'task' ? `#${item.orderNumber}` : 'Eksik'}
+                                            </span>
+                                            <span className="text-[9px] text-slate-400">
                                                 {new Date((item.completedAt?.seconds || item.updatedAt?.seconds || item.createdAt?.seconds) * 1000 || Date.now()).toLocaleDateString('tr-TR')}
                                             </span>
                                         </div>
-                                        <h4 className="font-bold text-sm text-slate-700 group-hover:text-blue-600 transition-colors line-clamp-1">{item.title || item.content}</h4>
-                                        <div className="flex items-center justify-between mt-1">
-                                            <p className="text-xs text-slate-500 line-clamp-1">{item.status ? StatusLabels[item.status] : 'Tamamlanan Eksik'}</p>
-                                            {item.checkStatus === 'clean' && <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 rounded">Temiz</span>}
-                                            {item.isCompleted && <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 rounded">Yapıldı</span>}
-                                        </div>
+                                        <h4 className="font-bold text-xs text-slate-700 group-hover:text-blue-600 transition-colors line-clamp-1">{item.title || item.content}</h4>
+                                        <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{item.status ? StatusLabels[item.status] : 'Tamamlanan Eksik'}</p>
                                     </div>
                                 )) : (
-                                    <div className="text-center py-8 text-slate-400 text-sm">
-                                        Kriterlere uygun kayıt yok.
+                                    <div className="text-center py-4 text-slate-400 text-xs italic">
+                                        Kayıt yok.
                                     </div>
                                 )}
                             </div>
-
-                            <div className="p-3 border-t border-slate-100 bg-slate-50/50 text-center">
-                                <button onClick={() => onNavigate()} className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors">
-                                    Tüm Kayıtları Görüntüle
-                                </button>
-                            </div>
-
                         </div>
                     </div>
 
