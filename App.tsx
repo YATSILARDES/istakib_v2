@@ -190,13 +190,15 @@ function App() {
   useEffect(() => {
     if (!user) return;
 
-    // Tasks
-    const qTasks = query(collection(db, 'tasks'), orderBy('orderNumber', 'asc'));
+    // Tasks - Client side sort to avoid missing field issues
+    const qTasks = query(collection(db, 'tasks'));
     const unsubTasks = onSnapshot(qTasks, (snapshot) => {
       const fetchedTasks: Task[] = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Task));
+      // Client-side sort
+      fetchedTasks.sort((a, b) => (a.orderNumber || 0) - (b.orderNumber || 0));
       setTasks(fetchedTasks);
     });
 
@@ -233,11 +235,11 @@ function App() {
             setUserPermissions({
               email: emailLower,
               name: '',
+              canAddCustomers: false,
               role: 'staff',
               allowedColumns: [],
               canAccessRoutineTasks: false,
-              canAccessAssignment: false,
-              canAddCustomers: false
+              canAccessAssignment: false
             });
           }
         });
@@ -678,7 +680,7 @@ function App() {
       <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 transition-all duration-300">
 
         <div className="fixed bottom-4 right-4 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
-          <span>🛠️ GELİŞTİRME MODU</span>
+          <span>🛠️ GELİŞTİRME MODU | Tasks: {tasks.length} | Admin: {hasAdminAccess ? 'Yes' : 'No'} | Filtered: {visibleTasks.length}</span>
         </div>
 
         <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-100 relative">
