@@ -281,14 +281,14 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         filteredMainTasks.map(task => (
                                             <div key={task.id} className="bg-slate-200 border-2 border-slate-400 hover:border-blue-600 rounded-xl p-3 shadow-md transition-all hover:shadow-xl group flex items-center justify-between">
                                                 <div>
-                                                    <div className="font-bold text-slate-700 text-sm flex items-center gap-2">
-                                                        <span className="bg-slate-100 text-slate-500 px-1.5 rounded text-[10px]">#{task.orderNumber}</span>
+                                                    <div className="font-bold text-blue-950 text-sm flex items-center gap-2">
+                                                        <span className="bg-blue-100 text-blue-700 px-1.5 rounded text-[10px]">#{task.orderNumber}</span>
                                                         {task.title}
                                                     </div>
-                                                    {task.jobDescription && <div className="text-[11px] text-slate-500 mt-0.5 italic">{task.jobDescription}</div>}
+                                                    {task.jobDescription && <div className="text-[11px] text-blue-900 mt-0.5 font-medium">{task.jobDescription}</div>}
                                                     <div className="flex items-center gap-2 mt-1.5">
-                                                        {task.district && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded font-medium">{task.district}</span>}
-                                                        <span className="text-[10px] text-slate-600 flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400" /> {task.address}</span>
+                                                        {task.district && <span className="text-[10px] text-white bg-blue-600 px-2 py-0.5 rounded font-bold shadow-sm">{task.district}</span>}
+                                                        <span className="text-[10px] text-red-700 font-semibold flex items-center gap-1"><MapPin className="w-3 h-3 text-red-500" /> {task.address}</span>
                                                     </div>
                                                 </div>
 
@@ -354,11 +354,11 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                                 <div className="flex-1">
                                                     {(task.customerName || task.phoneNumber) && (
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            {task.district && <span className="text-[9px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100">{task.district}</span>}
-                                                            {task.customerName && <span className="text-[10px] font-bold text-slate-600">{task.customerName}</span>}
+                                                            {task.district && <span className="text-[9px] bg-purple-600 text-white px-2 py-0.5 rounded font-bold shadow-sm">{task.district}</span>}
+                                                            {task.customerName && <span className="text-[10px] font-bold text-purple-900">{task.customerName}</span>}
                                                         </div>
                                                     )}
-                                                    <p className="text-xs text-slate-700 whitespace-pre-wrap">{task.content}</p>
+                                                    <p className="text-xs text-purple-950 font-medium whitespace-pre-wrap">{task.content}</p>
                                                     <div className="flex justify-end mt-1">
                                                         <span className="text-[9px] text-slate-400">{new Date(task.createdAt?.seconds ? task.createdAt.seconds * 1000 : task.createdAt).toLocaleDateString('tr-TR')}</span>
                                                     </div>
