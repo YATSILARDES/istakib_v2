@@ -353,9 +353,12 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                             <div key={task.id} className="bg-slate-200 border-2 border-slate-400 hover:border-purple-600 rounded-xl p-3 shadow-md transition-all hover:shadow-xl group flex items-start justify-between">
                                                 <div className="flex-1">
                                                     {(task.customerName || task.phoneNumber) && (
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            {task.district && <span className="text-[9px] bg-purple-600 text-white px-2 py-0.5 rounded font-bold shadow-sm">{task.district}</span>}
-                                                            {task.customerName && <span className="text-[10px] font-bold text-purple-900">{task.customerName}</span>}
+                                                        <div className="flex flex-col gap-1 mb-1">
+                                                            <div className="flex items-center gap-2">
+                                                                {task.district && <span className="text-[9px] bg-purple-600 text-white px-2 py-0.5 rounded font-bold shadow-sm">{task.district}</span>}
+                                                                {task.customerName && <span className="text-[10px] font-bold text-purple-900">{task.customerName}</span>}
+                                                            </div>
+                                                            {task.address && <div className="text-[10px] text-purple-800 font-semibold flex items-center gap-1"><MapPin className="w-3 h-3 text-purple-600" /> {task.address}</div>}
                                                         </div>
                                                     )}
                                                     <p className="text-xs text-purple-950 font-medium whitespace-pre-wrap">{task.content}</p>
