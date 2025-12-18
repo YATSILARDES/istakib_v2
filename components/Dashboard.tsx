@@ -15,6 +15,7 @@ interface DashboardProps {
     onOpenRoutineModal: () => void;
     onOpenAssignmentModal: () => void;
     onOpenNewCustomerModal: () => void;
+    onOpenFieldStaffModal: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -26,7 +27,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     onFilterMissing,
     onOpenRoutineModal,
     onOpenAssignmentModal,
-    onOpenNewCustomerModal
+    onOpenNewCustomerModal,
+    onOpenFieldStaffModal
 }) => {
     const [filter, setFilter] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
@@ -84,7 +86,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             displayName: 'SAHADAKİ PERSONEL',
             score: tasks.filter(t => t.assignee).length, // Count all assigned tasks
             subText: 'Personel üzerindeki aktif işler',
-            action: onOpenAssignmentModal, // Open Assignment View
+            action: onOpenFieldStaffModal, // Open Live Modal
             color: 'text-orange-600',
             borderColor: 'hover:border-orange-600',
             status: 'FIELD_STAFF' as any

@@ -12,6 +12,7 @@ import MobileLayout from './components/MobileLayout';
 import MobileAdminPanel from './components/MobileAdminPanel';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
+import FieldStaffStatusModal from './components/FieldStaffStatusModal';
 
 // NEW VIEWS
 import AssignmentView from './components/AssignmentView';
@@ -47,6 +48,7 @@ function App() {
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
 
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isFieldStaffModalOpen, setIsFieldStaffModalOpen] = useState(false);
   const [appSettings, setAppSettings] = useState<AppSettings>({ notifications: {}, pinnedStaff: [] });
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
 
@@ -801,6 +803,7 @@ function App() {
                   onOpenRoutineModal={() => setActiveTab('routine_pool' as any)}
                   onOpenAssignmentModal={() => setActiveTab('assignment' as any)}
                   onOpenNewCustomerModal={handleAddTaskClick}
+                  onOpenFieldStaffModal={() => setIsFieldStaffModalOpen(true)}
                 />
               ) : (
                 <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
@@ -874,16 +877,25 @@ function App() {
       )
       }
 
-      {/* Admin Panel */}
+      {/* Mobile Admin Panel */}
       <MobileAdminPanel
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}
         initialSettings={appSettings}
-        onSaveSettings={handleSaveSettings}
-        users={uniqueUsers}
+        onSaveSettings={(newSettings) => setAppSettings(newSettings)}
+        users={(appSettings.staffList || []).map(s => s.name)}
+        routineTasks={routineTasks}
+        tasks={tasks}
+        onTasksUpdate={(newTasks) => setTasks(newTasks)}
+      />
+
+      {/* Field Staff Live Status Modal */}
+      <FieldStaffStatusModal
+        isOpen={isFieldStaffModalOpen}
+        onClose={() => setIsFieldStaffModalOpen(false)}
         tasks={tasks}
         routineTasks={routineTasks}
-        onTasksUpdate={setTasks}
+        staffList={appSettings.staffList || []}
       />
     </div >
   );
