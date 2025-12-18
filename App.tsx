@@ -213,7 +213,8 @@ function App() {
     // PERMISSIONS LOGIC
     let unsubPerm = () => { };
     if (user && user.email) {
-      if (ADMIN_EMAILS.includes(user.email)) {
+      const emailLower = user.email.toLowerCase();
+      if (ADMIN_EMAILS.includes(emailLower)) {
         setUserPermissions({
           email: user.email,
           name: 'Admin',
