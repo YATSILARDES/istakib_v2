@@ -578,17 +578,13 @@ function App() {
     visibleTasks = [];
     visibleRoutineTasks = [];
   } else {
-    // If not admin, verify filtered visibility
-    if (!searchTerm && !isMissingFilterActive) {
-      // Apply filters only if no active search or special filter
-      // Actually user logic was: Filtered by allowedColumns first.
-      const allowedColumns = userPermissions.allowedColumns || [];
-      visibleTasks = visibleTasks.filter(t => allowedColumns.includes(t.status));
-    }
-
     const myName = userPermissions.name;
     const myEmail = userPermissions.email;
     const canSeePool = userPermissions.canAccessRoutineTasks;
+    const allowedColumns = userPermissions.allowedColumns || [];
+
+    // Permission filter ALWAYS applies (even with search)
+    visibleTasks = visibleTasks.filter(t => allowedColumns.includes(t.status));
 
     visibleRoutineTasks = routineTasks.filter(t => {
       const emailMatch = t.assigneeEmail && myEmail && t.assigneeEmail.toLowerCase() === myEmail.toLowerCase();
