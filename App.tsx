@@ -789,78 +789,74 @@ function App() {
                     </div>
                   </div>
                 </div>
-                <Plus className="w-4 h-4" />
-                Yeni Müşteri
-              </button>
-                  )}
-            </div>
-        </div>
-
-        {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
-          <Dashboard
-            tasks={visibleTasks}
-            routineTasks={routineTasks}
-            onNavigate={handleDashboardNavigate}
-            onTaskClick={handleTaskClick}
-            onFilterMissing={handleFilterMissing}
-            onOpenRoutineModal={() => setActiveTab('routine_pool' as any)}
-            onOpenAssignmentModal={() => setActiveTab('assignment' as any)}
-            onOpenNewCustomerModal={handleAddTaskClick}
-          />
-        ) : (
-          <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
-            {viewMode === 'split' ? (
-              <div className="flex-1 flex overflow-hidden">
-                <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
-                  <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
-                    <span>✅ Hazır / Sorunsuz İşler</span>
-                    <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
-                  </div>
-                  <KanbanBoard
-                    tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
-                    routineTasks={[]}
-                    myTasks={[]}
-                    onTaskClick={handleTaskClick}
-                    onToggleRoutineTask={handleToggleRoutineTask}
-                    visibleColumns={boardFilter ? [boardFilter] : undefined}
-                    showRoutineColumn={false}
-                    staffName={userPermissions?.name}
-                    isCompact={true}
-                  />
-                </div>
-                <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
-                  <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-                    <span>⚠️ Eksiği Olan İşler</span>
-                    <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
-                  </div>
-                  <KanbanBoard
-                    tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
-                    routineTasks={[]}
-                    myTasks={[]}
-                    onTaskClick={handleTaskClick}
-                    onToggleRoutineTask={handleToggleRoutineTask}
-                    visibleColumns={boardFilter ? [boardFilter] : undefined}
-                    showRoutineColumn={false}
-                    staffName={userPermissions?.name}
-                    isCompact={true}
-                  />
-                </div>
               </div>
-            ) : (
-              <KanbanBoard
-                tasks={visibleTasks}
-                routineTasks={visibleRoutineTasks}
-                myTasks={[]}
-                onTaskClick={handleTaskClick}
-                onToggleRoutineTask={handleToggleRoutineTask}
-                visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
-                showRoutineColumn={!boardFilter && !hasAdminAccess}
-                staffName={userPermissions?.name}
-              />
-            )}
-          </div>
-        )}
-      </>
+            </div>
+
+          {activeTab === 'dashboard' && viewMode === 'dashboard' ? (
+            <Dashboard
+              tasks={visibleTasks}
+              routineTasks={routineTasks}
+              onNavigate={handleDashboardNavigate}
+              onTaskClick={handleTaskClick}
+              onFilterMissing={handleFilterMissing}
+              onOpenRoutineModal={() => setActiveTab('routine_pool' as any)}
+              onOpenAssignmentModal={() => setActiveTab('assignment' as any)}
+              onOpenNewCustomerModal={handleAddTaskClick}
+            />
+          ) : (
+            <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
+              {viewMode === 'split' ? (
+                <div className="flex-1 flex overflow-hidden">
+                  <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
+                    <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
+                      <span>✅ Hazır / Sorunsuz İşler</span>
+                      <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
+                    </div>
+                    <KanbanBoard
+                      tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
+                      routineTasks={[]}
+                      myTasks={[]}
+                      onTaskClick={handleTaskClick}
+                      onToggleRoutineTask={handleToggleRoutineTask}
+                      visibleColumns={boardFilter ? [boardFilter] : undefined}
+                      showRoutineColumn={false}
+                      staffName={userPermissions?.name}
+                      isCompact={true}
+                    />
+                  </div>
+                  <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
+                    <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
+                      <span>⚠️ Eksiği Olan İşler</span>
+                      <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
+                    </div>
+                    <KanbanBoard
+                      tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
+                      routineTasks={[]}
+                      myTasks={[]}
+                      onTaskClick={handleTaskClick}
+                      onToggleRoutineTask={handleToggleRoutineTask}
+                      visibleColumns={boardFilter ? [boardFilter] : undefined}
+                      showRoutineColumn={false}
+                      staffName={userPermissions?.name}
+                      isCompact={true}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <KanbanBoard
+                  tasks={visibleTasks}
+                  routineTasks={visibleRoutineTasks}
+                  myTasks={[]}
+                  onTaskClick={handleTaskClick}
+                  onToggleRoutineTask={handleToggleRoutineTask}
+                  visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
+                  showRoutineColumn={!boardFilter && !hasAdminAccess}
+                  staffName={userPermissions?.name}
+                />
+              )}
+            </div>
+          )}
+        </>
           )}
     </div>
       </main >
@@ -880,7 +876,7 @@ function App() {
 }
 
 {/* Admin Panel */ }
-<AdminPanel
+<MobileAdminPanel
   isOpen={isAdminPanelOpen}
   onClose={() => setIsAdminPanelOpen(false)}
   initialSettings={appSettings}
