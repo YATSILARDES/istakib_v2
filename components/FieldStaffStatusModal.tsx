@@ -23,15 +23,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 }) => {
     const [selectedStaffEmail, setSelectedStaffEmail] = React.useState<string | null>(null);
 
-    if (!isOpen) return null;
-
-    // --- Safety Checks ---
-    if (!tasks || !Array.isArray(tasks) || !routineTasks || !Array.isArray(routineTasks) || !staffList || !Array.isArray(staffList)) {
-        console.warn("FieldStaffStatusModal: Invalid props received", { tasks, routineTasks, staffList });
-        return null;
-    }
-
-    // --- Date Helpers ---
+    // --- Date Helpers (Moved up to be available for useMemo) ---
     const getTaskDate = (t: any): Date => {
         try {
             // Priority: Scheduled Date -> Created At -> Now
@@ -74,6 +66,89 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
         return date < today;
     };
 
+    // --- Statistics Calculation for SUMMARY View (Moved UP before conditional return) ---
+    const staffStats = useMemo(() => {
+        // If closed, we can return empty to save calc, but hooks MUST run.
+        // Or we just calculate it. It's safe.
+
+        const statsMap = new Map<string, {
+            name: string;
+            email: string;
+            activeTasks: Task[];
+            activeRoutine: RoutineTask[];
+            completedCount: number;
+        }>();
+
+        if (!staffList) return [];
+
+        try {
+            staffList.forEach(s => {
+                if (s && s.name) {
+                    statsMap.set(s.name, {
+                        name: s.name,
+                        email: s.email || '',
+                        activeTasks: [],
+                        activeRoutine: [],
+                        completedCount: 0
+                    });
+                }
+            });
+
+            // Add Active Main Tasks
+            if (tasks && Array.isArray(tasks)) {
+                tasks.forEach(t => {
+                    if (!t) return;
+                    const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
+                    if (t.assignee && isTaskActive) {
+                        const date = getTaskDate(t);
+                        // IF Today OR Overdue -> Show in Summary
+                        if (isToday(date) || isOverdue(date)) {
+                            if (!statsMap.has(t.assignee)) {
+                                statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
+                            }
+                            statsMap.get(t.assignee)!.activeTasks.push(t);
+                        }
+                    }
+                });
+            }
+
+            // Add Active Routine Tasks
+            if (routineTasks && Array.isArray(routineTasks)) {
+                routineTasks.forEach(t => {
+                    if (!t) return;
+                    if (t.assignee && !t.isCompleted) {
+                        const date = getTaskDate(t);
+                        if (isToday(date) || isOverdue(date)) {
+                            if (!statsMap.has(t.assignee)) {
+                                statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
+                            }
+                            statsMap.get(t.assignee)!.activeRoutine.push(t);
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Error calculating staff stats:", error);
+        }
+
+        return Array.from(statsMap.values()).sort((a, b) => {
+            const totalA = a.activeTasks.length + a.activeRoutine.length;
+            const totalB = b.activeTasks.length + b.activeRoutine.length;
+            return totalB - totalA;
+        });
+    }, [tasks, routineTasks, staffList]);
+
+    const totalActive = staffStats.reduce((acc, s) => acc + s.activeTasks.length + s.activeRoutine.length, 0);
+
+    // --- Early Return Checks AFTER hooks ---
+    if (!isOpen) return null;
+
+    // --- Safety Checks (Visual only, hook structure preserved) ---
+    if (!tasks || !routineTasks || !staffList) {
+        console.warn("FieldStaffStatusModal: Invalid props received", { tasks, routineTasks, staffList });
+        return null;
+    }
+
     // Rollover Logic: Effective date is Today if task is Overdue
     const getEffectiveDate = (t: any) => {
         const d = getTaskDate(t);
@@ -92,71 +167,6 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
             return date.toDateString(); // Fallback
         }
     };
-
-    // --- Statistics Calculation for SUMMARY View ---
-    const staffStats = useMemo(() => {
-        const statsMap = new Map<string, {
-            name: string;
-            email: string;
-            activeTasks: Task[];
-            activeRoutine: RoutineTask[];
-            completedCount: number;
-        }>();
-
-        try {
-            staffList.forEach(s => {
-                if (s && s.name) {
-                    statsMap.set(s.name, {
-                        name: s.name,
-                        email: s.email || '',
-                        activeTasks: [],
-                        activeRoutine: [],
-                        completedCount: 0
-                    });
-                }
-            });
-
-            // Add Active Main Tasks (Today + Overdue ONLY)
-            tasks.forEach(t => {
-                if (!t) return;
-                const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
-                if (t.assignee && isTaskActive) {
-                    const date = getTaskDate(t);
-                    // IF Today OR Overdue -> Show in Summary
-                    if (isToday(date) || isOverdue(date)) {
-                        if (!statsMap.has(t.assignee)) {
-                            statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
-                        }
-                        statsMap.get(t.assignee)!.activeTasks.push(t);
-                    }
-                }
-            });
-
-            // Add Active Routine Tasks (Today + Overdue ONLY)
-            routineTasks.forEach(t => {
-                if (!t) return;
-                if (t.assignee && !t.isCompleted) {
-                    const date = getTaskDate(t);
-                    if (isToday(date) || isOverdue(date)) {
-                        if (!statsMap.has(t.assignee)) {
-                            statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
-                        }
-                        statsMap.get(t.assignee)!.activeRoutine.push(t);
-                    }
-                }
-            });
-        } catch (error) {
-            console.error("Error calculating staff stats:", error);
-        }
-
-        return Array.from(statsMap.values()).sort((a, b) => {
-            const totalA = a.activeTasks.length + a.activeRoutine.length;
-            const totalB = b.activeTasks.length + b.activeRoutine.length;
-            return totalB - totalA;
-        });
-    }, [tasks, routineTasks, staffList]);
-
-    const totalActive = staffStats.reduce((acc, s) => acc + s.activeTasks.length + s.activeRoutine.length, 0);
 
     // --- Weekly View Data ---
     const getWeeklyData = (staffEmail: string) => {
