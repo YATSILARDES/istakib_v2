@@ -921,7 +921,7 @@ function App() {
         }}
         onTaskClick={(task) => {
           setSelectedTask(task);
-          setIsTaskModalOpen(true);
+          setIsModalOpen(true);
         }}
       />
     </div >
