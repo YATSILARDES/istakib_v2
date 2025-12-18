@@ -79,6 +79,16 @@ const Dashboard: React.FC<DashboardProps> = ({
             color: 'text-purple-500',
             borderColor: 'hover:border-purple-500'
         },
+        {
+            title: 'SAHADAKİ PERSONEL',
+            displayName: 'SAHADAKİ PERSONEL',
+            score: tasks.filter(t => t.assignee).length, // Count all assigned tasks
+            subText: 'Personel üzerindeki aktif işler',
+            action: onOpenAssignmentModal, // Open Assignment View
+            color: 'text-orange-600',
+            borderColor: 'hover:border-orange-600',
+            status: 'FIELD_STAFF' as any
+        },
     ];
 
     // Filtreleme Mantığı (Son Güncellemeler için)
@@ -216,7 +226,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 return (
                                     <button
                                         key={idx}
-                                        onClick={() => onNavigate(card.status)}
+                                        onClick={() => card.action ? card.action() : onNavigate(card.status)}
                                         className={`${isGasAlert ? 'bg-red-100 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)]' : 'bg-white border-slate-100'} p-4 rounded-xl shadow-sm border-t-4 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-28 relative overflow-hidden`}
                                     >
                                         <div className="flex justify-between items-start w-full mb-1 z-10 relative">
