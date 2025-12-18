@@ -133,7 +133,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
     const isPinned = selectedStaffName ? pinnedStaff.includes(selectedStaffName) : false;
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 overflow-hidden animate-in fade-in duration-300">
+        <div className="flex flex-col h-full bg-slate-200 overflow-hidden animate-in fade-in duration-300">
 
             {/* HEADER BAR */}
             <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm z-10">
@@ -219,12 +219,12 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
             </div>
 
             {/* MAIN CONTENT GRID */}
-            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 bg-slate-100/50">
+            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/20 bg-slate-200">
 
                 {/* LEFT COLUMN: POOL (Unassigned) */}
-                <div className="flex flex-col min-h-0 bg-white/50 backdrop-blur-sm">
+                <div className="flex flex-col min-h-0 bg-white/30 backdrop-blur-xl">
                     <div
-                        className="bg-white px-4 py-3 border-b border-slate-200 flex justify-between items-center cursor-pointer select-none lg:cursor-default sticky top-0 z-20"
+                        className="bg-white/50 backdrop-blur px-4 py-3 border-b border-white/20 flex justify-between items-center cursor-pointer select-none lg:cursor-default sticky top-0 z-20"
                         onClick={() => setIsPoolSectionExpanded(!isPoolSectionExpanded)}
                     >
                         <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         <div className="text-center py-8 text-slate-400 text-xs italic">Listelenecek iş yok.</div>
                                     ) : (
                                         filteredMainTasks.map(task => (
-                                            <div key={task.id} className="bg-slate-50 border-2 border-slate-300 hover:border-blue-500 rounded-xl p-3 shadow-md transition-all hover:shadow-lg group flex items-center justify-between">
+                                            <div key={task.id} className="bg-slate-200 border-2 border-slate-400 hover:border-blue-600 rounded-xl p-3 shadow-md transition-all hover:shadow-xl group flex items-center justify-between">
                                                 <div>
                                                     <div className="font-bold text-slate-700 text-sm flex items-center gap-2">
                                                         <span className="bg-slate-100 text-slate-500 px-1.5 rounded text-[10px]">#{task.orderNumber}</span>
@@ -350,7 +350,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         <div className="text-center py-8 text-slate-400 text-xs italic">Listelenecek eksik yok.</div>
                                     ) : (
                                         filteredRoutineTasks.map(task => (
-                                            <div key={task.id} className="bg-slate-50 border-2 border-slate-300 hover:border-purple-500 rounded-xl p-3 shadow-md transition-all hover:shadow-lg group flex items-start justify-between">
+                                            <div key={task.id} className="bg-slate-200 border-2 border-slate-400 hover:border-purple-600 rounded-xl p-3 shadow-md transition-all hover:shadow-xl group flex items-start justify-between">
                                                 <div className="flex-1">
                                                     {(task.customerName || task.phoneNumber) && (
                                                         <div className="flex items-center gap-2 mb-1">
