@@ -53,7 +53,7 @@ function App() {
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
 
   // Dashboard & Navigation State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'kanban' | 'assignment' | 'routine_pool'>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [viewMode, setViewMode] = useState<'dashboard' | 'board' | 'split'>('dashboard');
   const [boardFilter, setBoardFilter] = useState<TaskStatus | undefined>(undefined);
   const [isMissingFilterActive, setIsMissingFilterActive] = useState(false);
