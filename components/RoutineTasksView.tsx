@@ -119,10 +119,10 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
         : poolTasks.filter(t => t.district === activeDistrict);
 
     const renderTaskCard = (task: RoutineTask, isCompletedView: boolean) => (
-        <div key={task.id} className={`group flex items-start gap-4 p-4 rounded-xl border-2 transition-all animate-in fade-in slide-in-from-bottom-2 ${isCompletedView ? 'bg-slate-100 border-slate-300 opacity-60' : 'bg-slate-200 border-slate-400 hover:border-purple-600 hover:shadow-xl'} ${editingTaskId === task.id ? 'ring-2 ring-purple-500 border-purple-500' : ''}`}>
+        <div key={task.id} className={`group flex items-start gap-4 p-4 rounded-xl border-2 transition-all animate-in fade-in slide-in-from-bottom-2 ${isCompletedView ? 'bg-slate-100 border-slate-300 opacity-60' : 'bg-slate-50 border-slate-300 hover:border-blue-300 hover:shadow-lg'} ${editingTaskId === task.id ? 'ring-2 ring-blue-400 border-blue-400' : ''}`}>
             <button
                 onClick={() => onToggleTask(task.id)}
-                className={`mt-1 transition-colors ${isCompletedView ? 'text-emerald-500' : 'text-slate-300 hover:text-purple-500'}`}
+                className={`mt-1 transition-colors ${isCompletedView ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-500'}`}
                 title={isCompletedView ? "Tamamlanmadı yap" : "Tamamlandı işaretle"}
             >
                 {isCompletedView ? <CheckSquare className="w-6 h-6" /> : <Square className="w-6 h-6" />}
@@ -132,29 +132,29 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                 {(task.customerName || task.phoneNumber || task.address || task.district) && (
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-2 text-sm">
                         {task.customerName && (
-                            <span className={`font-bold flex items-center gap-1.5 ${isCompletedView ? 'text-slate-600' : 'text-purple-900'}`}>
+                            <span className={`font-bold flex items-center gap-1.5 ${isCompletedView ? 'text-slate-600' : 'text-blue-700'}`}>
                                 <UserCircle className="w-4 h-4" /> {task.customerName}
                             </span>
                         )}
                         {task.phoneNumber && (
-                            <a href={`tel:${task.phoneNumber}`} className="text-emerald-500 hover:text-emerald-600 flex items-center gap-1 hover:underline" onClick={(e) => e.stopPropagation()}>
+                            <a href={`tel:${task.phoneNumber}`} className="text-emerald-600 hover:text-emerald-700 flex items-center gap-1 hover:underline font-medium" onClick={(e) => e.stopPropagation()}>
                                 <Phone className="w-3.5 h-3.5" /> {task.phoneNumber}
                             </a>
                         )}
                         {task.district && (
-                            <span className="bg-purple-600 text-white px-2 py-0.5 rounded-full text-xs font-bold border border-purple-600 shadow-sm">
+                            <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-bold border border-orange-600 shadow-sm">
                                 {task.district}
                             </span>
                         )}
                         {task.address && (
-                            <span className="text-purple-800 flex items-center gap-1 text-xs font-semibold">
-                                <MapPin className="w-3.5 h-3.5 text-red-600" /> {task.address}
+                            <span className="text-slate-600 flex items-center gap-1 text-xs font-medium">
+                                <MapPin className="w-3.5 h-3.5 text-red-500" /> {task.address}
                             </span>
                         )}
                     </div>
                 )}
 
-                <p className={`${isCompletedView ? 'text-slate-500 line-through' : 'text-purple-950 font-medium'} whitespace-pre-wrap break-words leading-relaxed`}>{task.content}</p>
+                <p className={`${isCompletedView ? 'text-slate-500 line-through' : 'text-slate-800 font-medium'} whitespace-pre-wrap break-words leading-relaxed`}>{task.content}</p>
 
                 {!isCompletedView && (
                     <div className="flex items-center gap-3 mt-3">

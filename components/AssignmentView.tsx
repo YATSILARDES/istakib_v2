@@ -394,7 +394,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                 </div>
 
                 {/* RIGHT COLUMN: STAFF CALENDAR (Assigned) */}
-                <div className="flex flex-col min-h-0 bg-white shadow-xl shadow-slate-200/50 z-10">
+                <div className="flex flex-col min-h-0 bg-slate-100 shadow-xl shadow-slate-200/50 z-10 border-l border-slate-300">
                     <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-white sticky top-0 z-20">
                         <div className="flex items-center gap-2 cursor-pointer lg:cursor-default" onClick={() => setIsStaffListExpanded(!isStaffListExpanded)}>
                             <div className="bg-blue-100 p-1.5 rounded-lg">
@@ -423,7 +423,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                         </div>
                     </div>
 
-                    <div className={`flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50/30 ${!isStaffListExpanded ? 'hidden lg:block' : ''}`}>
+                    <div className={`flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-200 ${!isStaffListExpanded ? 'hidden lg:block' : ''}`}>
 
                         {viewMode === 'week' ? (
                             // WEEK GRID
