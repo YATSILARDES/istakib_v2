@@ -12,6 +12,7 @@ interface MobileAdminPanelProps {
     initialSettings: AppSettings;
     users: string[];
     tasks: Task[];
+    routineTasks: RoutineTask[];
     onTasksUpdate: (newTasks: Task[]) => void;
 }
 
