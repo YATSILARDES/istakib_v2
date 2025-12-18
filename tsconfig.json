@@ -27,6 +27,16 @@
     "noEmit": true
   },
   "exclude": [
-    "yeni_kodlar"
+    "yeni_kodlar",
+    "node_modules",
+    "dist",
+    "dist-electron",
+    "release"
+  ],
+  "include": [
+    "src/**/*",
+    "electron/**/*",
+    "*.tsx",
+    "*.ts"
   ]
 }
