@@ -898,7 +898,8 @@ function App() {
         tasks={tasks}
         routineTasks={routineTasks}
         // If Admin, show all. If Staff, show only SELF.
-        staffList={(appSettings.staffList || []).filter(s => {
+        staffList={(appSettings?.staffList || []).filter(s => {
+          if (!s) return false;
           if (userPermissions?.role === 'admin') return true;
           // Match by email or name
           return s.email === user?.email || s.name === userPermissions?.name;

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Task, RoutineTask, StaffMember, TaskStatus, StatusLabels } from '../types';
-import { X, User, Users, Phone, MapPin, Search, BarChart3, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Users, BarChart3, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface FieldStaffModalProps {
     isOpen: boolean;
@@ -86,6 +86,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
     // Safe formatting for locale
     const safeFormatDate = (date: Date) => {
         try {
+            if (isNaN(date.getTime())) return "Tarihsiz";
             return date.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'numeric' });
         } catch (e) {
             return date.toDateString(); // Fallback
