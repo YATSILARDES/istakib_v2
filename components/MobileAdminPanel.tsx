@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '@/src/firebase';
 import { doc, getDocs, setDoc, collection, deleteDoc } from 'firebase/firestore';
-import { UserPermission, AppSettings, Task, TaskStatus, StatusLabels } from '../types';
+import { UserPermission, AppSettings, Task, RoutineTask, TaskStatus, StatusLabels } from '../types';
 import * as XLSX from 'xlsx';
 import { User, Database, Bell, Download, Upload, Check, Plus, Trash2, Shield, Lock, Eye, AlertCircle, X, Users, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 
