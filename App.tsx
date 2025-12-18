@@ -575,6 +575,12 @@ function App() {
   const isManager = userPermissions?.role === 'manager';
   const hasAdminAccess = isAdmin || isManager;
 
+  console.log('DEBUG: User:', user.email);
+  console.log('DEBUG: Is Admin:', isAdmin);
+  console.log('DEBUG: Tasks Count:', tasks.length);
+  console.log('DEBUG: User Permissions:', userPermissions);
+
+
 
   if (hasAdminAccess) {
     visibleRoutineTasks = routineTasks;
