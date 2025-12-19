@@ -268,7 +268,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         className={`${isGasAlert ? 'bg-red-100 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)]' : 'bg-white border-slate-100'} p-4 rounded-xl shadow-sm border-t-4 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-28 relative overflow-hidden`}
                                     >
                                         <div className="flex justify-between items-start w-full mb-1 z-10 relative">
-                                            <h3 className={`font-bold text-[10px] uppercase tracking-wider ${isGasAlert ? 'text-red-700' : 'text-slate-600'}`}>{card.displayName}</h3>
+                                            <h3 className={`font-bold text-[10px] uppercase tracking-wider ${isGasAlert ? 'text-red-700' : 'text-slate-600'}`}>{card.title}</h3>
                                             {isGasAlert && (
                                                 <div className="absolute -top-1 -right-1 flex items-center gap-1">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
