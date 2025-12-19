@@ -137,12 +137,20 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ userEmail }) => {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden relative">
             {/* Header */}
             {/* Header */}
+            {/* Header */}
             <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex flex-col">
                     <span className="font-bold text-slate-700 capitalize text-sm">{monthName}</span>
                     <span className="text-[10px] text-slate-400 font-medium">Kişisel Takvim</span>
                 </div>
-                {/* Navigation removed as per '1 aylık dilim' request - Locked to current month */}
+                <div className="flex gap-1">
+                    <button onClick={handlePrevMonth} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
+                        <ChevronLeft className="w-4 h-4 text-slate-500" />
+                    </button>
+                    <button onClick={handleNextMonth} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
+                        <ChevronRight className="w-4 h-4 text-slate-500" />
+                    </button>
+                </div>
             </div>
 
             {/* Grid Header */}
@@ -156,7 +164,6 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ userEmail }) => {
 
             {/* Days Grid */}
             <div className="grid grid-cols-7 gap-1 p-2 flex-1 overflow-auto custom-scrollbar content-start">
-                {days}
                 {days}
             </div>
 
