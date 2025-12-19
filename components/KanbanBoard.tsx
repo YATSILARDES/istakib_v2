@@ -154,7 +154,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             </div>
 
             {/* Tasks List */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 pb-20 space-y-3 custom-scrollbar">
               {/* STANDARD TASKS SECTION */}
               {filteredStandard.length > 0 && (
                 <div className="mb-4 space-y-3">
@@ -291,7 +291,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               </div>
 
               {/* Tasks Container */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3 pb-20 space-y-3 custom-scrollbar">
                 {filteredTasks.map(task => (
                   <div
                     key={task.id}
