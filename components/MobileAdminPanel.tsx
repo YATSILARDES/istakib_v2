@@ -49,7 +49,7 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
 
     // Load permissions when entering lists
     useEffect(() => {
-        if (view === 'permissions_list') {
+        if (view === 'permissions_list' || view === 'notifications') {
             loadPermissions();
         }
     }, [view]);
@@ -339,8 +339,21 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                             {/* User List Integration */}
                             {(() => {
                                 const uniqueUsersMap = new Map<string, string>();
-                                allPermissions.forEach(p => { if (p.email) uniqueUsersMap.set(p.email, p.name || p.email); });
-                                users.forEach(email => { if (!uniqueUsersMap.has(email)) uniqueUsersMap.set(email, email); });
+
+                                // Source 1: Firestore Permissions (Real Login Users)
+                                allPermissions.forEach(p => {
+                                    if (p.email) uniqueUsersMap.set(p.email.toLowerCase(), p.name || p.email);
+                                });
+
+                                // Source 2: Settings Staff List (Manually Added)
+                                (settings.staffList || []).forEach(s => {
+                                    if (s.email) {
+                                        const lower = s.email.toLowerCase();
+                                        if (!uniqueUsersMap.has(lower)) {
+                                            uniqueUsersMap.set(lower, s.name);
+                                        }
+                                    }
+                                });
 
                                 return Array.from(uniqueUsersMap.entries()).map(([email, name]) => (
                                     <label key={email} className="flex items-center bg-slate-800 p-4 rounded-xl border border-slate-700 active:bg-slate-700 transition-colors">
