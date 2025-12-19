@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask, UserPermission } from '@/types';
 import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal } from 'lucide-react';
 import PersonalNotes from './PersonalNotes';
+import CalendarWidget from './CalendarWidget';
 // import InteractiveMap from './InteractiveMap'; // Later integration
 
 interface DashboardProps {
@@ -297,9 +298,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 </div>
 
-                {/* Right Column: Personal Notes (Fixed Width, Full Height) */}
-                <div className="w-80 shrink-0 h-full">
-                    <PersonalNotes userEmail={currentUser?.email} />
+                {/* Right Column: Personal Notes & Calendar (Fixed Width, Full Height) */}
+                <div className="w-80 shrink-0 h-full flex flex-col gap-4">
+                    <div className="h-[45%]">
+                        <PersonalNotes userEmail={currentUser?.email} />
+                    </div>
+                    <div className="flex-1 min-h-0">
+                        <CalendarWidget userEmail={currentUser?.email} />
+                    </div>
                 </div>
 
             </div>
