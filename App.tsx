@@ -802,7 +802,10 @@ function App() {
                   staffList={
                     userPermissions?.role === 'admin'
                       ? appSettings.staffList || []
-                      : (appSettings.staffList || []).filter(s => s.email === user?.email)
+                      : (appSettings.staffList || []).filter(s =>
+                        (s.email && user?.email && s.email.toLowerCase() === user.email.toLowerCase()) ||
+                        (userPermissions?.name && s.name === userPermissions.name)
+                      )
                   }
                   pinnedStaff={appSettings.pinnedStaff || []}
                   onAddStaff={(name, email) => {
@@ -966,8 +969,9 @@ function App() {
         staffList={(appSettings?.staffList || []).filter(s => {
           if (!s) return false;
           if (userPermissions?.role === 'admin') return true;
-          // Match by email or name
-          return s.email === user?.email || s.name === userPermissions?.name;
+          // Match by email or name (case-insensitive)
+          return (s.email && user?.email && s.email.toLowerCase() === user.email.toLowerCase()) ||
+            (s.name === userPermissions?.name);
         })}
         onUpdateTask={async (taskId, newStatus) => {
           await updateDoc(doc(db, 'tasks', taskId), {
