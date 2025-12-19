@@ -547,9 +547,16 @@ function App() {
       setIsAdminPanelOpen(true);
       return;
     }
+
+    // RESET ALL FILTERS
+    setBoardFilter(undefined);
+    setIsMissingFilterActive(false);
+
     setActiveTab(tab as any);
     if (tab === 'dashboard') {
       setViewMode('dashboard');
+    } else {
+      setViewMode('board'); // Reset view mode for other tabs (like kanban)
     }
   };
 
