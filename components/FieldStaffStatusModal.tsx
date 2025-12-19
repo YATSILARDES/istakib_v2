@@ -237,7 +237,6 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                         </button>
                         <div>
                             <h3 className="text-xl font-black text-slate-800">{staffName}</h3>
-                            <p className="text-slate-500 text-sm font-medium">Bu Haftaki Görev Dağılımı (Kalanlar Sonraki Güne Devreder)</p>
                         </div>
                     </div>
 

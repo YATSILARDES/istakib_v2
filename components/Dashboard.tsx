@@ -72,16 +72,14 @@ const Dashboard: React.FC<DashboardProps> = ({
             title: 'KONTROL EDİLDİ',
             displayName: StatusLabels[TaskStatus.CHECK_COMPLETED],
             score: getCount(TaskStatus.CHECK_COMPLETED),
-            subText: 'Kontrolü tamamlanmış işler',
             status: TaskStatus.CHECK_COMPLETED,
             color: 'text-blue-500',
             borderColor: 'hover:border-blue-500'
         },
         {
-            title: 'DEPOZİTO ONAYI',
+            title: 'DEPOZİTOSU YATIRILMIŞ İŞLER',
             displayName: StatusLabels[TaskStatus.DEPOSIT_PAID],
             score: getCount(TaskStatus.DEPOSIT_PAID),
-            subText: 'Depozitosu yatırılmış işler',
             status: TaskStatus.DEPOSIT_PAID,
             color: 'text-indigo-500',
             borderColor: 'hover:border-indigo-500'
@@ -91,7 +89,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             title: 'SAHADAKİ PERSONEL',
             displayName: 'SAHADAKİ PERSONEL',
             score: tasks.filter(t => t.assignee).length, // Count all assigned tasks
-            subText: 'Personel üzerindeki aktif işler',
             action: onOpenFieldStaffModal, // Open Live Modal
             color: 'text-orange-600',
             borderColor: 'hover:border-orange-600',
@@ -100,26 +97,23 @@ const Dashboard: React.FC<DashboardProps> = ({
             title: 'ATANAN İŞLERİM',
             displayName: 'ATANAN İŞLERİM',
             score: getMyActiveTaskCount(),
-            subText: 'Üzerimdeki aktif saha görevleri',
             action: onOpenFieldStaffModal, // Opens same modal, but App.tsx will filter content
             color: 'text-emerald-600',
             borderColor: 'hover:border-emerald-600',
             status: 'MY_TASKS' as any
         },
         {
-            title: 'GAZ AÇILDI',
+            title: 'GAZI AÇILAN İŞLER',
             displayName: StatusLabels[TaskStatus.GAS_OPENED],
             score: getCount(TaskStatus.GAS_OPENED),
-            subText: 'Gaz açımı yapılmış işler',
             status: TaskStatus.GAS_OPENED,
             color: 'text-emerald-500',
             borderColor: 'hover:border-emerald-500'
         },
         {
-            title: 'SERVİS YÖNLENDİRME',
+            title: 'SERVİS YÖNLENDİRİLMESİ YAPILMIŞ İŞLER',
             displayName: StatusLabels[TaskStatus.SERVICE_DIRECTED],
             score: getCount(TaskStatus.SERVICE_DIRECTED),
-            subText: 'Servise yönlendirilmiş işler',
             status: TaskStatus.SERVICE_DIRECTED,
             color: 'text-purple-500',
             borderColor: 'hover:border-purple-500'
