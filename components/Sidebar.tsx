@@ -12,7 +12,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdmin, onLogout }) => {
     const menuItems = [
         { id: 'dashboard', label: 'Panel', icon: Home },
-        { id: 'reports', label: 'Raporlar', icon: BarChart2 },
+        // { id: 'reports', label: 'Raporlar', icon: BarChart2 },
         { id: 'archive', label: 'Arşiv', icon: FolderOpen },
     ];
 
