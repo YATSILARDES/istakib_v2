@@ -1,0 +1,4 @@
+$(document).ready(function () {
+    $('#cepTel1').mask('(000) 000 0000');
+    $('#evTel1').mask('(000) 000 0000');
+});

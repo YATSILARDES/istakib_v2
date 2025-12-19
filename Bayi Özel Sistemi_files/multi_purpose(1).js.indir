@@ -1,0 +1,775 @@
+String.prototype.trim = function() {
+    return this.replace(/^\s+|\s+$/, '');
+};
+
+String.prototype.format = function() {
+    var str = this;
+
+    for (var i = 0; i < arguments.length; i++) {
+        var re = new RegExp('\\{' + (i) + '\\}', 'gm');
+        str = str.replace(re, arguments[i]);
+    }
+    return str;
+}
+
+String.prototype.startsWith = function(str) {
+    var reg = new RegExp('^' + str);
+    return reg.test(this);
+}
+
+String.prototype.endsWith = function(str) {
+    var reg = new RegExp(str + '$');
+    return reg.test(this);
+}
+
+String.prototype.replaceAll = function(pcFrom, pcTo) {
+    var i = this.indexOf(pcFrom);
+    var c = this;
+
+    while (i > -1) {
+        c = c.replace(pcFrom, pcTo);
+        i = c.indexOf(pcFrom);
+    }
+    return c;
+}
+
+/* HASHTABLE*/
+function Hashtable() {
+    this.clear = hashtable_clear;
+    this.containsKey = hashtable_containsKey;
+    this.containsValue = hashtable_containsValue;
+    this.get = hashtable_get;
+    this.getKey = hashtable_getKey;
+    this.isEmpty = hashtable_isEmpty;
+    this.keys = hashtable_keys;
+    this.put = hashtable_put;
+    this.remove = hashtable_remove;
+    this.size = hashtable_size;
+    this.toString = hashtable_toString;
+    this.values = hashtable_values;
+    this.value = hashtable_value;
+    this.hashtable = new Array();
+}
+/*=======Private methods for internal use only========*/
+
+function hashtable_value(key) {
+    if (key != null) {
+        for (var i in this.hashtable) {
+            if (this.hashtable[i][0] == key) {
+                return this.hashtable[i][1];
+                break;
+            }
+        }
+    }
+    return "";
+}
+
+function hashtable_clear() {
+    this.hashtable = new Array();
+}
+
+function hashtable_containsKey(key) {
+    var exists = false;
+    for (var i in this.hashtable) {
+        if (i == key && this.hashtable[i] != null) {
+            exists = true;
+            break;
+        }
+    }
+    return exists;
+}
+
+function hashtable_containsValue(value) {
+    var contains = false;
+    if (value != null) {
+        for (var i in this.hashtable) {
+            if (this.hashtable[i] == value) {
+                contains = true;
+                break;
+            }
+        }
+    }
+    return contains;
+}
+
+function hashtable_get(key) {
+    return this.hashtable[key];
+}
+
+function hashtable_getKey(value) {
+
+    for (var i in this.hashtable) {
+        if (this.hashtable[i] == value)
+            return i;
+    }
+
+    return -1;
+
+}
+
+function hashtable_isEmpty() {
+    return (this.size == 0) ? true : false;
+}
+
+function hashtable_keys() {
+    var keys = new Array();
+    for (var i in this.hashtable) {
+        if (this.hashtable[i] != null)
+            keys.push(i);
+    }
+    return keys;
+}
+
+function hashtable_put(key, value) {
+    if (key == null || value == null) {
+        throw 'NullPointerException {' + key + '},{' + value + '}';
+    }
+    else {
+        this.hashtable[key] = value;
+    }
+}
+
+function hashtable_remove(key) {
+    var rtn = this.hashtable[key];
+    this.hashtable[key] = null;
+    return rtn;
+}
+
+function hashtable_size() {
+    var size = 0;
+    for (var i in this.hashtable) {
+        if (this.hashtable[i] != null)
+            size ++;
+    }
+    return size;
+}
+
+function hashtable_toString() {
+    var result = '';
+    for (var i in this.hashtable) {
+        if (this.hashtable[i] != null)
+            result += '{' + i + '},{' + this.hashtable[i] + '}\n';
+    }
+    return result;
+}
+
+function hashtable_values() {
+    var values = new Array();
+    for (var i in this.hashtable) {
+        if (this.hashtable[i] != null)
+            values.push(this.hashtable[i]);
+    }
+    return values;
+}
+/* HASHTABLE*/
+
+function isDefined(object) {
+    return (typeof(object) == undefined) ? false : true;
+}
+
+function isNULL(pObject) {
+    return (pObject == null || pObject == undefined) ? true : false;
+}
+
+function isDigit(value) {
+    return (/^\d+$/.test(value));
+}
+
+function isUpperCharset(value) {
+    return (/^[A-Z]+$/.test(value));
+}
+
+function isLowerCharset(value) {
+    return (/^[a-z]+$/.test(value));
+}
+
+function CheckNumericValidate(input, inputCapt) {
+
+    var input = document.getElementById(input);
+    input.value = input.value.trim();
+
+    if (input.value == "") {
+        //input.value = "0";
+        return true;
+    }
+
+    if (!isNumber(input.value)) {
+        input.focus();
+        input.select();
+        PageAlert("Document_Profile_Message_NumericValue", inputCapt);
+        return false;
+    }
+
+    if (input.value > 999999999) {
+        input.focus();
+        input.select();
+        PageAlert("Document_Profile_Message_NumericLessValue", inputCapt);
+        return false;
+    }
+}
+
+function CheckDecimalValidate(input, inputCapt) {
+
+    var input = document.getElementById(input);
+    input.value = input.value.trim();
+    if (input.value == "") {
+        //input.value = "0";
+        return true;
+    }
+
+    if (!isValidDecimal(input.value)) {
+        input.focus();
+        input.select();
+        PageAlert("Document_Profile_Message_NumericValue", inputCapt);
+        return false;
+    }
+
+    if (input.value > 999999999.0) {
+        input.focus();
+        input.select()
+        PageAlert("Document_Profile_Message_NumericLessValue", inputCapt);
+        return false;
+    }
+
+}
+
+function isValidDecimal(val) {
+    if (val == null) {
+        return false;
+    }
+    if (val.length == 0) {
+        return false;
+    }
+    var DecimalFound = false
+    for (var i = 0; i < val.length; i++) {
+        var ch = val.charAt(i)
+        //      if (i == 0 && ch == "-") {
+        //            continue
+        //      }
+        if (ch == "." && !DecimalFound) {
+            DecimalFound = true
+            continue;
+        }
+        if (ch < "0" || ch > "9") {
+            return false
+        }
+    }
+    return true
+}
+
+// Tarih almak ve gunun tarihini istenildigi kadar artirarak almayi saglar.
+function getDate(incDay, sperator) {
+    if (isNULL(incDay))
+        incDay = 0;
+    if (isNULL(sperator))
+        sperator = '.';
+
+    var myDate = new Date();
+    myDate.setDate(myDate.getDate() + incDay);
+
+    var dd = myDate.getDate();
+    var day = (dd < 10) ? '0' + dd : dd;
+
+    var MM = myDate.getMonth() + 1;
+    var month = (MM < 10) ? '0' + MM : MM;
+
+    var yy = myDate.getFullYear();
+    var year = (yy < 1000) ? yy + 1900 : yy;
+
+    return day + sperator + month + sperator + year;
+}
+
+// Aktif Tarih ve Saati verir.
+function getDateTime(incDay, sperator) {
+    if (incDay == null || incDay == "undefined")
+        incDay = 0;
+    if (isNULL(sperator))
+        sperator = '.';
+
+    var myDate = new Date();
+    myDate.setDate(myDate.getDate() + incDay);
+
+    var dd = myDate.getDate();
+    var day = (dd < 10) ? '0' + dd : dd;
+
+    var MM = myDate.getMonth() + 1;
+    var month = (MM < 10) ? '0' + MM : MM;
+
+    var yy = myDate.getFullYear();
+    var year = (yy < 1000) ? yy + 1900 : yy;
+
+    var HH = myDate.getHours();
+    var hour = (HH < 10) ? '0' + HH : HH;
+
+    var mm = myDate.getMinutes();
+    var minute = (mm < 10) ? '0' + mm : mm;
+
+    var ss = myDate.getSeconds();
+    var seconds = (ss < 10) ? '0' + ss : ss;
+
+    return day + sperator + month + sperator + year + " " + hour + ":" + minute + ":" + seconds;
+}
+
+function LTrim(value) {
+
+    var re = /\s*((\S+\s*)*)/;
+    return value.replace(re, "$1");
+}
+
+function RTrim(value) {
+
+    var re = /((\s*\S+)*)\s*/;
+    return value.replace(re, "$1");
+}
+
+function Trim(value) {
+    confirm(value);
+    return LTrim(RTrim(value));
+}
+
+function RefreshPage() {
+    window.location.reload();
+}
+
+// Event ClientX i alir
+function GetEvent() {
+    var szBrowser = navigator.appName;
+    if (szBrowser == "Microsoft Internet Explorer") {
+        return window.event;
+    }
+    else {
+        return event;
+    }
+}
+
+
+var iTmr = null;
+
+// Belirtilen saniye kadar bekler ve process i calistirir.
+function timeOutProcess(pProcess, piMilliSecond) {
+    try {
+        return window.setTimeout(pProcess, piMilliSecond);
+    }
+    catch(ex) {
+        alert("timeOutProcess: " + ex.message);
+    }
+    return 0;
+}
+
+function _hideLoading(pszLoadingID) {
+    var objDivLoading = document.getElementById(pszLoadingID);
+    if (isNULL(objDivLoading))
+        return;
+
+    objDivLoading.style.display = "none";
+    clearTimeout(iTmr);
+}
+
+/* 
+ loading div lerini gizler
+ */
+function hideLoading(pszLoadingID) {
+    var objDivLoading = document.getElementById(pszLoadingID);
+    if (isNULL(objDivLoading))
+        return;
+
+    var delay = 1;
+    try {
+        if (arguments.length > 1) {
+            delay = parseInt(arguments[1]);
+        }
+        iTmr = window.setTimeout("_hideLoading('" + pszLoadingID + "')", delay);
+    }
+    catch(ex) {
+        alert("hideLoading: " + ex.message);
+    }
+}
+
+function showLoading(pszLoadingID) {
+    var objDivLoading = document.getElementById(pszLoadingID);
+    if (isNULL(objDivLoading))
+        return;
+
+    var args = showLoading.arguments;
+
+    try {
+        if (args.length == 1) {
+
+            var objCenter = objDivLoading.childNodes(0).rows(0).cells(0).childNodes(0);
+            var objImg = objCenter.childNodes(0);
+            //objCenter.innerHTML = objImg.outerHTML;
+            //objImg.src = getIconPath(objImg.iconPath);
+        }
+        if (args.length > 1) {
+            if (args[1].trim() != "") {
+                var objCenter = objDivLoading.childNodes(0).rows(0).cells(0).childNodes(0);
+                var objImg = objCenter.childNodes(0);
+                //objImg.src = getIconPath(objImg.iconPath);
+
+                objCenter.innerHTML = objImg.outerHTML + "<NOBR><B>" + "&nbsp&nbsp" + args[1] + "</B></NOBR>";
+            }
+        }
+        if (args.length > 2) {
+            if (parseInt(args[2]) >= 0)
+                objDivLoading.style.left = args[2];
+        }
+        if (args.length > 3) {
+            if (parseInt(args[3]) >= 0)
+                objDivLoading.style.top = args[3];
+        }
+    }
+    catch(ex) {
+        alert("showLoading : " + ex.message + "\n showLoading");
+    }
+    objDivLoading.style.display = "inline";
+}
+
+/* 
+ parametre olarak verilen Input name ine gore input u bulur
+ Input un value sini donderir
+ */
+function getResourceMessage(pszInputname) {
+    var szResource = "";
+    if (document.getElementById(pszInputname)) {
+        szResource = document.getElementById(pszInputname).value;
+
+        if (arguments.length > 1) {
+            for (var i = 1; i < arguments.length; i++) {
+                var re = new RegExp('\\{' + (parseInt(i - 1)) + '\\}', 'gm');
+                szResource = szResource.replace(re, arguments[parseInt(i)]);
+            }
+        }
+        while (szResource.indexOf("<br>") >= 0) {
+            szResource = szResource.replace("<br>", "\n");
+        }
+    }
+    return szResource;
+}
+
+// message text lerini icerikleri hidden input lar sayfa yuklenirlen olusturulur
+// pszInputname page icindeki hidden input id leri verilecek
+function PageAlert(pszInputname) {
+    if (document.getElementById(pszInputname)) {
+        szResource = document.getElementById(pszInputname).value;
+
+        if (arguments.length > 1) {
+            for (var i = 1; i < arguments.length; i++) {
+                var re = new RegExp('\\{' + (parseInt(i - 1)) + '\\}', 'gm');
+                szResource = szResource.replace(re, arguments[parseInt(i)]);
+            }
+        }
+        while (szResource.indexOf("<br>") >= 0) {
+            szResource = szResource.replace("<br>", "\n");
+        }
+
+        alert(szResource);
+    }
+    else {
+        alert("Tan\u0131ms\u0131z mesaj. \n [" + pszInputname + "]");
+    }
+}
+
+function PageConfirm(pszInputname) {
+    var objInput;
+    if (document.getElementById(pszInputname) != null) {
+        objInput = document.getElementById(pszInputname);
+        var szAlert = objInput.value;
+
+        if (arguments.length > 1) {
+            for (var i = 1; i < arguments.length; i++) {
+                var re = new RegExp('\\{' + (parseInt(i - 1)) + '\\}', 'gm');
+                szAlert = szAlert.replace(re, arguments[parseInt(i)]);
+            }
+        }
+        while (szAlert.indexOf("<br>") >= 0) {
+            szAlert = szAlert.replace("<br>", "\n");
+        }
+
+        return confirm(szAlert);
+    }
+    else {
+        alert("Tan\u0131ms\u0131z mesaj. \n [" + pszInputname + "]");
+        return false;
+    }
+}
+
+function getIconPath(szIcon) {
+    var szResult = szIcon;
+    var szPathName = self.location.pathname;
+
+    if (szPathName != null && szPathName.substring(0, 1) != "/")
+        szPathName = "/" + szPathName;
+
+    var arrPath = szPathName.split("/");
+    switch (arrPath.length) {
+        case 6:
+            szResult = "../../../Resources/Images/" + szIcon;
+            break;
+        case 5:
+            szResult = "../../Resources/Images/" + szIcon;
+            break;
+        case 4:
+            szResult = "../Resources/Images/" + szIcon;
+            break;
+        case 3:
+            szResult = "Resources/Images/" + szIcon;
+            break;
+        case 2:
+            szResult = "Images/" + szIcon;
+            break;
+        case 1:
+            szResult = szIcon;
+            break;
+        default:
+            szResult = szIcon;
+            break;
+    }
+    /*
+     confirm(
+     "szPathName:"+ szPathName +"\n"+ szPathName.substring(0, 1) +"\n"+
+     "szIcon:"+ szIcon +"\n"+
+     "arrPath:"+ arrPath +"\n"+
+     "szResult:"+ szResult +"\n"+
+     "arrPath.length:"+ arrPath.length);
+     */
+    return szResult;
+}
+
+function getLoadingPath(szObjectName) {
+    var szResult = szObjectName;
+    var szPathName = self.location.pathname;
+
+    if (szPathName != null && szPathName.substring(0, 1) != "/")
+        szPathName = "/" + szPathName;
+
+    var arrPath = szPathName.split("/");
+    switch (arrPath.length) {
+        case 5:
+            szResult = "../../Pages/" + szObjectName;
+            break;
+        case 4:
+            szResult = "../Pages/" + szObjectName;
+            break;
+        case 3:
+            szResult = "Pages/" + szObjectName;
+            break;
+        case 2:
+            szResult = "/" + szObjectName;
+            break;
+        default:
+            szResult = "/" + szObjectName;
+            break;
+    }
+
+    return szResult;
+}
+
+function getFCKeditorPath() {
+    var szResult = "";
+    var szPathName = self.location.pathname;
+
+    if (szPathName != null && szPathName.substring(0, 1) != "/")
+        szPathName = "/" + szPathName;
+
+    var arrPath = szPathName.split("/");
+    switch (arrPath.length) {
+        case 6:
+            szResult = "../../../Resources/FCKeditor/";
+            break;
+        case 5:
+            szResult = "../../Resources/FCKeditor/";
+            break;
+        case 4:
+            szResult = "../Resources/FCKeditor/";
+            break;
+        case 3:
+            szResult = "Resources/FCKeditor/";
+            break;
+        case 2:
+            szResult = "FCKeditor/";
+            break;
+        case 1:
+            szResult = "";
+            break;
+        default:
+            szResult = "";
+            break;
+    }
+
+    return szResult;
+}
+
+function getImage(szPath) {
+    var szResult = szPath;
+    var szPathName = self.location.pathname;
+
+    if (szPathName != null && szPathName.substring(0, 1) != "/")
+        szPathName = "/" + szPathName;
+
+    var arrPath = szPathName.split("/");
+    switch (arrPath.length) {
+        case 6:
+            szResult = "../../../Pages/Image.jsp?imagePath=" + szPath;
+            break;
+        case 5:
+            szResult = "../../Pages/Image.jsp?imagePath=" + szPath;
+            break;
+        case 4:
+            szResult = "../Pages/Image.jsp?imagePath=" + szPath;
+            break;
+        case 3:
+            szResult = "Pages/Image.jsp?imagePath=" + szPath;
+            break;
+        case 2:
+            szResult = "Image.jsp?imagePath=" + szPath;
+            break;
+        case 1:
+            szResult = "Image.jsp?imagePath=" + szPath;
+            break;
+        default:
+            szResult = "Image.jsp?imagePath=" + szPath;
+            break;
+    }
+}
+/* 
+ pszName Aktif Pasif yapilacak Element in ID si,
+ pbDisabled true false degerlerini alir.
+ */
+function disabledChange(pszID, pbDisabled) {
+    var obj = document.getElementById(pszID);
+    if (obj != null) {
+        var bDisabled = pbDisabled == true || pbDisabled == "true" ? true : false;
+        if (bDisabled) {
+            if ((obj.tagName == "INPUT") && (obj.type.toUpperCase() == "BUTTON")) {
+                if (window.button_Blur)
+                    window.button_Blur(null, obj);
+            }
+        }
+        obj.disabled = bDisabled;
+    }
+}
+
+function displayChange(pszID, pbDisplay) {
+    var obj = document.getElementById(pszID);
+    if (obj != null) {
+        obj.style.display = pbDisplay == true || pbDisplay == "true" ? "inline" : "none";
+    }
+}
+
+function getWindowCoor() {
+    var winW = 630, winH = 460;
+
+    if (parseInt(navigator.appVersion) > 3) {
+        if (navigator.appName == "Netscape") {
+            winW = window.innerWidth;
+            winH = window.innerHeight;
+        }
+        if (navigator.appName.indexOf("Microsoft") != -1) {
+            winW = document.body.offsetWidth;
+            winH = document.body.offsetHeight;
+        }
+    }
+
+    return [winW, winH];
+}
+
+function getErrorMessage(ex) {
+    return "Hata: " + ex.name + "\nMesaj: " + ex.message + "\nAciklama: " + ex.description + "\nSatir: " + ex.line;
+}
+/*
+ window.onerror = function (sMessage, sUrl, sLine) {
+ alert(sMessage +"\nAciklama: "+ sUrl + "\nSatir: "+ sLine);
+ return true;
+ }
+ */
+function getElementsByAttribute(oElm, strTagName, strAttributeName, strAttributeValue) {
+    var arrElements = (strTagName == "*" && oElm.all) ? oElm.all : oElm.getElementsByTagName(strTagName);
+    var arrReturnElements = new Array();
+    var oAttributeValue = (typeof strAttributeValue != "undefined") ? new RegExp("(^|\\s)" + strAttributeValue + "(\\s|$)", "i") : null;
+    var oCurrent;
+    var oAttribute;
+    for (var i = 0; i < arrElements.length; i++) {
+        oCurrent = arrElements[i];
+        oAttribute = oCurrent.getAttribute && oCurrent.getAttribute(strAttributeName);
+        if (typeof oAttribute == "string" && oAttribute.length > 0) {
+            if (typeof strAttributeValue == "undefined" || (oAttributeValue && oAttributeValue.test(oAttribute))) {
+                arrReturnElements.push(oCurrent);
+            }
+        }
+    }
+    return arrReturnElements;
+}
+
+function ChanceAttribute(pszHref, pszAttrName, pszAttrValue) {
+    var szHref = pszHref;
+    var arrHref = new Array();
+
+    if (pszHref.split("?").length > 1) {
+        arrHref = pszHref.split("?")[1].split("&");
+        for (var iIndex = 0; iIndex < arrHref.length; iIndex++) {
+            var arrParam = new Array();
+            arrParam = arrHref[iIndex].split("=");
+            if (arrParam[0] == pszAttrName)
+                arrParam[1] = pszAttrValue;
+            arrHref[iIndex] = arrParam[0] + "=" + arrParam[1];
+
+        }
+        szHref = pszHref.split("?")[0];
+        for (var iIndex = 0; iIndex < arrHref.length; iIndex++) {
+            if (iIndex == 0) szHref += "?";
+            szHref += arrHref[iIndex];
+            if (iIndex < arrHref.length - 1)
+                szHref += "&";
+        }
+    }
+
+    return szHref;
+}
+
+function copyToClipboard(text) {
+    if (window.clipboardData) // Internet Explorer
+    {
+        window.clipboardData.setData("Text", text);
+        alert('IE Kopyalama Tamalandı.');
+    }
+    else {
+        /*unsafeWindow.netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+         const clipboardHelper = Components.classes["@mozilla.org/widget/clipboardhelper;1"].getService(Components.interfaces.nsIClipboardHelper);
+         clipboardHelper.copyString(text);*/
+
+        var clipboarddiv = document.getElementById('divclipboardswf');
+        if (clipboarddiv == null) {
+            clipboarddiv = document.createElement('div');
+            clipboarddiv.setAttribute("name", "divclipboardswf");
+            clipboarddiv.setAttribute("id", "divclipboardswf");
+            document.body.appendChild(clipboarddiv);
+        }
+        clipboarddiv.innerHTML = '<embed src="clipboard.swf" FlashVars="clipboard=' +
+            encodeURIComponent(text) + '" width="0" height="0" type="application/x-shockwave-flash"></embed>';
+        alert('!IE Kopyalama Tamalandı.') ;
+    }
+
+}
+
+function copyToClipboardByID(ID) {
+    if (document.getElementById(ID) == null || document.getElementById(ID) == undefined) {
+        confirm(ID + " elemanı form içinde bulanamadığı için kopyalama yapılamadı.");
+        return;
+    }
+
+    var t = document.getElementById(ID).innerHTML.replace(/<BR>/g, "\n").replace(/&nbsp;/g, " ");
+    copyToClipboard(t);
+}
+
+function getURLParameter(name) {
+    var value = decodeURI((RegExp(name + '=' + '(.+?)(&|$)').exec(location.search) || [, null])[1]);
+    if(value === null || value === undefined || value === 'Undefined'|| value === 'undefined')  {
+        value = '';
+    }
+    return decodeURIComponent(value).replaceAll('+', ' ');
+}
+
+function isValidEmailAddress(emailAddress) {
+    var pattern = new RegExp(/^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?$/i);
+    return pattern.test(emailAddress);
+};

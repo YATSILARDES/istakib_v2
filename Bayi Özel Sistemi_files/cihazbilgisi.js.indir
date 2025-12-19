@@ -1,0 +1,54 @@
+    $(document).ready(function () {
+        $("#mamserno").blur(function() {
+                if ($("#mamserno").val() == null || $("#mamserno").val() == '') {
+                    document.getElementById("mamAnaGrp").value = '';
+                    document.getElementById("mamulkod").value = '';
+                    document.getElementById("mamAdi1").value = '';
+                    document.getElementById("bayiMarkaKod").value = '';
+                }
+            }
+            );
+
+        $(function () {
+            $("#mamserno").autocomplete({
+                source: function (request, response) {
+                    if (document.getElementById("mamserno").value.length==20 || document.getElementById("mamserno").value.length==22 || document.getElementById("mamserno").value.length==28) {
+                        $.ajax({
+                            url: "cihazbilgisi.json",
+                            type: "GET",
+                            crossDomain: true,
+                            data: {
+                                term: request.term,
+                                arn_token: $("#arnTokenPrm").val()
+                            },
+                            dataType: "json", success: function (data) {
+                                document.getElementById("mamAnaGrp").value = data[0].mamAnaGrp;
+                                document.getElementById("mamulkod").value = data[0].mamKod;
+                                document.getElementById("mamAdi1").value = data[0].mamAd;
+                                document.getElementById("bayiMarkaKod").value = data[0].marka;
+                                if(data[0].mamAnaGrp == '10'){
+                                    $('#bacamontajonay').show();
+                                } else {
+                                    $('#bacamontajonay').hide();
+                                }
+                            },
+                            error : function (xhr) {
+                                document.getElementById("mamAnaGrp").value = '';
+                                document.getElementById("mamulkod").value = '';
+                                document.getElementById("mamAdi1").value = '';
+                                document.getElementById("bayiMarkaKod").value = '';
+                                alert(xhr.responseText)
+                            }
+                    });
+                }
+                    else {
+                        document.getElementById("mamAnaGrp").value = '';
+                        document.getElementById("mamulkod").value = '';
+                        document.getElementById("mamAdi1").value = '';
+                        document.getElementById("bayiMarkaKod").value = '';
+                        $('#bacamontajonay').hide();
+                    }
+                }
+            });
+        });
+    });

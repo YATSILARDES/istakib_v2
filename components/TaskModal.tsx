@@ -425,14 +425,46 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                 {/* --- SERVICE & GAS INFO TAB --- */}
                 {activeTab === 'service' && (
                   <div className="space-y-6 animate-fadeIn">
-                    <div className="flex items-center gap-2 text-lg font-medium text-slate-200 border-b border-slate-700 pb-2">
-                      <Wrench className="w-5 h-5 text-blue-400" /> Servis ve Gaz Açım Bilgileri
+                    <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+                      <div className="flex items-center gap-2 text-lg font-medium text-slate-200">
+                        <Wrench className="w-5 h-5 text-blue-400" /> Servis ve Gaz Açım Bilgileri
+                      </div>
                     </div>
 
                     {/* Gaz Açım Bölümü */}
                     <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 space-y-4">
-                      <div className="flex items-center gap-2 text-orange-400 font-medium border-b border-slate-700/50 pb-2">
-                        <Flame className="w-4 h-4" /> Gaz Açım Detayları
+                      <div className="flex items-center justify-between border-b border-slate-700/50 pb-2">
+                        <div className="flex items-center gap-2 text-orange-400 font-medium">
+                          <Flame className="w-4 h-4" /> Gaz Açım Detayları
+                        </div>
+                        {/* DemirDöküm Button */}
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              // @ts-ignore
+                              if (window.electron && window.electron.ipcRenderer) {
+                                // @ts-ignore
+                                await window.electron.ipcRenderer.invoke('open-demirdokum', {
+                                  customerName: formData.title,
+                                  phone: formData.phone,
+                                  address: formData.address,
+                                  city: formData.city,
+                                  district: formData.district,
+                                  email: String(formData.title || '').toLowerCase().replace(/\s/g, '') + '@example.com' // Dummy or real if exists
+                                });
+                              } else {
+                                alert('Bu özellik sadece masaüstü uygulamasında çalışır.');
+                              }
+                            } catch (error) {
+                              console.error(error);
+                              alert('Bir hata oluştu: ' + error);
+                            }
+                          }}
+                          className="bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 hover:text-orange-300 text-xs px-3 py-1.5 rounded-lg border border-orange-500/30 flex items-center gap-2 transition-colors"
+                        >
+                          <Share2 className="w-3 h-3" /> DemirDöküm'e Aktar
+                        </button>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

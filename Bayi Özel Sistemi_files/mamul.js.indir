@@ -1,0 +1,21 @@
+function getMamKod(mamKod, callback) {
+    $.ajax({
+        async: false,
+        cache:false,
+        type: "GET",
+        url: "../mamuljson.json",
+        crossDomain: true,
+        data: "mamkod=" + mamKod +"&arn_token="+$("#arnTokenPrm").val(),
+        success: function (result) {
+            var data = $.parseJSON(result);
+            if (data.hata != null) {
+                callback();
+            } else {
+                callback(data.mamul);
+            }
+        },
+        error:function (result) {
+            callback();
+        }
+    });
+}

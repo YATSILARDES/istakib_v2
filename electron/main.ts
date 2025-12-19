@@ -106,6 +106,99 @@ app.on('activate', () => {
     }
 });
 
-ipcMain.on('app-version', (event) => {
-    event.sender.send('app-version', { version: app.getVersion() });
+ipcMain.handle('open-demirdokum', async (event, data) => {
+    const { customerName, phone, address, city, district, email } = data;
+
+    // Create new window for DemirDöküm
+    const externalWin = new BrowserWindow({
+        width: 1200,
+        height: 900,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            // We don't need preload for the external site necessarily if we use executeJavaScript
+        },
+        autoHideMenuBar: true
+    });
+
+    externalWin.loadURL('https://servis.demirdokum.com.tr/was/Frames.html');
+
+    // Inject script to fill form
+    // We wait for page to load then inject button
+    externalWin.webContents.on('did-finish-load', () => {
+        const script = `
+            // Create Floating Button
+            if (!document.getElementById('dd-auto-fill-btn')) {
+                const btn = document.createElement('button');
+                btn.id = 'dd-auto-fill-btn';
+                btn.innerText = 'BİLGİLERİ DOLDUR (${customerName})';
+                btn.style.position = 'fixed';
+                btn.style.top = '10px';
+                btn.style.right = '10px';
+                btn.style.zIndex = '99999';
+                btn.style.padding = '10px 20px';
+                btn.style.backgroundColor = '#dc2626'; // Red
+                btn.style.color = 'white';
+                btn.style.border = 'none';
+                btn.style.borderRadius = '5px';
+                btn.style.cursor = 'pointer';
+                btn.style.fontWeight = 'bold';
+                btn.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                
+                document.body.appendChild(btn);
+
+                btn.onclick = () => {
+                    // Try to find the frames
+                    // The site uses frameset: 'main' frame -> 'ustForm' or input fields usually in 'main' frame
+                    // We need to access the correct frame document. 
+                    // Since executeJavaScript runs in top frame, we might need to access frames.
+                    
+                    const mainFrame = window.frames['main'];
+                    const targetDoc = mainFrame ? mainFrame.document : document;
+
+                    function setVal(id, val) {
+                        if (!val) return;
+                        const el = targetDoc.getElementById(id);
+                        if (el) el.value = val;
+                    }
+
+                    // Fill Fields
+                    setVal('adi1', '${customerName || ''}');
+                    setVal('cepTel1', '${phone || ''}');
+                    setVal('evTel1', '${phone || ''}'); // Use mobile for home too if available
+                    setVal('eposta1', '${email || ''}');
+                    
+                    // Address - simple mapping
+                    // We put full address in 'apartman1' as a safe bet for now if it fits, 
+                    // or try to split if possible. 
+                    // User said: "apartman1" is Apartman/Site. 
+                    setVal('apartman1', '${address ? address.replace(/\n/g, " ") : ""}');
+                    
+                    // City Selection (Dropdown)
+                    // ID: sehir1
+                    // Options values are IDs (e.g. 51=Adana, 17=Ankara). Text match is safer.
+                    const citySelect = targetDoc.getElementById('sehir1');
+                    if (citySelect && '${city}') {
+                        const searchText = '${city}'.toLocaleUpperCase(['tr-TR']);
+                        for (let i = 0; i < citySelect.options.length; i++) {
+                            if (citySelect.options[i].text.toLocaleUpperCase(['tr-TR']).includes(searchText)) {
+                                citySelect.selectedIndex = i;
+                                // Trigger change event if needed
+                                const event = new Event('change');
+                                citySelect.dispatchEvent(event);
+                                break;
+                            }
+                        }
+                    }
+
+                    // District handling would require waiting for reload, complicated for v1.
+                    // Let's stick to basic fields first.
+
+                    alert('Bilgiler form alanlarına aktarıldı! Lütfen kontrolleri yapınız.');
+                };
+            }
+        `;
+        externalWin.webContents.executeJavaScript(script).catch(e => console.error("Script injection failed", e));
+    });
 });
+

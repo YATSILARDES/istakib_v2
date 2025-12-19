@@ -1,0 +1,105 @@
+$(document).ready(function () {
+    crossDesignRefresh();
+});
+
+function crossDesignRefresh(){
+    $('.buton').removeClass("btn btn-default").addClass("btn btn-default");
+    $('input[type=button]').removeClass("btn btn-default").addClass("btn btn-default");
+    $('input[type=text]').css("size", function (index, value) {
+        $(this).css("width", ($(this)[0].size * 12));
+    });
+    $('input[type=password]').css("size", function (index, value) {
+        $(this).css("width", ($(this)[0].size * 12));
+    });
+    $('input:not([class*="gizli"])[disabled]').css("background-color", "lightgray").css("color", "black");
+    $('input:not([class*="gizli"])[readonly]').css("background-color", "lightgray").css("color", "black");
+    $('textarea').css("cols", function (index, value) {
+        $(this).css("width", ($(this)[0].cols * 10));
+        $(this).css("height", ($(this)[0].rows * 20));
+    });
+
+    $('body:not([noborder])').css('border-width', '1px').css('border-color', 'gray').css('padding', '4 4 4 4').css('border-style', 'solid');
+
+    $('.input-append.date').datepicker({
+        format: "dd/mm/yyyy",
+        orientation: "top left",
+        language: "tr",
+        todayBtn: "linked",
+        forceParse: false,
+        todayHighlight: true,
+        autoclose: true,
+        calendarWeeks: true,
+        clearBtn: true,
+        icons: {
+            time: 'fa fa-clock-o',
+            date: 'fa fa-calendar',
+            up: 'fa fa-arrow-up',
+            down: 'fa fa-arrow-down'
+        }
+    });
+}
+function prepareDialog(pDialogId, pUrl, pHeight, pWidht) {
+    $("#dialog_" + pDialogId).dialog({
+        autoOpen: false,
+        hide: 'slideUp',
+        show: 'slideDown',
+        modal: true,
+        position: {my: "center", at: "top"},
+        title: "Seçim Listesi",
+        height: 560, //(pHeight == undefined ? 600 : pHeight),
+        width: 800, //(pWidht == undefined ? 600 : pWidht),
+        open: function (ev, ui) {
+            var rootURL = getRootContext();
+            if(rootURL.indexOf("/dds") <0)
+                pUrl = "dds/" + pUrl;
+            /*var pOrigin = "";
+            if (window.location.origin != undefined) {
+                pOrigin = window.location.origin;
+            } else {
+                pOrigin = "http://" + window.location.host;
+            } */
+
+            $('#frame_' + pDialogId).attr('src', rootURL + "/" + pUrl);
+        },
+        beforeClose: function () {
+            $(this).children().attr('src', '');
+        }, close: function () {
+            $(this).dialog("destroy");
+        }, buttons: [{
+            text: "Kapat",
+            click: function () {
+                $(this).children().attr('src', '');
+                $(this).dialog('destroy');
+                return false;
+            }
+        }]
+    });
+
+    $("#dialog_" + pDialogId).dialog('open');
+}
+
+function getRootContext() {
+    var base = document.getElementsByTagName('base')[0];
+    if (base && base.href && (base.href.length > 0)) {
+        base = base.href;
+    } else {
+        base = document.URL;
+    }
+    return base.substr(0,
+            base.indexOf("/", base.indexOf("/", base.indexOf("//") + 2) + 1));
+};
+
+navigator.sayswho = (function () {
+    var ua = navigator.userAgent, tem, M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+    if (/trident/i.test(M[1])) {
+        tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
+        return 'IE ' + (tem[1] || '');
+    }
+    if (M[1] === 'Chrome') {
+        tem = ua.match(/\bOPR\/(\d+)/)
+        if (tem != null) return 'Opera ' + tem[1];
+    }
+    M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
+    if ((tem = ua.match(/version\/(\d+)/i)) != null) M.splice(1, 1, tem[1]);
+    return M.join(' ');
+})();
