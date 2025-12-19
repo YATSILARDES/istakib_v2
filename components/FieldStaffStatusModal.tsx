@@ -106,10 +106,10 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                         const date = getTaskDate(t);
                         // IF Today OR Overdue -> Show in Summary
                         if (isToday(date) || isOverdue(date)) {
-                            if (!statsMap.has(t.assignee)) {
-                                statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
+                            // STRICT: Only add if staff exists in our filtered list (statsMap)
+                            if (statsMap.has(t.assignee)) {
+                                statsMap.get(t.assignee)!.activeTasks.push(t);
                             }
-                            statsMap.get(t.assignee)!.activeTasks.push(t);
                         }
                     }
                 });
@@ -122,10 +122,10 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                     if (t.assignee && !t.isCompleted) {
                         const date = getTaskDate(t);
                         if (isToday(date) || isOverdue(date)) {
-                            if (!statsMap.has(t.assignee)) {
-                                statsMap.set(t.assignee, { name: t.assignee, email: t.assigneeEmail || '', activeTasks: [], activeRoutine: [], completedCount: 0 });
+                            // STRICT: Only add if staff exists in our filtered list (statsMap)
+                            if (statsMap.has(t.assignee)) {
+                                statsMap.get(t.assignee)!.activeRoutine.push(t);
                             }
-                            statsMap.get(t.assignee)!.activeRoutine.push(t);
                         }
                     }
                 });
