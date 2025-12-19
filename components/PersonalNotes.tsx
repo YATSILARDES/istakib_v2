@@ -1,38 +1,70 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, StickyNote } from 'lucide-react';
+import { Plus, Trash2, StickyNote, Loader2 } from 'lucide-react';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig'; // Ensure this path is correct relative to components folder
 
-const PersonalNotes: React.FC = () => {
+interface PersonalNotesProps {
+    userEmail?: string;
+}
+
+const PersonalNotes: React.FC<PersonalNotesProps> = ({ userEmail }) => {
     const [notes, setNotes] = useState<string[]>([]);
     const [newNote, setNewNote] = useState('');
+    const [loading, setLoading] = useState(false);
 
+    // Load Notes from Firestore
     useEffect(() => {
-        const saved = localStorage.getItem('personal_notes');
-        if (saved) {
-            try {
-                setNotes(JSON.parse(saved));
-            } catch (e) {
-                console.error("Failed to parse notes", e);
-            }
+        if (!userEmail) {
+            setNotes([]);
+            return;
         }
-    }, []);
 
-    const saveNotes = (updatedNotes: string[]) => {
-        setNotes(updatedNotes);
-        localStorage.setItem('personal_notes', JSON.stringify(updatedNotes));
+        setLoading(true);
+        const unsubscribe = onSnapshot(doc(db, 'personal_notes', userEmail), (docSnap) => {
+            if (docSnap.exists()) {
+                setNotes(docSnap.data().notes || []);
+            } else {
+                setNotes([]);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Notes fetch error:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [userEmail]);
+
+    const saveNotes = async (updatedNotes: string[]) => {
+        if (!userEmail) return;
+        // setNotes(updatedNotes); // Optimistic update (already handled by snapshot if local latency is good, but explicit set is faster UI)
+        try {
+            await setDoc(doc(db, 'personal_notes', userEmail), {
+                notes: updatedNotes,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+        } catch (e) {
+            console.error("Error saving notes:", e);
+        }
     };
 
-    const handleAdd = (e?: React.FormEvent) => {
+    const handleAdd = async (e?: React.FormEvent) => {
         e?.preventDefault();
         if (!newNote.trim()) return;
         const updated = [newNote, ...notes];
-        saveNotes(updated);
+        // Optimistic
+        setNotes(updated);
         setNewNote('');
+        await saveNotes(updated);
     };
 
-    const handleDelete = (index: number) => {
+    const handleDelete = async (index: number) => {
         const updated = notes.filter((_, i) => i !== index);
-        saveNotes(updated);
+        setNotes(updated);
+        await saveNotes(updated);
     };
+
+    if (!userEmail) return null; // Or show 'Please login'
 
     return (
         <div className="h-full flex flex-col">
@@ -41,7 +73,13 @@ const PersonalNotes: React.FC = () => {
                 Kişisel Notlarım
             </h3>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col flex-1 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col flex-1 overflow-hidden relative">
+                {loading && (
+                    <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                    </div>
+                )}
+
                 <div className="p-3 border-b border-slate-100 bg-slate-50/50">
                     <form onSubmit={handleAdd} className="flex flex-col gap-2 relative group">
                         <textarea
@@ -57,7 +95,7 @@ const PersonalNotes: React.FC = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
-                    {notes.length === 0 && (
+                    {!loading && notes.length === 0 && (
                         <div className="text-center text-slate-400 text-xs py-8 italic flex flex-col items-center gap-2">
                             <StickyNote className="w-8 h-8 text-slate-200" />
                             Henüz not eklenmemiş.

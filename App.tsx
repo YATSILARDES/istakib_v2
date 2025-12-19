@@ -887,6 +887,7 @@ function App() {
                   onOpenFieldStaffModal={() => setIsFieldStaffModalOpen(true)}
                   currentUser={userPermissions ? { name: userPermissions.name, email: userPermissions.email } : undefined}
                   userRole={userPermissions?.role}
+                  userPermissions={userPermissions}
                 />
               ) : (
                 <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">

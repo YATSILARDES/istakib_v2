@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask } from '@/types';
+import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask, UserPermission } from '@/types';
 import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal } from 'lucide-react';
 import PersonalNotes from './PersonalNotes';
 // import InteractiveMap from './InteractiveMap'; // Later integration
@@ -18,6 +18,7 @@ interface DashboardProps {
     onOpenFieldStaffModal: () => void;
     currentUser?: { name: string; email: string };
     userRole?: 'admin' | 'staff' | 'manager';
+    userPermissions?: UserPermission;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -32,7 +33,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     onOpenNewCustomerModal,
     onOpenFieldStaffModal,
     currentUser,
-    userRole
+    userRole,
+    userPermissions
 }) => {
     const [filter, setFilter] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
@@ -220,27 +222,36 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                            <button onClick={onOpenNewCustomerModal} className="flex items-center gap-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-3 rounded-lg transition-all border border-emerald-100 group shadow-sm hover:shadow-md justify-start">
-                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
-                                    <Plus className="w-5 h-5" />
-                                </div>
-                                <span className="font-bold text-xs text-left">Yeni Müşteri</span>
-                            </button>
+                            {/* Conditionally render New Customer Button */}
+                            {userPermissions?.canAddCustomers && (
+                                <button onClick={onOpenNewCustomerModal} className="flex items-center gap-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-3 rounded-lg transition-all border border-emerald-100 group shadow-sm hover:shadow-md justify-start">
+                                    <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                        <Plus className="w-5 h-5" />
+                                    </div>
+                                    <span className="font-bold text-xs text-left">Yeni Müşteri</span>
+                                </button>
+                            )}
 
-                            <button onClick={onOpenAssignmentModal} className="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-3 rounded-lg transition-all border border-blue-100 group shadow-sm hover:shadow-md justify-start">
-                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
-                                    <Users className="w-5 h-5" />
-                                </div>
-                                <span className="font-bold text-xs text-left">Görev Dağıtımı</span>
-                            </button>
+                            {/* Conditionally render Assignment Button */}
+                            {userPermissions?.canAccessAssignment && (
+                                <button onClick={onOpenAssignmentModal} className="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-3 rounded-lg transition-all border border-blue-100 group shadow-sm hover:shadow-md justify-start">
+                                    <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                        <Users className="w-5 h-5" />
+                                    </div>
+                                    <span className="font-bold text-xs text-left">Görev Dağıtımı</span>
+                                </button>
+                            )}
 
-                            <button onClick={onOpenRoutineModal} className="flex items-center gap-3 bg-purple-50 hover:bg-purple-100 text-purple-600 px-4 py-3 rounded-lg transition-all border border-purple-100 group relative shadow-sm hover:shadow-md justify-start">
-                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
-                                    <Bell className="w-5 h-5" />
-                                </div>
-                                <span className="font-bold text-xs text-left">Eksikler Havuzu</span>
-                                <span className="absolute top-2 right-2 bg-purple-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">3</span>
-                            </button>
+                            {/* Conditionally render Routine Pool Button */}
+                            {userPermissions?.canAccessRoutineTasks && (
+                                <button onClick={onOpenRoutineModal} className="flex items-center gap-3 bg-purple-50 hover:bg-purple-100 text-purple-600 px-4 py-3 rounded-lg transition-all border border-purple-100 group relative shadow-sm hover:shadow-md justify-start">
+                                    <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                        <Bell className="w-5 h-5" />
+                                    </div>
+                                    <span className="font-bold text-xs text-left">Eksikler Havuzu</span>
+                                    <span className="absolute top-2 right-2 bg-purple-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">3</span>
+                                </button>
+                            )}
 
                             <button className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-3 rounded-lg transition-all border border-slate-100 group shadow-sm hover:shadow-md justify-start">
                                 <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
@@ -295,7 +306,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
                 {/* Right Column: Personal Notes (Fixed Width, Full Height) */}
                 <div className="w-80 shrink-0 h-full">
-                    <PersonalNotes />
+                    <PersonalNotes userEmail={currentUser?.email} />
                 </div>
 
             </div>
