@@ -43,16 +43,15 @@ const PersonalNotes: React.FC = () => {
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col flex-1 overflow-hidden">
                 <div className="p-3 border-b border-slate-100 bg-slate-50/50">
-                    <form onSubmit={handleAdd} className="flex gap-2 relative group">
-                        <input
-                            type="text"
+                    <form onSubmit={handleAdd} className="flex flex-col gap-2 relative group">
+                        <textarea
                             value={newNote}
                             onChange={(e) => setNewNote(e.target.value)}
                             placeholder="Yeni not yazın..."
-                            className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all placeholder:text-slate-400 text-slate-700"
+                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all placeholder:text-slate-400 text-slate-700 resize-none h-20"
                         />
-                        <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition-colors shadow-sm">
-                            <Plus className="w-3.5 h-3.5" />
+                        <button type="submit" className="self-end bg-slate-800 hover:bg-slate-700 text-white py-1.5 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-xs font-bold">
+                            <Plus className="w-3.5 h-3.5" /> Ekle
                         </button>
                     </form>
                 </div>
