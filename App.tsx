@@ -904,10 +904,11 @@ function App() {
                       <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
                         <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
                           <span>✅ Hazır / Sorunsuz İşler</span>
-                          <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean')).length}</span>
+                          {/* Clean means: Check is clean (or null) AND Project is drawn */}
+                          <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && t.isProjectDrawn).length}</span>
                         </div>
                         <KanbanBoard
-                          tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean'))}
+                          tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && t.isProjectDrawn)}
                           routineTasks={[]}
                           myTasks={[]}
                           onTaskClick={handleTaskClick}
@@ -920,11 +921,12 @@ function App() {
                       </div>
                       <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
                         <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-                          <span>⚠️ Eksiği Olan İşler</span>
-                          <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing').length}</span>
+                          <span>⚠️ Eksiği Olan İşler (Proje/Kontrol)</span>
+                          {/* Missing means: Check has missing items OR Project is NOT drawn */}
+                          <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing' || !t.isProjectDrawn).length}</span>
                         </div>
                         <KanbanBoard
-                          tasks={visibleTasks.filter(t => t.checkStatus === 'missing')}
+                          tasks={visibleTasks.filter(t => t.checkStatus === 'missing' || !t.isProjectDrawn)}
                           routineTasks={[]}
                           myTasks={[]}
                           onTaskClick={handleTaskClick}
