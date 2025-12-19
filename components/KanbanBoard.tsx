@@ -164,7 +164,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       key={t.id}
                       onClick={() => onTaskClick(t)}
                       className={`
-                        p-4 rounded-xl border transition-all cursor-pointer group shadow-md hover:shadow-xl hover:-translate-y-1
+                        h-44 flex flex-col justify-between p-4 rounded-xl border transition-all cursor-pointer group shadow-md hover:shadow-xl hover:-translate-y-1
                         ${t.checkStatus === 'missing'
                           ? 'bg-gradient-to-br from-white to-orange-50 border-l-[6px] border-l-orange-500 border-slate-200'
                           : t.checkStatus === 'clean'
@@ -200,7 +200,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 <div className="space-y-3">
                   {filteredStandard.length > 0 && <div className="text-[10px] font-bold text-purple-600 uppercase tracking-widest pl-1 pt-2 border-t border-slate-200">Eksikler / Notlar ({filteredRoutine.length})</div>}
                   {filteredRoutine.map(t => (
-                    <div key={t.id} className={`flex flex-col gap-2 p-4 rounded-xl border transition-all shadow-md hover:shadow-xl hover:-translate-y-1 ${t.isCompleted
+                    <div key={t.id} className={`h-44 flex flex-col justify-between p-4 rounded-xl border transition-all shadow-md hover:shadow-xl hover:-translate-y-1 ${t.isCompleted
                       ? 'bg-slate-100 border-slate-200 text-slate-500 opacity-60'
                       : 'bg-gradient-to-br from-white to-slate-50 border-slate-200 hover:border-purple-500/30'
                       }`}>
@@ -297,7 +297,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     key={task.id}
                     onClick={() => onTaskClick(task)}
                     className={`
-                      px-4 py-4 rounded-xl border transition-all cursor-pointer group relative shadow-md hover:shadow-xl hover:-translate-y-1
+                      h-44 flex flex-col justify-between px-4 py-4 rounded-xl border transition-all cursor-pointer group relative shadow-md hover:shadow-xl hover:-translate-y-1
                       ${task.checkStatus === 'missing'
                         ? 'bg-gradient-to-br from-white to-orange-50 border-l-[6px] border-l-orange-500 border-slate-200'
                         : task.checkStatus === 'clean'
