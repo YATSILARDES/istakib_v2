@@ -31,11 +31,11 @@
     "node_modules",
     "dist",
     "dist-electron",
-    "release"
+    "release",
+    "electron"
   ],
   "include": [
     "src/**/*",
-    "electron/**/*",
     "*.tsx",
     "*.ts"
   ]
