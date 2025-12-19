@@ -267,6 +267,8 @@ function App() {
     };
   }, [user]);
 
+  const handleLogout = () => signOut(auth);
+
   const nextOrderNumber = tasks.length > 0 ? Math.max(...tasks.map(t => t.orderNumber)) + 1 : 1;
 
   // Handlers - Tasks
