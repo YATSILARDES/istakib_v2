@@ -922,7 +922,7 @@ function App() {
                       onTaskClick={handleTaskClick}
                       onToggleRoutineTask={handleToggleRoutineTask}
                       visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
-                      showRoutineColumn={!boardFilter && !hasAdminAccess}
+                      showRoutineColumn={false}
                       staffName={userPermissions?.name}
                     />
                   )}
