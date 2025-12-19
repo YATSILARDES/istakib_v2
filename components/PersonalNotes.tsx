@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, StickyNote, Loader2 } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Ensure this path is correct relative to components folder
+import { db } from '../src/firebase'; // Ensure this path is correct relative to components folder
 
 interface PersonalNotesProps {
     userEmail?: string;
