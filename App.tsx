@@ -966,13 +966,13 @@ function App() {
         tasks={tasks}
         routineTasks={routineTasks}
         // If Admin, show all. If Staff, show only SELF.
-        staffList={(appSettings?.staffList || []).filter(s => {
-          if (!s) return false;
-          if (userPermissions?.role === 'admin') return true;
-          // Match by email or name (case-insensitive)
-          return (s.email && user?.email && s.email.toLowerCase() === user.email.toLowerCase()) ||
-            (s.name === userPermissions?.name);
-        })}
+        staffList={
+          userPermissions?.role === 'admin'
+            ? (appSettings.staffList || [])
+            : (appSettings.staffList || []).filter(s =>
+              (s.email && user?.email && s.email.toLowerCase() === user.email.toLowerCase())
+            )
+        }
         onUpdateTask={async (taskId, newStatus) => {
           await updateDoc(doc(db, 'tasks', taskId), {
             status: newStatus,
