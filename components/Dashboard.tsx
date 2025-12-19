@@ -285,8 +285,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             </div>
                                         </div>
 
-                                        <p className={`text-[10px] font-medium relative z-10 mt-2 line-clamp-1 ${isGasAlert ? 'text-red-600 font-bold animate-pulse' : 'text-slate-400'}`}>
-                                            {isGasAlert ? '⚠️ MÜDAHALE EDİLMELİ' : card.subText}
+                                        <p className={`text-[10px] font-medium relative z-10 mt-2 line-clamp-1 ${isGasAlert ? 'text-red-600 font-bold animate-pulse' : 'text-slate-400 opacity-0'}`}>
+                                            {isGasAlert ? '⚠️ MÜDAHALE EDİLMELİ' : ''}
                                         </p>
 
                                         <Activity className={`absolute -right-4 -bottom-4 w-24 h-24 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0 ${isGasAlert ? 'text-red-200' : 'text-slate-50'}`} />
