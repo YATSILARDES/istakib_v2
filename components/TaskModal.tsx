@@ -438,33 +438,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                           <Flame className="w-4 h-4" /> Gaz Açım Detayları
                         </div>
                         {/* DemirDöküm Button */}
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              // @ts-ignore
-                              if (window.electron && window.electron.ipcRenderer) {
-                                // @ts-ignore
-                                await window.electron.ipcRenderer.invoke('open-demirdokum', {
-                                  customerName: formData.title,
-                                  phone: formData.phone,
-                                  address: formData.address,
-                                  city: formData.city,
-                                  district: formData.district,
-                                  email: String(formData.title || '').toLowerCase().replace(/\s/g, '') + '@example.com' // Dummy or real if exists
-                                });
-                              } else {
-                                alert('Bu özellik sadece masaüstü uygulamasında çalışır.');
-                              }
-                            } catch (error) {
-                              console.error(error);
-                              alert('Bir hata oluştu: ' + error);
-                            }
-                          }}
-                          className="bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 hover:text-orange-300 text-xs px-3 py-1.5 rounded-lg border border-orange-500/30 flex items-center gap-2 transition-colors"
-                        >
-                          <Share2 className="w-3 h-3" /> DemirDöküm'e Aktar
-                        </button>
+
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -676,8 +650,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
               </button>
             </div>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
       <LocationPreviewModal
         isOpen={showLocationModal}
         onClose={() => setShowLocationModal(false)}
