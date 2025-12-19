@@ -60,10 +60,9 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     const cards = [
         {
-            title: 'İNCELENECEK (TO_CHECK)', // Hardcoded labels or import? StatusLabels has Turkish.
+            title: 'KONTROLÜ YAPILACAK İŞLER',
             displayName: StatusLabels[TaskStatus.TO_CHECK],
             score: getCount(TaskStatus.TO_CHECK),
-            subText: 'Kontrol bekleyen yeni işler',
             status: TaskStatus.TO_CHECK,
             color: 'text-amber-500',
             borderColor: 'hover:border-amber-500'
