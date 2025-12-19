@@ -749,12 +749,7 @@ function App() {
               {/* Global Toolbar */}
               <div className="px-6 py-4 flex items-center justify-between border-b border-[#34495e] bg-[#2c3e50] shadow-sm shrink-0 z-10 w-full text-white">
                 <div className="flex items-center gap-4">
-                  {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
-                    <button onClick={() => setViewMode('dashboard')} className="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center gap-1">
-                      <Layout className="w-4 h-4" /> Panel'e Dön
-                    </button>
-                  )}
-                  <div className="h-4 w-px bg-slate-300 mx-2" />
+                  {/* Removed 'Panel'e Dön' from here */}
                   <div>
                     <h1 className="font-bold text-lg tracking-tight text-white">ONAY MÜHENDİSLİK</h1>
                     <div className="flex items-center gap-2">
@@ -765,6 +760,7 @@ function App() {
                 </div>
 
                 <div className="flex-1 max-w-md mx-6 flex justify-end">
+                  {/* Search Bar remains here */}
                   <div className="relative group w-full">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -787,7 +783,17 @@ function App() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Buttons removed as they are moved to Dashboard quick actions */}
+                  {/* Animated Close Button for Sub-views */}
+                  {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
+                    <button
+                      onClick={() => setViewMode('dashboard')}
+                      className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-2 rounded-full transition-all hover:rotate-90 border border-slate-600 shadow-sm"
+                      title="Panele Dön"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold text-xs ring-2 ring-slate-600">
                       {user?.email?.charAt(0).toUpperCase()}
