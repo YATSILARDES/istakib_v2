@@ -160,7 +160,31 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ userEmail }) => {
             {/* Days Grid */}
             <div className="grid grid-cols-7 gap-1 p-2 flex-1 overflow-auto custom-scrollbar content-start">
                 {days}
+                {days}
             </div>
+
+            {/* Today Note Alert */}
+            {(() => {
+                const today = new Date();
+                const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
+                if (notes[todayStr]) {
+                    return (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+                            <button
+                                onClick={() => handleDateClick(today.getDate())}
+                                className="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg shadow-red-500/30 animate-pulse flex items-center gap-2 whitespace-nowrap transition-colors"
+                            >
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                </span>
+                                BUGÜN NOTUNUZ VAR!
+                            </button>
+                        </div>
+                    );
+                }
+                return null;
+            })()}
 
             {/* Note Modal/Overlay */}
             {isInternalModalOpen && (
