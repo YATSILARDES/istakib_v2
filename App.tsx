@@ -747,7 +747,7 @@ function App() {
           ) : (
             <>
               {/* Global Toolbar */}
-              <div className="px-6 py-4 flex items-center justify-between border-b border-[#34495e] bg-[#2c3e50] shadow-sm shrink-0 z-10 w-full text-white">
+              <div className="px-6 py-2 flex items-center justify-between border-b border-[#34495e] bg-[#2c3e50] shadow-sm shrink-0 z-10 w-full text-white">
                 <div className="flex items-center gap-4">
                   {/* Removed 'Panel'e Dön' from here */}
                   <div>
@@ -800,7 +800,13 @@ function App() {
                     </div>
                     <div className="hidden md:block text-right">
                       <div className="text-xs font-bold text-white leading-tight">{user?.email?.split('@')[0]}</div>
-                      <div className="text-[10px] text-slate-400 font-medium">{userPermissions?.role === 'admin' ? 'Yönetici' : 'Personel'}</div>
+                      <div className="flex items-center gap-2 justify-end">
+                        <div className="text-[10px] text-slate-400 font-medium">{userPermissions?.role === 'admin' ? 'Yönetici' : 'Personel'}</div>
+                        <button onClick={handleLogout} className="text-[10px] font-bold text-red-400 hover:text-red-300 hover:underline transition-colors flex items-center gap-1">
+                          <LogOut className="w-3 h-3" />
+                          Çıkış
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
