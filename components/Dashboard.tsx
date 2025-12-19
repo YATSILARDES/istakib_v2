@@ -265,10 +265,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <button
                                         key={idx}
                                         onClick={() => card.action ? card.action() : onNavigate(card.status)}
-                                        className={`${isGasAlert ? 'bg-red-100 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)]' : 'bg-white border-slate-100'} p-4 rounded-xl shadow-sm border-t-4 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-28 relative overflow-hidden`}
+                                        className={`${isGasAlert ? 'bg-red-50 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200'} p-5 rounded-2xl shadow-lg border border-t-[6px] ${card.borderColor} hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-left flex flex-col justify-between group h-32 relative overflow-hidden`}
                                     >
+                                        <div className="absolute inset-0 bg-white/40 group-hover:bg-transparent transition-colors z-0" />
+
                                         <div className="flex justify-between items-start w-full mb-1 z-10 relative">
-                                            <h3 className={`font-black text-xs uppercase tracking-wider ${isGasAlert ? 'text-red-700' : 'text-slate-800'}`}>{card.title}</h3>
+                                            <h3 className={`font-black text-xs uppercase tracking-wider ${isGasAlert ? 'text-red-700' : 'text-slate-700'}`}>{card.title}</h3>
                                             {isGasAlert && (
                                                 <div className="absolute -top-1 -right-1 flex items-center gap-1">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -278,19 +280,20 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         </div>
 
                                         <div className="flex items-end justify-between z-10 relative">
-                                            <span className={`text-3xl font-bold ${isGasAlert ? 'text-red-700' : card.color}`}>
+                                            <span className={`text-4xl font-black tracking-tight ${isGasAlert ? 'text-red-700' : card.color} drop-shadow-sm`}>
                                                 {card.score}
                                             </span>
-                                            <div className={`p-1.5 rounded-full ${isGasAlert ? 'bg-red-200 animate-bounce' : 'bg-slate-50 group-hover:bg-white'} transition-colors`}>
-                                                <Activity className={`w-4 h-4 ${isGasAlert ? 'text-red-600' : card.color} opacity-50 group-hover:opacity-100`} />
+                                            <div className={`p-2 rounded-xl ${isGasAlert ? 'bg-red-200 animate-bounce' : 'bg-white shadow-sm group-hover:scale-110'} transition-all duration-300`}>
+                                                <Activity className={`w-5 h-5 ${isGasAlert ? 'text-red-600' : card.color}`} />
                                             </div>
                                         </div>
 
-                                        <p className={`text-[10px] font-medium relative z-10 mt-2 line-clamp-1 ${isGasAlert ? 'text-red-600 font-bold animate-pulse' : 'text-slate-400 opacity-0'}`}>
-                                            {isGasAlert ? '⚠️ MÜDAHALE EDİLMELİ' : ''}
+                                        <p className={`text-[10px] font-bold relative z-10 mt-2 line-clamp-1 ${isGasAlert ? 'text-red-600 font-bold animate-pulse' : 'text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity'}`}>
+                                            {isGasAlert ? '⚠️ MÜDAHALE EDİLMELİ' : 'Detaylar için tıklayın ->'}
                                         </p>
 
-                                        <Activity className={`absolute -right-4 -bottom-4 w-24 h-24 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0 ${isGasAlert ? 'text-red-200' : 'text-slate-50'}`} />
+                                        {/* Decorative Background Icon */}
+                                        <Activity className={`absolute -right-6 -bottom-6 w-32 h-32 opacity-[0.03] group-hover:opacity-[0.07] group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 z-0 ${isGasAlert ? 'text-red-900' : 'text-slate-900'}`} />
                                     </button>
                                 );
                             })}
