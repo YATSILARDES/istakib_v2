@@ -911,6 +911,7 @@ function App() {
                       : [...currentPinned, name];
                     setAppSettings(prev => ({ ...prev, pinnedStaff: newPinned }));
                   }}
+                  onReorderTasks={handleReorderDailyTasks}
                 />
               ) : activeTab === 'routine_pool' ? (
                 <RoutineTasksView
