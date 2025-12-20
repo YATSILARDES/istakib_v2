@@ -26,11 +26,14 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
     const [selectedStaffEmail, setSelectedStaffEmail] = React.useState<string | null>(null);
 
     // Auto-select if only one staff member (e.g. Non-Admin User)
+    // REVERTED: User wants to see the summary card first.
+    /*
     React.useEffect(() => {
         if (staffList.length === 1 && !selectedStaffEmail) {
             setSelectedStaffEmail(staffList[0].email);
         }
     }, [staffList]);
+    */
 
 
     // --- Date Helpers (Moved up to be available for useMemo) ---
