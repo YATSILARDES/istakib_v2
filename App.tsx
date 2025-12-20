@@ -975,7 +975,7 @@ function App() {
                   onOpenNewCustomerModal={handleAddTaskClick}
                   onOpenFieldStaffModal={() => setIsFieldStaffModalOpen(true)}
                   currentUser={userPermissions ? { name: userPermissions.name, email: userPermissions.email } : undefined}
-                  userRole={userPermissions?.role}
+                  userRole={hasAdminAccess ? 'admin' : userPermissions?.role}
                   userPermissions={userPermissions}
                 />
               ) : (
