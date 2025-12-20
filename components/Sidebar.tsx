@@ -36,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
                     <div className="w-8 h-8 bg-white/10 rounded-xl shadow-lg flex items-center justify-center border border-white/10">
                         <span className="text-white font-bold text-lg">İ</span>
                     </div>
-                    <span className="font-bold text-xl text-white tracking-tight">İş Takip</span>
+                    <span className="font-bold text-lg text-white tracking-tight">ONAY MÜHENDİSLİK</span>
                 </div>
             </div>
 

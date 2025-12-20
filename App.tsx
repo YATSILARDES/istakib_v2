@@ -753,7 +753,7 @@ function App() {
                 <div className="flex items-center gap-4">
                   {/* Removed 'Panel'e Dön' from here */}
                   <div>
-                    <h1 className="font-bold text-lg tracking-tight text-white">ONAY MÜHENDİSLİK</h1>
+                    {/* <h1 className="font-bold text-lg tracking-tight text-white">ONAY MÜHENDİSLİK</h1> */}
                     <div className="flex items-center gap-2">
                       <p className="text-xs text-slate-400">İş Takip V2</p>
                       <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
