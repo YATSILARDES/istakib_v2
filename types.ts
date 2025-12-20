@@ -14,6 +14,7 @@ export interface StaffMember {
 export interface Task {
   id: string;
   orderNumber: number; // Sıra Numarası
+  dailyOrder?: number; // Günlük Sıralama (Drag and Drop)
   title: string;
   jobDescription?: string; // İşin Tanımı (Örn: Mutfak Dolabı)
   description?: string;
@@ -103,4 +104,5 @@ export interface RoutineTask {
   city?: string; // İl
   scheduledDate?: any; // Yeni: Planlanan Tarih
   completedAt?: any; // Tamamlanma Zamanı
+  dailyOrder?: number; // Günlük Sıralama
 }

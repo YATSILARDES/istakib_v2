@@ -12,6 +12,7 @@ interface AssignmentViewProps {
     onAddStaff: (name: string, email: string) => void;
     onRemoveStaff: (name: string) => void;
     onTogglePinStaff: (name: string) => void;
+    onReorderTasks: (updates: { id: string, type: 'main' | 'routine', dailyOrder: number }[]) => void;
 }
 
 const AssignmentView: React.FC<AssignmentViewProps> = ({
@@ -23,7 +24,8 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
     pinnedStaff,
     onAddStaff,
     onRemoveStaff,
-    onTogglePinStaff
+    onTogglePinStaff,
+    onReorderTasks
 }) => {
     const [selectedStaffName, setSelectedStaffName] = useState<string>('');
     const [showAddStaffInput, setShowAddStaffInput] = useState(false);
@@ -476,17 +478,11 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         date: dayDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'numeric' })
                                     };
 
-                                    // Filter Logic
+                                    // 1. FILTER TASKS FOR THIS DAY
                                     const dayRoutineTasks = staffRoutineTasks.filter(t => {
-                                        if (t.scheduledDate) {
-                                            const d = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
-                                            return d.toDateString() === dayDate.toDateString();
-                                        }
-                                        if (t.createdAt) {
-                                            const d = new Date(t.createdAt.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
-                                            return d.toDateString() === dayDate.toDateString();
-                                        }
-                                        return false;
+                                        const date = t.scheduledDate || t.createdAt;
+                                        const d = new Date(date?.seconds ? date.seconds * 1000 : date);
+                                        return d.toDateString() === dayDate.toDateString();
                                     });
 
                                     const dayMainTasks = staffTasks.filter(t => {
@@ -495,12 +491,99 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         return d.toDateString() === dayDate.toDateString();
                                     });
 
+                                    // 2. MERGE AND SORT BY dailyOrder
+                                    interface MergedTask { id: string; type: 'main' | 'routine'; dailyOrder: number; data: any; }
+
+                                    const allDayTasks: MergedTask[] = [
+                                        ...dayRoutineTasks.map(t => ({ id: t.id, type: 'routine' as const, dailyOrder: t.dailyOrder || 0, data: t })),
+                                        ...dayMainTasks.map(t => ({ id: t.id, type: 'main' as const, dailyOrder: t.dailyOrder || 0, data: t }))
+                                    ].sort((a, b) => {
+                                        // If dailyOrder is 0/undefined for both, fallback to standard sort
+                                        if (a.dailyOrder === 0 && b.dailyOrder === 0) {
+                                            if (a.type === b.type) return 0; // Keep relative if same type? Or sort by ID?
+                                            // Default: Routine first then Main (legacy behavior)
+                                            return a.type === 'routine' ? -1 : 1;
+                                        }
+                                        return a.dailyOrder - b.dailyOrder;
+                                    });
+
+                                    // 3. DROP HANDLER (REORDERING)
+                                    const handleDayDrop = (e: React.DragEvent) => {
+                                        e.preventDefault();
+                                        try {
+                                            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                                            if (!data.type || !data.id || !selectedStaffName) return;
+
+                                            // Determine Drop Index based on Y position
+                                            const dropTarget = e.currentTarget;
+                                            const tasksContainer = dropTarget.querySelector('.tasks-container');
+                                            let newIndex = allDayTasks.length; // Default to append
+
+                                            if (tasksContainer) {
+                                                const taskElements = Array.from(tasksContainer.children);
+                                                const dropY = e.clientY;
+
+                                                for (let idx = 0; idx < taskElements.length; idx++) {
+                                                    const rect = taskElements[idx].getBoundingClientRect();
+                                                    const centerY = rect.top + rect.height / 2;
+                                                    if (dropY < centerY) {
+                                                        newIndex = idx;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            // Construct New List
+                                            const isInternalMove = allDayTasks.some(t => t.id === data.id);
+                                            let newList = [...allDayTasks];
+
+                                            if (isInternalMove) {
+                                                // Moving within same day: Remove old, insert at new
+                                                const oldIndex = newList.findIndex(t => t.id === data.id);
+                                                const [movedItem] = newList.splice(oldIndex, 1);
+                                                // Adjust index if we removed from above
+                                                if (newIndex > oldIndex) newIndex -= 1;
+                                                newList.splice(newIndex, 0, movedItem);
+                                            } else {
+                                                // New item from outside
+                                                newList.splice(newIndex, 0, { id: data.id, type: data.type, dailyOrder: 0, data: {} });
+                                            }
+
+                                            // Recalculate Orders
+                                            const updates = newList.map((t, index) => ({
+                                                id: t.id,
+                                                type: t.type,
+                                                dailyOrder: index + 1 // Start from 1
+                                            }));
+
+                                            // Call Handlers
+                                            if (!isInternalMove) {
+                                                // First assign date
+                                                if (data.type === 'main') {
+                                                    onAssignTask(data.id, selectedStaffName, selectedStaffEmail, dayDate);
+                                                } else {
+                                                    onAssignRoutineTask(data.id, selectedStaffName, selectedStaffEmail, dayDate);
+                                                }
+                                                // Then update order after a short delay to allow assignment? 
+                                                // Better: Pass order to assignment? Setup doesn't support it easily.
+                                                // Implementation: Assign works, then we immediately fire Reorder.
+                                                // Since Reorder is by ID, it should work fine concurrently.
+                                            }
+
+                                            // Always fire reorder to save the new sequence
+                                            onReorderTasks(updates);
+
+                                        } catch (err) {
+                                            console.error("Drop error:", err);
+                                        }
+                                    };
+
                                     return (
                                         <div
                                             key={i}
                                             onClick={() => setSelectedDate(dayDate)}
                                             onDragOver={handleDragOver}
-                                            onDrop={(e) => handleDrop(e, dayDate)}
+                                            onDrop={handleDayDrop}
                                             className={`flex flex-col rounded-xl border transition-all cursor-pointer relative overflow-hidden group/day
                                                 ${isSelected
                                                     ? 'bg-blue-50/50 border-blue-400 ring-2 ring-blue-400/20 shadow-lg scale-[1.02] z-10'
@@ -513,39 +596,43 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                                 <div className="text-sm font-bold">{dayValues.date}</div>
                                             </div>
 
-                                            <div className="flex-1 p-1 space-y-1.5 overflow-y-auto custom-scrollbar">
-                                                {/* Tasks */}
-                                                {dayRoutineTasks.map(t => (
-                                                    <div
-                                                        key={t.id}
-                                                        draggable
-                                                        onDragStart={(e) => handleDragStart(e, 'routine', t.id)}
-                                                        className="bg-white border-l-2 border-l-purple-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-purple-50"
-                                                    >
-                                                        <div className="font-bold text-slate-700 truncate">{t.customerName || 'İsimsiz'}</div>
-                                                        <div className="line-clamp-2 text-slate-500 leading-tight">{t.content}</div>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); onAssignRoutineTask(t.id, '', undefined); }}
-                                                            className="absolute top-1 right-1 opacity-0 group-hover/task:opacity-100 text-red-400 hover:bg-red-50 rounded p-0.5 transition-all"
-                                                        ><X className="w-3 h-3" /></button>
-                                                    </div>
-                                                ))}
-
-                                                {dayMainTasks.map(t => (
-                                                    <div
-                                                        key={t.id}
-                                                        draggable
-                                                        onDragStart={(e) => handleDragStart(e, 'main', t.id)}
-                                                        className="bg-white border-l-2 border-l-blue-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-blue-50"
-                                                    >
-                                                        <div className="font-bold text-slate-700 truncate">{t.title}</div>
-                                                        <div className="line-clamp-2 text-slate-500 leading-tight">{t.address}</div>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); onAssignTask(t.id, '', undefined); }}
-                                                            className="absolute top-1 right-1 opacity-0 group-hover/task:opacity-100 text-red-400 hover:bg-red-50 rounded p-0.5 transition-all"
-                                                        ><X className="w-3 h-3" /></button>
-                                                    </div>
-                                                ))}
+                                            <div className="flex-1 p-1 space-y-1.5 overflow-y-auto custom-scrollbar tasks-container">
+                                                {allDayTasks.map(item => {
+                                                    const t = item.data;
+                                                    if (item.type === 'routine') {
+                                                        return (
+                                                            <div
+                                                                key={t.id}
+                                                                draggable
+                                                                onDragStart={(e) => handleDragStart(e, 'routine', t.id)}
+                                                                className="bg-white border-l-2 border-l-purple-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-purple-50"
+                                                            >
+                                                                <div className="font-bold text-slate-700 truncate">{t.customerName || 'İsimsiz'}</div>
+                                                                <div className="line-clamp-2 text-slate-500 leading-tight">{t.content}</div>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); onAssignRoutineTask(t.id, '', undefined); }}
+                                                                    className="absolute top-1 right-1 opacity-0 group-hover/task:opacity-100 text-red-400 hover:bg-red-50 rounded p-0.5 transition-all"
+                                                                ><X className="w-3 h-3" /></button>
+                                                            </div>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <div
+                                                                key={t.id}
+                                                                draggable
+                                                                onDragStart={(e) => handleDragStart(e, 'main', t.id)}
+                                                                className="bg-white border-l-2 border-l-blue-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-blue-50"
+                                                            >
+                                                                <div className="font-bold text-slate-700 truncate">{t.title}</div>
+                                                                <div className="line-clamp-2 text-slate-500 leading-tight">{t.address}</div>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); onAssignTask(t.id, '', undefined); }}
+                                                                    className="absolute top-1 right-1 opacity-0 group-hover/task:opacity-100 text-red-400 hover:bg-red-50 rounded p-0.5 transition-all"
+                                                                ><X className="w-3 h-3" /></button>
+                                                            </div>
+                                                        );
+                                                    }
+                                                })}
                                             </div>
                                         </div>
                                     );

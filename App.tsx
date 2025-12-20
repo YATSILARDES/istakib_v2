@@ -437,10 +437,28 @@ function App() {
   };
 
   // Handlers - Assignment & Staff
-  const handleAssignTask = async (taskId: string, assignee: string, assigneeEmail?: string, scheduledDate?: Date) => {
+  // --- REORDER HANDLER (BATCH UPDATE) ---
+  const handleReorderDailyTasks = async (updates: { id: string, type: 'main' | 'routine', dailyOrder: number }[]) => {
+    try {
+      if (updates.length > 0) {
+        // Optimistic Update can be tricky with mixed types, relying on Firebase updates
+        const batchUpdates = updates.map(async (update) => {
+          const coll = update.type === 'main' ? 'tasks' : 'routine_tasks';
+          const taskRef = doc(db, coll, update.id);
+          await updateDoc(taskRef, { dailyOrder: update.dailyOrder });
+        });
+        await Promise.all(batchUpdates);
+      }
+    } catch (error) {
+      console.error("Reorder Error:", error);
+      alert("Sıralama güncellenirken hata oluştu.");
+    }
+  };
+
+  const handleAssignTask = async (taskId: string, assigneeName: string, assigneeEmail?: string, scheduledDate?: Date) => {
     try {
       const taskRef = doc(db, 'tasks', taskId);
-      const updateData: any = { assignee, assigneeEmail: assigneeEmail || null, lastUpdatedBy: user?.email };
+      const updateData: any = { assignee: assigneeName, assigneeEmail: assigneeEmail || null, lastUpdatedBy: user?.email };
 
       if (scheduledDate) {
         const d = new Date(scheduledDate);
@@ -712,6 +730,7 @@ function App() {
               onAddStaff={handleAddStaff}
               onRemoveStaff={handleRemoveStaff}
               onTogglePinStaff={handleTogglePinStaff}
+              onReorderTasks={handleReorderDailyTasks}
             />
           </div>
         </div>
@@ -774,6 +793,7 @@ function App() {
                     onAddStaff={handleAddStaff}
                     onRemoveStaff={handleRemoveStaff}
                     onTogglePinStaff={handleTogglePinStaff}
+                    onReorderTasks={handleReorderDailyTasks}
                   />
                 </div>
               )}
