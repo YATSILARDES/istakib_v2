@@ -132,6 +132,33 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
 
     const isPinned = selectedStaffName ? pinnedStaff.includes(selectedStaffName) : false;
 
+    // --- DRAG AND DROP HANDLERS ---
+    const handleDragStart = (e: React.DragEvent, type: 'main' | 'routine', id: string) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({ type, id }));
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e: React.DragEvent, targetDate: Date) => {
+        e.preventDefault();
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+            if (!data.type || !data.id || !selectedStaffName) return;
+
+            if (data.type === 'main') {
+                onAssignTask(data.id, selectedStaffName, selectedStaffEmail, targetDate);
+            } else if (data.type === 'routine') {
+                onAssignRoutineTask(data.id, selectedStaffName, selectedStaffEmail, targetDate);
+            }
+        } catch (err) {
+            console.error("Drop error:", err);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-slate-200 overflow-hidden animate-in fade-in duration-300">
 
@@ -279,7 +306,12 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         <div className="text-center py-8 text-slate-400 text-xs italic">Listelenecek iş yok.</div>
                                     ) : (
                                         filteredMainTasks.map(task => (
-                                            <div key={task.id} className="bg-slate-200 border-2 border-slate-400 hover:border-blue-600 rounded-xl p-3 shadow-md transition-all hover:shadow-xl group flex items-center justify-between">
+                                            <div
+                                                key={task.id}
+                                                draggable
+                                                onDragStart={(e) => handleDragStart(e, 'main', task.id)}
+                                                className="bg-slate-200 border-2 border-slate-400 hover:border-blue-600 rounded-xl p-3 shadow-md transition-all hover:shadow-xl group flex items-center justify-between cursor-move active:scale-95 active:bg-blue-100"
+                                            >
                                                 <div>
                                                     <div className="font-bold text-blue-950 text-sm flex items-center gap-2">
                                                         <span className="bg-blue-100 text-blue-700 px-1.5 rounded text-[10px]">#{task.orderNumber}</span>
@@ -350,7 +382,12 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         <div className="text-center py-8 text-slate-400 text-xs italic">Listelenecek eksik yok.</div>
                                     ) : (
                                         filteredRoutineTasks.map(task => (
-                                            <div key={task.id} className="bg-slate-200 border-2 border-slate-400 hover:border-purple-600 rounded-xl p-3 shadow-md transition-all hover:shadow-xl group flex items-start justify-between">
+                                            <div
+                                                key={task.id}
+                                                draggable
+                                                onDragStart={(e) => handleDragStart(e, 'routine', task.id)}
+                                                className="bg-slate-200 border-2 border-slate-400 hover:border-purple-600 rounded-xl p-3 shadow-md transition-all hover:shadow-xl group flex items-start justify-between cursor-move active:scale-95 active:bg-purple-100"
+                                            >
                                                 <div className="flex-1">
                                                     {(task.customerName || task.phoneNumber) && (
                                                         <div className="flex flex-col gap-1 mb-1">
@@ -462,12 +499,14 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         <div
                                             key={i}
                                             onClick={() => setSelectedDate(dayDate)}
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) => handleDrop(e, dayDate)}
                                             className={`flex flex-col rounded-xl border transition-all cursor-pointer relative overflow-hidden group/day
-                                  ${isSelected
+                                                ${isSelected
                                                     ? 'bg-blue-50/50 border-blue-400 ring-2 ring-blue-400/20 shadow-lg scale-[1.02] z-10'
                                                     : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
                                                 }
-                               `}
+                                            `}
                                         >
                                             <div className={`text-center py-2 border-b border-slate-100 ${isToday ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-500'}`}>
                                                 <div className="text-[10px] uppercase font-bold tracking-wider opacity-80">{dayValues.name}</div>
@@ -477,7 +516,12 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                             <div className="flex-1 p-1 space-y-1.5 overflow-y-auto custom-scrollbar">
                                                 {/* Tasks */}
                                                 {dayRoutineTasks.map(t => (
-                                                    <div key={t.id} className="bg-white border-l-2 border-l-purple-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative">
+                                                    <div
+                                                        key={t.id}
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, 'routine', t.id)}
+                                                        className="bg-white border-l-2 border-l-purple-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-purple-50"
+                                                    >
                                                         <div className="font-bold text-slate-700 truncate">{t.customerName || 'İsimsiz'}</div>
                                                         <div className="line-clamp-2 text-slate-500 leading-tight">{t.content}</div>
                                                         <button
@@ -488,7 +532,12 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                                 ))}
 
                                                 {dayMainTasks.map(t => (
-                                                    <div key={t.id} className="bg-white border-l-2 border-l-blue-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative">
+                                                    <div
+                                                        key={t.id}
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, 'main', t.id)}
+                                                        className="bg-white border-l-2 border-l-blue-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-blue-50"
+                                                    >
                                                         <div className="font-bold text-slate-700 truncate">{t.title}</div>
                                                         <div className="line-clamp-2 text-slate-500 leading-tight">{t.address}</div>
                                                         <button
