@@ -429,7 +429,10 @@ export default function MobileLayout({
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
                                                         {StatusLabels[task.status]}
                                                     </span>
-                                                    <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                        {task.district && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{task.district}</span>}
+                                                    </div>
                                                 </div>
 
                                                 <div className="relative z-10">
@@ -526,11 +529,17 @@ export default function MobileLayout({
                                                         </div>
 
                                                         <div className="space-y-1.5 mb-2 pl-7">
-                                                            {task.customerName && (
-                                                                <div className="flex items-center gap-2 text-sky-400 text-xs">
-                                                                    <User className="w-3 h-3 text-sky-500/70" /> {task.customerName}
-                                                                </div>
-                                                            )}
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                {task.customerName ? (
+                                                                    <div className="flex items-center gap-2 text-sky-400 text-xs">
+                                                                        <User className="w-3 h-3 text-sky-500/70" /> {task.customerName}
+                                                                    </div>
+                                                                ) : <div />}
+
+                                                                {task.district && (
+                                                                    <span className="text-[9px] font-bold text-slate-400 bg-slate-900/30 px-1.5 py-0.5 rounded uppercase whitespace-nowrap">{task.district}</span>
+                                                                )}
+                                                            </div>
                                                             {task.address && (
                                                                 <div className="flex items-center gap-2 text-amber-300/90 text-xs">
                                                                     <MapPin className="w-3 h-3 text-amber-500/70" />
@@ -581,7 +590,10 @@ export default function MobileLayout({
                                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
                                                                 {StatusLabels[task.status]}
                                                             </span>
-                                                            <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                                {task.district && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{task.district}</span>}
+                                                            </div>
                                                         </div>
 
                                                         <div className="relative z-10">
