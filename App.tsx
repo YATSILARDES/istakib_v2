@@ -40,7 +40,8 @@ function App() {
   const [permissionsLoading, setPermissionsLoading] = useState(true);
 
   // UI State
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [forceMobile, setForceMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768 || forceMobile);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Modal State
@@ -59,12 +60,16 @@ function App() {
   const [isMissingFilterActive, setIsMissingFilterActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState(''); // NEW: Global Search
 
-  // Handle Resize
+  // Handle Resize & Force Mobile
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 768 || forceMobile);
+
+    // Initial check
+    handleResize();
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [forceMobile]);
 
   // Settings Listener
   useEffect(() => {
@@ -772,8 +777,16 @@ function App() {
       <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 transition-all duration-300">
 
         {import.meta.env.DEV && (
-          <div className="fixed bottom-4 right-4 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
-            <span>🛠️ GELİŞTİRME MODU | Tasks: {tasks.length} | User: {user?.email} | Admin: {hasAdminAccess ? 'Yes' : 'No'} | Role: {userPermissions?.role || 'None'}</span>
+          <div className="fixed bottom-4 right-4 flex items-center gap-2 z-[9999]">
+            <button
+              onClick={() => setForceMobile(!forceMobile)}
+              className={`bg-slate-800 text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-lg border ${forceMobile ? 'border-green-500 text-green-400' : 'border-slate-600'}`}
+            >
+              {forceMobile ? '📱 Mobile: ON' : '💻 Desktop'}
+            </button>
+            <div className="bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg pointer-events-none border border-red-400 flex items-center gap-2">
+              <span>🛠️ DEV | Tasks: {tasks.length} | User: {user?.email}</span>
+            </div>
           </div>
         )}
 
