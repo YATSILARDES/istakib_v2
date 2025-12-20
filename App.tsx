@@ -776,7 +776,7 @@ function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 transition-all duration-300">
 
-        {import.meta.env.DEV && (
+        {(import.meta.env.DEV || window.location.hostname.includes('vercel.app')) && (
           <div className="fixed bottom-4 right-4 flex items-center gap-2 z-[9999]">
             <button
               onClick={() => setForceMobile(!forceMobile)}
@@ -785,7 +785,7 @@ function App() {
               {forceMobile ? '📱 Mobile: ON' : '💻 Desktop'}
             </button>
             <div className="bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg pointer-events-none border border-red-400 flex items-center gap-2">
-              <span>🛠️ DEV | Tasks: {tasks.length} | User: {user?.email}</span>
+              <span>🛠️ {import.meta.env.DEV ? 'DEV' : 'PREVIEW'} | Tasks: {tasks.length} | User: {user?.email}</span>
             </div>
           </div>
         )}
