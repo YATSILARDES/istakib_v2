@@ -243,7 +243,22 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <Bell className="w-5 h-5" />
                                     </div>
                                     <span className="font-bold text-xs text-left">Eksikler Havuzu</span>
-                                    <span className="absolute top-2 right-2 bg-purple-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">3</span>
+                                    {(() => {
+                                        // Calculate number of routine tasks created TODAY
+                                        const today = new Date();
+                                        today.setHours(0, 0, 0, 0);
+                                        const dailyCount = routineTasks.filter(t => {
+                                            const d = t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000) : new Date(t.createdAt);
+                                            d.setHours(0, 0, 0, 0);
+                                            return d.getTime() === today.getTime();
+                                        }).length;
+
+                                        return dailyCount > 0 ? (
+                                            <span className="absolute top-2 right-2 bg-purple-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                                                +{dailyCount}
+                                            </span>
+                                        ) : null;
+                                    })()}
                                 </button>
                             )}
 
