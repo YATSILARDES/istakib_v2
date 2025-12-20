@@ -223,6 +223,65 @@ export default function MobileLayout({
     }
 
 
+    // --- COMBINED SORTING LOGIC (Custom Order) ---
+    const combinedTasks = React.useMemo(() => {
+        if (activeTab !== 'tasks') return [];
+
+        const mainItems = displayedTasks.map(t => ({
+            type: 'main' as const,
+            data: t,
+            // Calculate sort date (Scheduled > Date > Created)
+            getTime: () => {
+                let d = t.scheduledDate ? t.scheduledDate : t.date;
+                // Handle various formats
+                if (t.scheduledDate?.seconds) return t.scheduledDate.seconds * 1000;
+                if (typeof d === 'string') { const date = new Date(d); if (!isNaN(date.getTime())) return date.getTime(); }
+                return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+            },
+            dailyOrder: t.dailyOrder || 0
+        }));
+
+        const routineItems = displayedRoutineTasks.map(t => ({
+            type: 'routine' as const,
+            data: t,
+            getTime: () => {
+                if (t.scheduledDate?.seconds) return t.scheduledDate.seconds * 1000;
+                if (t.scheduledDate) return new Date(t.scheduledDate).getTime();
+                return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+            },
+            dailyOrder: t.dailyOrder || 0
+        }));
+
+        return [...mainItems, ...routineItems].sort((a, b) => {
+            // 1. Date Sort (Day Precision)
+            const timeA = a.getTime();
+            const timeB = b.getTime();
+            const dayA = new Date(timeA).setHours(0, 0, 0, 0);
+            const dayB = new Date(timeB).setHours(0, 0, 0, 0);
+
+            if (dayA !== dayB) return dayA - dayB;
+
+            // 2. Daily Order Sort
+            const orderA = a.dailyOrder;
+            const orderB = b.dailyOrder;
+
+            // If both have order, use it
+            if (orderA !== 0 && orderB !== 0) return orderA - orderB;
+
+            // If one has order, it comes first? Or last? 
+            // In Calendar we append new items (order=0) at the end. 
+            // So ordered items (1,2,3) come before 0.
+            if (orderA !== 0) return -1;
+            if (orderB !== 0) return 1;
+
+            // 3. Fallback: Routine first (Legacy preference)
+            if (a.type !== b.type) return a.type === 'routine' ? -1 : 1;
+
+            // 4. Fallback: Time
+            return timeA - timeB;
+        });
+    }, [displayedTasks, displayedRoutineTasks, activeTab]);
+
     const handleShareTask = async (task: Task, e: React.MouseEvent) => {
         e.stopPropagation();
         const cleanAddress = (task.address || '').replace(/https?:\/\/[^\s]+/g, '').trim();
@@ -332,173 +391,159 @@ export default function MobileLayout({
                             </div>
                         )}
 
-                        {/* --- ROUTINE TASKS SECTION (Only in 'Tasks' Tab) --- */}
-                        {activeTab === 'tasks' && displayedRoutineTasks.length > 0 && (
-                            <div className="space-y-3 animate-fadeIn">
-                                <div className="flex items-center gap-2 text-purple-400 border-b border-purple-500/20 pb-2">
-                                    <CheckSquare className="w-4 h-4" />
-                                    <h3 className="text-sm font-bold uppercase tracking-wide">Eksiklerim</h3>
-                                    <span className="bg-purple-500/20 text-purple-300 text-[10px] px-2 py-0.5 rounded-full">{displayedRoutineTasks.length}</span>
-                                </div>
-                                {displayedRoutineTasks.map(task => (
-                                    <div key={task.id} className={`bg-slate-800/80 border ${task.isCompleted ? 'border-green-500/30' : 'border-purple-500/30'} rounded-xl p-4 relative overflow-hidden shadow-sm transition-all`}>
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${task.isCompleted ? 'bg-green-500' : 'bg-purple-500'}`}></div>
-
-                                        {/* Header: Alert Icon + Content + Check Button */}
-                                        <div className="flex justify-between items-start gap-3 mb-2">
-                                            <div className="flex items-start gap-2 flex-1">
-                                                {/* Exclamation Icon for emphasis */}
-                                                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5 animate-pulse" />
-                                                <h4 className={`font-medium text-sm ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>{task.content}</h4>
-                                            </div>
-
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onToggleRoutineTask(task.id);
-                                                }}
-                                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${task.isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10'}`}
-                                            >
-                                                {task.isCompleted ? (
-                                                    <Check className="w-5 h-5" />
-                                                ) : (
-                                                    <CheckCircle2 className="w-5 h-5 opacity-50" />
-                                                )}
-                                            </button>
+                        {/* --- COMBINED TASKS LIST (Mixed & Ordered) --- */}
+                        {activeTab === 'tasks' && (
+                            <div className="space-y-4">
+                                {combinedTasks.length === 0 ? (
+                                    <div className="text-center text-slate-500 py-12 flex flex-col items-center gap-3">
+                                        <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center">
+                                            <Search className="w-8 h-8 opacity-20" />
                                         </div>
-
-                                        <div className="space-y-1.5 mb-2 pl-7"> {/* Indented to align with text */}
-                                            {task.customerName && (
-                                                <div className="flex items-center gap-2 text-sky-400 text-xs">
-                                                    <User className="w-3 h-3 text-sky-500/70" /> {task.customerName}
-                                                </div>
-                                            )}
-                                            {task.address && ( // ADDED ADDRESS
-                                                <div className="flex items-center gap-2 text-amber-300/90 text-xs">
-                                                    <MapPin className="w-3 h-3 text-amber-500/70" />
-                                                    <span className="truncate">{task.address}</span>
-                                                </div>
-                                            )}
-                                            {task.phoneNumber && (
-                                                <div className="flex items-center gap-2 text-emerald-400 text-xs">
-                                                    <Phone className="w-3 h-3 text-emerald-500/70" />
-                                                    <a href={`tel:${task.phoneNumber}`} className="hover:text-emerald-300 transition-colors">{task.phoneNumber}</a>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 border-t border-white/5 pt-2 ml-7">
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="w-3 h-3" />
-                                                {new Date(task.createdAt?.seconds * 1000).toLocaleDateString('tr-TR')}
-                                            </span>
-                                            <span className={task.isCompleted ? 'text-green-400 font-bold' : 'text-purple-400 font-medium'}>
-                                                {task.isCompleted ? 'Tamamlandı' : 'Tamamlanmadı'}
-                                            </span>
-                                        </div>
+                                        <span className="text-sm">
+                                            {searchQuery ? 'Arama kriterlerine uygun iş bulunamadı.' : 'Görüntülenecek iş bulunamadı.'}
+                                        </span>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-
-
-                        {/* --- MAIN TASKS SECTION --- */}
-                        {/* Show section header only if showing routine tasks as well */}
-                        {activeTab === 'tasks' && displayedRoutineTasks.length > 0 && (
-                            <div className="flex items-center gap-2 text-blue-400 border-b border-blue-500/20 pb-2 mt-6">
-                                <LayoutGrid className="w-4 h-4" />
-                                <h3 className="text-sm font-bold uppercase tracking-wide">Saha Görevleri</h3>
-                                <span className="bg-blue-500/20 text-blue-300 text-[10px] px-2 py-0.5 rounded-full">{displayedTasks.length}</span>
-                            </div>
-                        )}
-
-                        <div className="space-y-3">
-                            {displayedTasks.length === 0 && displayedRoutineTasks.length === 0 && (
-                                <div className="text-center text-slate-500 py-12 flex flex-col items-center gap-3">
-                                    <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center">
-                                        <Search className="w-8 h-8 opacity-20" />
-                                    </div>
-                                    <span className="text-sm">
-                                        {searchQuery ? 'Arama kriterlerine uygun iş bulunamadı.' : 'Görüntülenecek iş bulunamadı.'}
-                                    </span>
-                                </div>
-                            )}
-
-                            {displayedTasks.map(task => {
-                                // COLOR CODING LOGIC
-                                let cardStyle = "bg-slate-800 border-slate-700/50"; // Default
-                                let badgeStyle = "bg-blue-500/20 text-blue-400"; // Default Badge
-                                let shadowStyle = "";
-
-                                if (task.checkStatus === 'missing') {
-                                    cardStyle = "bg-orange-950/30 border-orange-500/50";
-                                    badgeStyle = "bg-orange-500/20 text-orange-400";
-                                    shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]"; // Orange Glow
-                                } else if (task.checkStatus === 'clean') {
-                                    cardStyle = "bg-emerald-950/30 border-emerald-500/50";
-                                    badgeStyle = "bg-emerald-500/20 text-emerald-400";
-                                    shadowStyle = "shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]"; // Green Glow
-                                }
-
-                                return (
-                                    <div
-                                        key={task.id}
-                                        // onClick removed to prevent accidental opens while scrolling
-                                        className={`rounded-2xl p-4 border transition-all relative overflow-hidden ${cardStyle} ${shadowStyle}`}
-                                    >
-                                        {/* Status Badge & Row Num */}
-                                        <div className="flex justify-between items-start mb-2 relative z-10">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
-                                                {StatusLabels[task.status]}
-                                            </span>
-                                            <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {/* Optional Header for Today? */}
+                                        <div className="flex items-center gap-2 text-slate-400 pb-2 border-b border-white/5">
+                                            <Calendar className="w-4 h-4" />
+                                            <span className="text-xs font-bold uppercase tracking-wider">İş Listesi</span>
+                                            <span className="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded-full">{combinedTasks.length}</span>
                                         </div>
 
-                                        {/* Content */}
-                                        <div className="relative z-10">
-                                            <h4 className={`font-bold text-sm mb-2 line-clamp-2 ${task.checkStatus === 'missing' ? 'text-orange-100' : task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-white'}`}>
-                                                {task.title}
-                                            </h4>
+                                        {combinedTasks.map((item, index) => {
+                                            if (item.type === 'routine') {
+                                                const task = item.data as RoutineTask;
+                                                return (
+                                                    <div key={task.id} className={`bg-slate-800/80 border ${task.isCompleted ? 'border-green-500/30' : 'border-purple-500/30'} rounded-xl p-4 relative overflow-hidden shadow-sm transition-all`}>
+                                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${task.isCompleted ? 'bg-green-500' : 'bg-purple-500'}`}></div>
 
-                                            <div className="flex items-center gap-2 text-amber-300/90 text-xs mb-3">
-                                                <MapPin className="w-3 h-3 shrink-0 text-amber-500/70" />
-                                                <span className="truncate">{task.address || 'Adres Girilmemiş'}</span>
-                                            </div>
+                                                        {/* Header: Alert Icon + Content + Check Button */}
+                                                        <div className="flex justify-between items-start gap-3 mb-2">
+                                                            <div className="flex items-start gap-2 flex-1">
+                                                                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5 animate-pulse" />
+                                                                <h4 className={`font-medium text-sm ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>{task.content}</h4>
+                                                            </div>
 
-                                            <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                                                <button
-                                                    onClick={() => onTaskClick(task)}
-                                                    className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
-                                                >
-                                                    <Calendar className="w-3.5 h-3.5" /> Detay
-                                                </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onToggleRoutineTask(task.id);
+                                                                }}
+                                                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${task.isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10'}`}
+                                                            >
+                                                                {task.isCompleted ? <Check className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5 opacity-50" />}
+                                                            </button>
+                                                        </div>
 
-                                                <div className="flex items-center gap-3">
-                                                    <button
-                                                        onClick={(e) => handleShareTask(task, e)}
-                                                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                        <div className="space-y-1.5 mb-2 pl-7">
+                                                            {task.customerName && (
+                                                                <div className="flex items-center gap-2 text-sky-400 text-xs">
+                                                                    <User className="w-3 h-3 text-sky-500/70" /> {task.customerName}
+                                                                </div>
+                                                            )}
+                                                            {task.address && (
+                                                                <div className="flex items-center gap-2 text-amber-300/90 text-xs">
+                                                                    <MapPin className="w-3 h-3 text-amber-500/70" />
+                                                                    <span className="truncate">{task.address}</span>
+                                                                </div>
+                                                            )}
+                                                            {task.phoneNumber && (
+                                                                <div className="flex items-center gap-2 text-emerald-400 text-xs">
+                                                                    <Phone className="w-3 h-3 text-emerald-500/70" />
+                                                                    <a href={`tel:${task.phoneNumber}`} className="hover:text-emerald-300 transition-colors">{task.phoneNumber}</a>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 border-t border-white/5 pt-2 ml-7">
+                                                            <span className="flex items-center gap-1">
+                                                                <Clock className="w-3 h-3" />
+                                                                {new Date(task.createdAt?.seconds * 1000).toLocaleDateString('tr-TR')}
+                                                            </span>
+                                                            <span className={task.isCompleted ? 'text-green-400 font-bold' : 'text-purple-400 font-medium'}>
+                                                                {task.isCompleted ? 'Tamamlandı' : 'Tamamlanmadı'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            } else {
+                                                const task = item.data as Task;
+                                                let cardStyle = "bg-slate-800 border-slate-700/50";
+                                                let badgeStyle = "bg-blue-500/20 text-blue-400";
+                                                let shadowStyle = "";
+
+                                                if (task.checkStatus === 'missing') {
+                                                    cardStyle = "bg-orange-950/30 border-orange-500/50";
+                                                    badgeStyle = "bg-orange-500/20 text-orange-400";
+                                                    shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
+                                                } else if (task.checkStatus === 'clean') {
+                                                    cardStyle = "bg-emerald-950/30 border-emerald-500/50";
+                                                    badgeStyle = "bg-emerald-500/20 text-emerald-400";
+                                                    shadowStyle = "shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]";
+                                                }
+
+                                                return (
+                                                    <div
+                                                        key={task.id}
+                                                        className={`rounded-2xl p-4 border transition-all relative overflow-hidden ${cardStyle} ${shadowStyle}`}
                                                     >
-                                                        <Share2 className="w-3.5 h-3.5" />
-                                                    </button>
+                                                        <div className="flex justify-between items-start mb-2 relative z-10">
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
+                                                                {StatusLabels[task.status]}
+                                                            </span>
+                                                            <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                        </div>
 
-                                                    {task.phone && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                window.open(`tel:${task.phone}`);
-                                                            }}
-                                                            className="w-8 h-8 rounded-full bg-white/5 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-white/10 transition-colors"
-                                                        >
-                                                            <Phone className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                                        <div className="relative z-10">
+                                                            <h4 className={`font-bold text-sm mb-2 line-clamp-2 ${task.checkStatus === 'missing' ? 'text-orange-100' : task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-white'}`}>
+                                                                {task.title}
+                                                            </h4>
+
+                                                            <div className="flex items-center gap-2 text-amber-300/90 text-xs mb-3">
+                                                                <MapPin className="w-3 h-3 shrink-0 text-amber-500/70" />
+                                                                <span className="truncate">{task.address || 'Adres Girilmemiş'}</span>
+                                                            </div>
+
+                                                            <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                                                                <button
+                                                                    onClick={() => onTaskClick(task)}
+                                                                    className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
+                                                                >
+                                                                    <Calendar className="w-3.5 h-3.5" /> Detay
+                                                                </button>
+
+                                                                <div className="flex items-center gap-3">
+                                                                    <button
+                                                                        onClick={(e) => handleShareTask(task, e)}
+                                                                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                                    >
+                                                                        <Share2 className="w-3.5 h-3.5" />
+                                                                    </button>
+
+                                                                    {task.phone && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                window.open(`tel:${task.phone}`);
+                                                                            }}
+                                                                            className="w-8 h-8 rounded-full bg-white/5 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                                        >
+                                                                            <Phone className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                        })}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
