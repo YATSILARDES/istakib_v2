@@ -391,6 +391,94 @@ export default function MobileLayout({
                             </div>
                         )}
 
+                        {/* --- HOME TAB LIST RENDER --- */}
+                        {activeTab === 'home' && (
+                            <div className="space-y-4 pt-2">
+                                {displayedTasks.length === 0 ? (
+                                    <div className="text-center text-slate-500 py-12 flex flex-col items-center gap-3">
+                                        <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center">
+                                            <Search className="w-8 h-8 opacity-20" />
+                                        </div>
+                                        <span className="text-sm">
+                                            {searchQuery ? 'Arama kriterlerine uygun iş bulunamadı.' : 'Bu kategoride iş bulunmuyor.'}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    displayedTasks.map(task => {
+                                        // COLOR CODING LOGIC (Copied from below)
+                                        let cardStyle = "bg-slate-800 border-slate-700/50";
+                                        let badgeStyle = "bg-blue-500/20 text-blue-400";
+                                        let shadowStyle = "";
+
+                                        if (task.checkStatus === 'missing') {
+                                            cardStyle = "bg-orange-950/30 border-orange-500/50";
+                                            badgeStyle = "bg-orange-500/20 text-orange-400";
+                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
+                                        } else if (task.checkStatus === 'clean') {
+                                            cardStyle = "bg-emerald-950/30 border-emerald-500/50";
+                                            badgeStyle = "bg-emerald-500/20 text-emerald-400";
+                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]";
+                                        }
+
+                                        return (
+                                            <div
+                                                key={task.id}
+                                                className={`rounded-2xl p-4 border transition-all relative overflow-hidden ${cardStyle} ${shadowStyle}`}
+                                            >
+                                                <div className="flex justify-between items-start mb-2 relative z-10">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
+                                                        {StatusLabels[task.status]}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                </div>
+
+                                                <div className="relative z-10">
+                                                    <h4 className={`font-bold text-sm mb-2 line-clamp-2 ${task.checkStatus === 'missing' ? 'text-orange-100' : task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-white'}`}>
+                                                        {task.title}
+                                                    </h4>
+
+                                                    <div className="flex items-center gap-2 text-amber-300/90 text-xs mb-3">
+                                                        <MapPin className="w-3 h-3 shrink-0 text-amber-500/70" />
+                                                        <span className="truncate">{task.address || 'Adres Girilmemiş'}</span>
+                                                    </div>
+
+                                                    <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                                                        <button
+                                                            onClick={() => onTaskClick(task)}
+                                                            className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
+                                                        >
+                                                            <Calendar className="w-3.5 h-3.5" /> Detay
+                                                        </button>
+
+                                                        <div className="flex items-center gap-3">
+                                                            <button
+                                                                onClick={(e) => handleShareTask(task, e)}
+                                                                className="w-8 h-8 rounded-full bg-white/5 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                            >
+                                                                <Share2 className="w-3.5 h-3.5" />
+                                                            </button>
+
+                                                            {task.phone && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        window.open(`tel:${task.phone}`);
+                                                                    }}
+                                                                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                                >
+                                                                    <Phone className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+
                         {/* --- COMBINED TASKS LIST (Mixed & Ordered) --- */}
                         {activeTab === 'tasks' && (
                             <div className="space-y-4">
