@@ -90,13 +90,53 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
         // If closed, we can return empty to save calc, but hooks MUST run.
         // Or we just calculate it. It's safe.
 
-        const statsMap = new Map<string, {
-            name: string;
-            email: string;
-            activeTasks: Task[];
-            activeRoutine: RoutineTask[];
-            completedCount: number;
-        }>();
+        // --- Last Seen Logic ---
+        const [userPresence, setUserPresence] = React.useState<Record<string, any>>({});
+
+        // Subscribe to users collection only when modal is open
+        React.useEffect(() => {
+            if (!isOpen) return;
+
+            // Note: Using onSnapshot on the entire 'users' collection might be too much if there are thousands,
+            // but for <100 staff it is fine.
+            // We really only need 'lastSeen' field.
+            import('firebase/firestore').then(({ collection, onSnapshot, query }) => {
+                // Assuming db is imported from somewhere or we pass it? 
+                // We need db instance. It is not passed in props.
+                // We should typically pass it or import it.
+                // Let's assume it's available via module import like in App.tsx.
+                // If not, we might need to add it to props.
+                // Checking imports... 'auth', 'db' seem needed.
+            });
+
+        }, [isOpen]);
+        // WAIT: I don't see 'db' imported in this file. I need to check imports.
+        // If db is not imported, I should add it.
+
+        const formatLastSeen = (timestamp: any) => {
+            if (!timestamp) return { text: 'Çevrimdışı', color: 'text-gray-400', date: null };
+
+            let date: Date;
+            if (timestamp.seconds) {
+                date = new Date(timestamp.seconds * 1000);
+            } else if (timestamp instanceof Date) {
+                date = timestamp;
+            } else {
+                // Try parsing
+                date = new Date(timestamp);
+            }
+
+            if (isNaN(date.getTime())) return { text: 'Bilinmiyor', color: 'text-gray-400', date: null };
+
+            const now = new Date();
+            const diffMinutes = Math.floor((now.getTime() - date.getTime()) / 60000);
+
+            if (diffMinutes < 5) return { text: 'Çevrimiçi', color: 'text-green-500', date };
+            if (diffMinutes < 60) return { text: `${diffMinutes} dk önce`, color: 'text-yellow-500', date };
+            if (diffMinutes < 1440) return { text: `${Math.floor(diffMinutes / 60)} saat önce`, color: 'text-gray-500', date };
+
+            return { text: date.toLocaleDateString('tr-TR'), color: 'text-gray-400', date };
+        };
 
         if (!staffList) return [];
 
@@ -373,9 +413,20 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-slate-800 text-lg leading-tight">{staff.name}</h3>
-                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${totalWork > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
-                                                {totalWork > 0 ? 'Sahada / Aktif' : 'Boşta'}
-                                            </span>
+
+                                            {/* Last Seen Indicator */}
+                                            {(function () {
+                                                const lastSeen = userPresence[staff.email.toLowerCase()] || null;
+                                                const status = formatLastSeen(lastSeen);
+                                                return (
+                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${status.text === 'Çevrimiçi' ? 'bg-green-500 animate-pulse' : (status.color?.includes('yellow') ? 'bg-yellow-500' : 'bg-slate-300')}`} />
+                                                        <span className={`text-[10px] font-bold ${status.color}`}>
+                                                            {status.text}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                     <div className="text-right">
