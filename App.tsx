@@ -1072,8 +1072,6 @@ function App() {
         routineTasks={routineTasks}
         // If Admin, show all. If Staff, show only SELF.
         staffList={
-          // If Admin, show all. If Staff, show only SELF.
-          staffList = {
           (hasAdminAccess || userPermissions?.role === 'admin')
             ? (appSettings.staffList || [])
             : (appSettings.staffList || []).filter(s =>
