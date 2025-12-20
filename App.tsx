@@ -676,6 +676,47 @@ function App() {
         />
       )}
 
+      {activeTab === 'routine_pool' && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b bg-slate-50">
+            <h2 className="font-bold text-lg">Eksikler Havuzu</h2>
+            <button onClick={() => setActiveTab('dashboard')} className="p-2 bg-slate-200 rounded-full"><X className="w-6 h-6" /></button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <RoutineTasksView
+              tasks={routineTasks}
+              onAddTask={handleAddRoutineTask}
+              onToggleTask={handleToggleRoutineTask}
+              onDeleteTask={handleDeleteRoutineTask}
+              onConvertTask={handleConvertRoutineTask}
+              onUpdateTask={handleUpdateRoutineTask}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'assignment' && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b bg-slate-50">
+            <h2 className="font-bold text-lg">Görev Dağıtımı</h2>
+            <button onClick={() => setActiveTab('dashboard')} className="p-2 bg-slate-200 rounded-full"><X className="w-6 h-6" /></button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <AssignmentView
+              tasks={tasks}
+              routineTasks={routineTasks}
+              onAssignTask={handleAssignTask}
+              onAssignRoutineTask={handleAssignRoutineTask}
+              staffList={registeredStaff}
+              pinnedStaff={appSettings.pinnedStaff || []}
+              onAddStaff={handleAddStaff}
+              onRemoveStaff={handleRemoveStaff}
+              onTogglePinStaff={handleTogglePinStaff}
+            />
+          </div>
+        </div>
+      )}
+
       {isModalOpen && (
         <TaskModal
           task={selectedTask}
@@ -689,9 +730,11 @@ function App() {
         />
       )}
 
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
-        <span>🛠️ GELİŞTİRME MODU</span>
-      </div>
+      {import.meta.env.DEV && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
+          <span>🛠️ GELİŞTİRME MODU</span>
+        </div>
+      )}
     </>;
   }
 
