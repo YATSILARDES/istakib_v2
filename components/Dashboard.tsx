@@ -291,11 +291,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     >
                                         {/* Top Gradient Border */}
                                         <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl ${isGasAlert ? 'bg-gradient-to-r from-red-500 to-orange-500' :
-                                                card.status === TaskStatus.TO_CHECK ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
-                                                    card.status === TaskStatus.CHECK_COMPLETED ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
-                                                        card.status === TaskStatus.DEPOSIT_PAID ? 'bg-gradient-to-r from-indigo-400 to-purple-500' :
-                                                            card.status === TaskStatus.SERVICE_DIRECTED ? 'bg-gradient-to-r from-purple-400 to-pink-500' :
-                                                                'bg-gradient-to-r from-emerald-400 to-teal-500'
+                                            card.status === TaskStatus.TO_CHECK ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
+                                                card.status === TaskStatus.CHECK_COMPLETED ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
+                                                    card.status === TaskStatus.DEPOSIT_PAID ? 'bg-gradient-to-r from-indigo-400 to-purple-500' :
+                                                        card.status === TaskStatus.SERVICE_DIRECTED ? 'bg-gradient-to-r from-purple-400 to-pink-500' :
+                                                            'bg-gradient-to-r from-emerald-400 to-teal-500'
                                             }`} />
 
                                         {/* Hover Glow Effect */}
@@ -314,21 +314,20 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             )}
                                         </div>
 
-                                        <div className="flex items-end justify-between z-10 relative mt-auto">
-                                            <div className="flex flex-col">
-                                                <span className={`text-4xl font-black tracking-tight ${isGasAlert ? 'text-red-600' : card.color} drop-shadow-sm`}>
-                                                    {card.score}
-                                                </span>
-                                                <span className={`text-[10px] font-semibold mt-1 ${isGasAlert ? 'text-red-500' : 'text-slate-400'}`}>
-                                                    {isGasAlert ? '⚠️ MÜDAHALE!' : 'kayıt'}
-                                                </span>
-                                            </div>
-                                            <div className={`p-2.5 rounded-xl transition-all duration-300 ${isGasAlert
-                                                    ? 'bg-red-200 animate-bounce'
-                                                    : 'bg-gradient-to-br from-slate-100 to-slate-200 shadow-inner group-hover:scale-110 group-hover:shadow-md'
-                                                }`}>
-                                                <Activity className={`w-5 h-5 ${isGasAlert ? 'text-red-600' : card.color}`} />
-                                            </div>
+                                        <div className="flex flex-col z-10 relative mt-auto">
+                                            <span className={`text-4xl font-black tracking-tight ${isGasAlert ? 'text-red-600' : card.color} drop-shadow-sm`}>
+                                                {card.score}
+                                            </span>
+                                            <span className={`text-[10px] font-semibold mt-1 ${isGasAlert ? 'text-red-500' : 'text-slate-400'}`}>
+                                                {isGasAlert ? '⚠️ MÜDAHALE!' : 'kayıt'}
+                                            </span>
+                                        </div>
+
+                                        <div className={`absolute right-5 bottom-5 z-10 p-2.5 rounded-xl transition-all duration-300 ${isGasAlert
+                                            ? 'bg-red-200 animate-bounce'
+                                            : 'bg-gradient-to-br from-slate-100 to-slate-200 shadow-inner group-hover:scale-110 group-hover:shadow-md'
+                                            }`}>
+                                            <Activity className={`w-5 h-5 ${isGasAlert ? 'text-red-600' : card.color}`} />
                                         </div>
 
                                         {/* Decorative Background Pattern */}
