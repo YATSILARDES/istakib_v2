@@ -225,17 +225,18 @@ export default function MobileLayout({
     }
 
     // --- ADMIN: Group tasks by staff for accordion view ---
-    // Only show ACTIVE tasks (not completed routine tasks)
+    // Only show ACTIVE tasks: TO_CHECK status for main tasks, incomplete for routine tasks
     const tasksByStaff = useMemo(() => {
         if (userPermissions?.role !== 'admin' || !staffList || staffList.length === 0) return null;
 
         const grouped: Record<string, { tasks: Task[], routineTasks: RoutineTask[] }> = {};
 
         staffList.forEach(staff => {
-            // Filter tasks assigned to this staff member
+            // Filter tasks: only TO_CHECK status (not yet checked/completed)
             const staffTasks = tasks.filter(t =>
-                t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() ||
-                t.assignee === staff.name
+                t.status === TaskStatus.TO_CHECK && // Only show tasks waiting for check
+                (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() ||
+                    t.assignee === staff.name)
             );
             // Filter ONLY incomplete routine tasks assigned to this staff member
             const staffRoutines = routineTasks.filter(t =>
