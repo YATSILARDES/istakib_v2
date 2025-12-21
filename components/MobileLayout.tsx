@@ -225,26 +225,49 @@ export default function MobileLayout({
     }
 
     // --- ADMIN: Group tasks by staff for accordion view ---
-    // Only show ACTIVE tasks: TO_CHECK status without checkStatus, incomplete for routine tasks
+    // Only show ACTIVE tasks: TO_CHECK status, today/past date, no checkStatus
     const tasksByStaff = useMemo(() => {
         if (userPermissions?.role !== 'admin' || !staffList || staffList.length === 0) return null;
+
+        const today = new Date();
+        today.setHours(23, 59, 59, 999); // End of today
 
         const grouped: Record<string, { tasks: Task[], routineTasks: RoutineTask[] }> = {};
 
         staffList.forEach(staff => {
-            // Filter tasks: only TO_CHECK status with no checkStatus (same as desktop AssignmentView)
-            const staffTasks = tasks.filter(t =>
-                t.status === TaskStatus.TO_CHECK && // Only show tasks waiting for check
-                !t.checkStatus && // NOT checked yet (no missing/clean status)
-                (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() ||
-                    t.assignee === staff.name)
-            );
-            // Filter ONLY incomplete routine tasks assigned to this staff member
-            const staffRoutines = routineTasks.filter(t =>
-                !t.isCompleted && // Only show incomplete routine tasks
-                (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() ||
-                    t.assignee === staff.name)
-            );
+            // Filter tasks: TO_CHECK, no checkStatus, scheduled for today or past
+            const staffTasks = tasks.filter(t => {
+                // Basic filters (status, checkStatus, assignee)
+                const basicMatch = t.status === TaskStatus.TO_CHECK &&
+                    !t.checkStatus &&
+                    (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() || t.assignee === staff.name);
+
+                if (!basicMatch) return false;
+
+                // Date filter: only today or past (not future)
+                if (t.scheduledDate) {
+                    const schedDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+                    return schedDate <= today;
+                }
+                return true; // No scheduled date = show it
+            });
+
+            // Filter routine tasks: incomplete, today or past
+            const staffRoutines = routineTasks.filter(t => {
+                const basicMatch = !t.isCompleted &&
+                    (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() || t.assignee === staff.name);
+
+                if (!basicMatch) return false;
+
+                // Date filter for routine tasks
+                const date = t.scheduledDate || t.createdAt;
+                if (date) {
+                    const taskDate = new Date(date.seconds ? date.seconds * 1000 : date);
+                    return taskDate <= today;
+                }
+                return true;
+            });
+
             grouped[staff.name] = { tasks: staffTasks, routineTasks: staffRoutines };
         });
 
