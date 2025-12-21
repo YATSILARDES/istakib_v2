@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export enum TaskStatus {
   TO_CHECK = 'TO_CHECK',
   CHECK_COMPLETED = 'CHECK_COMPLETED',
