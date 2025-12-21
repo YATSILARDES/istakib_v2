@@ -534,8 +534,8 @@ export default function MobileLayout({
                             </div>
                         )}
 
-                        {/* --- COMBINED TASKS LIST (Mixed & Ordered) --- */}
-                        {activeTab === 'tasks' && (
+                        {/* --- COMBINED TASKS LIST (Mixed & Ordered) - Only for Staff, NOT Admin --- */}
+                        {activeTab === 'tasks' && userPermissions?.role !== 'admin' && (
                             <div className="space-y-4">
                                 {combinedTasks.length === 0 ? (
                                     <div className="text-center text-slate-500 py-12 flex flex-col items-center gap-3">
