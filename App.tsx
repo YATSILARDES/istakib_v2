@@ -715,6 +715,7 @@ function App() {
         userPermissions={userPermissions}
         tasks={tasks}
         routineTasks={routineTasks}
+        staffList={registeredStaff}
         onSignOut={handleSignOut}
         onTaskClick={handleTaskClick}
         onAddTask={handleAddTaskClick}
