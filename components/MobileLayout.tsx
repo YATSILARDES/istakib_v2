@@ -843,29 +843,8 @@ export default function MobileLayout({
                                     })}
                                 </>
                             ) : (
-                                /* STAFF VIEW: Own tasks (existing combined list) */
-                                <>
-                                    {combinedTasks.length === 0 ? (
-                                        <div className="text-center text-slate-500 py-12 flex flex-col items-center gap-3">
-                                            <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center">
-                                                <Search className="w-8 h-8 opacity-20" />
-                                            </div>
-                                            <span className="text-sm">
-                                                {searchQuery ? 'Arama kriterlerine uygun iş bulunamadı.' : 'Görüntülenecek iş bulunamadı.'}
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="flex items-center gap-2 text-slate-400 pb-2 border-b border-white/5">
-                                                <Calendar className="w-4 h-4" />
-                                                <span className="text-xs font-bold uppercase tracking-wider">İş Listesi</span>
-                                                <span className="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded-full">{combinedTasks.length}</span>
-                                            </div>
-                                            {/* Render combinedTasks as before - simplified reference */}
-                                            <p className="text-slate-500 text-sm text-center py-4">Personel görünümü aktif</p>
-                                        </>
-                                    )}
-                                </>
+                                /* STAFF VIEW: Empty - handled by combined tasks list above */
+                                null
                             )}
                         </div>
                     </div>
