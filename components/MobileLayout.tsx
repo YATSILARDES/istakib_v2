@@ -225,19 +225,23 @@ export default function MobileLayout({
     }
 
     // --- ADMIN: Group tasks by staff for accordion view ---
+    // Only show ACTIVE tasks (not completed routine tasks)
     const tasksByStaff = useMemo(() => {
         if (userPermissions?.role !== 'admin' || !staffList || staffList.length === 0) return null;
 
         const grouped: Record<string, { tasks: Task[], routineTasks: RoutineTask[] }> = {};
 
         staffList.forEach(staff => {
+            // Filter tasks assigned to this staff member
             const staffTasks = tasks.filter(t =>
                 t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() ||
                 t.assignee === staff.name
             );
+            // Filter ONLY incomplete routine tasks assigned to this staff member
             const staffRoutines = routineTasks.filter(t =>
-                t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() ||
-                t.assignee === staff.name
+                !t.isCompleted && // Only show incomplete routine tasks
+                (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() ||
+                    t.assignee === staff.name)
             );
             grouped[staff.name] = { tasks: staffTasks, routineTasks: staffRoutines };
         });
@@ -739,8 +743,8 @@ export default function MobileLayout({
                                                     {/* Badge & Chevron */}
                                                     <div className="flex items-center gap-2">
                                                         <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${totalItems > 0
-                                                                ? 'bg-blue-500/20 text-blue-400'
-                                                                : 'bg-slate-700/50 text-slate-500'
+                                                            ? 'bg-blue-500/20 text-blue-400'
+                                                            : 'bg-slate-700/50 text-slate-500'
                                                             }`}>
                                                             {totalItems} iş
                                                         </span>
