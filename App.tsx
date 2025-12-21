@@ -793,11 +793,7 @@ function App() {
         />
       )}
 
-      {import.meta.env.DEV && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600/90 backdrop-blur text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg z-[9999] pointer-events-none border border-red-400 flex items-center gap-2">
-          <span>🛠️ GELİŞTİRME MODU</span>
-        </div>
-      )}
+
     </>;
   }
 
