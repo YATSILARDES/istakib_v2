@@ -407,6 +407,14 @@ export default function MobileLayout({
                                 placeholder="İş, müşteri, adres veya telefon ara..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                onFocus={(e) => {
+                                    // Prevent mobile browsers from scrolling the page when focusing the input
+                                    e.target.scrollIntoView = () => { };
+                                    // Also prevent any parent scroll adjustment
+                                    setTimeout(() => {
+                                        window.scrollTo(0, 0);
+                                    }, 100);
+                                }}
                                 className="w-full bg-slate-800/60 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/30 outline-none transition-all"
                             />
                         </div>
