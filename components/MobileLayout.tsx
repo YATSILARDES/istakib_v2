@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, ChevronDown, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2 } from 'lucide-react';
 import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission, StaffMember } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
@@ -38,6 +38,7 @@ export default function MobileLayout({
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedStaff, setExpandedStaff] = useState<string | null>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     // Helper: Get Display Name
     const displayName = userPermissions?.name || user?.displayName || user?.email?.split('@')[0] || 'Kullanıcı';
     const roleName = userPermissions?.role === 'admin' ? 'Yönetici' : 'Personel';
@@ -403,17 +404,17 @@ export default function MobileLayout({
                         <div className="relative">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                             <input
+                                ref={inputRef}
                                 type="text"
+                                inputMode="search"
                                 placeholder="İş, müşteri, adres veya telefon ara..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onFocus={(e) => {
-                                    // Prevent mobile browsers from scrolling the page when focusing the input
-                                    e.target.scrollIntoView = () => { };
-                                    // Also prevent any parent scroll adjustment
-                                    setTimeout(() => {
-                                        window.scrollTo(0, 0);
-                                    }, 100);
+                                onClick={(e) => {
+                                    // Prevent default focus which causes scrolling
+                                    e.preventDefault();
+                                    // Manually focus without scrolling
+                                    inputRef.current?.focus({ preventScroll: true });
                                 }}
                                 className="w-full bg-slate-800/60 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/30 outline-none transition-all"
                             />
