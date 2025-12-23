@@ -62,6 +62,9 @@ export default function MobileLayout({
 
     // Rename to avoid conflict
     const filteredMainTasks = myTasks.filter(t => {
+        // Filter by Status: Hide CHECK_COMPLETED (Kontrolü Yapılan İşler)
+        if (t.status === TaskStatus.CHECK_COMPLETED) return false;
+
         // Filter by Search
         if (!filterTask(t)) return false;
 
