@@ -65,6 +65,9 @@ export default function MobileLayout({
         // Filter by Status: Hide CHECK_COMPLETED (Kontrolü Yapılan İşler)
         if (t.status === TaskStatus.CHECK_COMPLETED) return false;
 
+        // Filter by Check Status: Hide logic if check is done (missing or clean)
+        if (t.checkStatus) return false;
+
         // Filter by Search
         if (!filterTask(t)) return false;
 
