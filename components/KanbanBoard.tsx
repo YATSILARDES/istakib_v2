@@ -83,21 +83,31 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const term = (searchTerms['ROUTINE'] || '').toLocaleLowerCase('tr').trim();
     const matchesTerm = (text: string) => text.toLocaleLowerCase('tr').includes(term);
 
-    // Sort Routine Tasks: Incomplete first, then by ASSIGNMENT TIME (User Request: "Sıralama yaparak atama"), then by creation
+    // Sort Routine Tasks: Incomplete first, then by DAILY ORDER (if set), then by Assignment Time
     const sortedRoutine = [...routineTasks].sort((a, b) => {
+      // 1. Completion Status (Incomplete first)
       if (a.isCompleted !== b.isCompleted) {
         return a.isCompleted ? 1 : -1;
       }
 
-      // 1. Sıralama Önceliği: Atanma Zamanı (Eğer atanmışsa)
+      // 2. Daily Order (Explicit ordering from Assignment View)
+      if (a.dailyOrder !== 0 || b.dailyOrder !== 0) {
+        // If one is 0 (undefined/unset), push it to bottom or keep relative?
+        // Let's assume 0 means "unsorted" or "bottom".
+        if (a.dailyOrder !== 0 && b.dailyOrder !== 0) return a.dailyOrder - b.dailyOrder;
+        if (a.dailyOrder !== 0) return -1;
+        if (b.dailyOrder !== 0) return 1;
+      }
+
+      // 3. Assignment Time (Fallback)
       const aAssign = a.assignedAt?.toMillis?.() || a.assignedAt || 0;
       const bAssign = b.assignedAt?.toMillis?.() || b.assignedAt || 0;
 
       if (aAssign !== bAssign) {
-        return aAssign - bAssign; // Eskiden yeniye (İlk atanan üstte)
+        return aAssign - bAssign; // Oldest first
       }
 
-      // 2. Sıralama Önceliği: Oluşturulma Zamanı (Fallback)
+      // 4. Creation Time (Last Resort)
       const aCreate = a.createdAt?.toMillis?.() || a.createdAt || 0;
       const bCreate = b.createdAt?.toMillis?.() || b.createdAt || 0;
       return aCreate - bCreate;
@@ -110,8 +120,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       (t.phoneNumber && matchesTerm(t.phoneNumber))
     );
 
-    // Filter Standard Tasks (myTasks)
-    const filteredStandard = !term ? myTasks : myTasks.filter(t =>
+    // Filter AND Sort Standard Tasks (myTasks)
+    const sortedStandard = [...myTasks].sort((a, b) => {
+      // 1. Daily Order
+      if (a.dailyOrder !== 0 || b.dailyOrder !== 0) {
+        if (a.dailyOrder !== 0 && b.dailyOrder !== 0) return a.dailyOrder - b.dailyOrder;
+        if (a.dailyOrder !== 0) return -1;
+        if (b.dailyOrder !== 0) return 1;
+      }
+      // 2. Order Number (Fallback)
+      return (a.orderNumber || 0) - (b.orderNumber || 0);
+    });
+
+    const filteredStandard = !term ? sortedStandard : sortedStandard.filter(t =>
       matchesTerm(t.title) ||
       matchesTerm(t.address || '') ||
       t.orderNumber.toString().includes(term)
