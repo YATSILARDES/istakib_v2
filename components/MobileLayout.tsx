@@ -239,7 +239,7 @@ export default function MobileLayout({
         const today = new Date();
         today.setHours(23, 59, 59, 999); // End of today
 
-        const grouped: Record<string, { tasks: Task[], routineTasks: RoutineTask[] }> = {};
+        const grouped: Record<string, Array<{ type: 'main' | 'routine', data: Task | RoutineTask, dailyOrder: number }>> = {};
 
         staffList.forEach(staff => {
             // Filter tasks: TO_CHECK, no checkStatus, scheduled for today or past
@@ -275,7 +275,54 @@ export default function MobileLayout({
                 return true;
             });
 
-            grouped[staff.name] = { tasks: staffTasks, routineTasks: staffRoutines };
+            // COMBINE AND SORT (Matching 'combinedTasks' logic)
+            const mainItems = staffTasks.map(t => ({
+                type: 'main' as const,
+                data: t,
+                getTime: () => {
+                    let d = t.scheduledDate ? t.scheduledDate : t.date;
+                    if (t.scheduledDate?.seconds) return t.scheduledDate.seconds * 1000;
+                    if (typeof d === 'string') { const date = new Date(d); if (!isNaN(date.getTime())) return date.getTime(); }
+                    return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+                },
+                dailyOrder: t.dailyOrder || 0
+            }));
+
+            const routineItems = staffRoutines.map(t => ({
+                type: 'routine' as const,
+                data: t,
+                getTime: () => {
+                    if (t.scheduledDate?.seconds) return t.scheduledDate.seconds * 1000;
+                    if (t.scheduledDate) return new Date(t.scheduledDate).getTime();
+                    return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+                },
+                dailyOrder: t.dailyOrder || 0
+            }));
+
+            const combined = [...mainItems, ...routineItems].sort((a, b) => {
+                // 1. Date Sort (Day Precision)
+                const timeA = a.getTime();
+                const timeB = b.getTime();
+                const dayA = new Date(timeA).setHours(0, 0, 0, 0);
+                const dayB = new Date(timeB).setHours(0, 0, 0, 0);
+
+                if (dayA !== dayB) return dayA - dayB;
+
+                // 2. Daily Order Sort
+                const orderA = a.dailyOrder;
+                const orderB = b.dailyOrder;
+                if (orderA !== 0 && orderB !== 0) return orderA - orderB;
+                if (orderA !== 0) return -1;
+                if (orderB !== 0) return 1;
+
+                // 3. Fallback: Routine first
+                if (a.type !== b.type) return a.type === 'routine' ? -1 : 1;
+
+                // 4. Fallback: Time
+                return timeA - timeB;
+            });
+
+            grouped[staff.name] = combined;
         });
 
         return grouped;
@@ -759,7 +806,7 @@ export default function MobileLayout({
 
                                     {staffList.map(staff => {
                                         const staffData = tasksByStaff[staff.name];
-                                        const totalItems = (staffData?.tasks.length || 0) + (staffData?.routineTasks.length || 0);
+                                        const totalItems = staffData?.length || 0;
                                         const isExpanded = expandedStaff === staff.name;
 
                                         return (
@@ -803,52 +850,143 @@ export default function MobileLayout({
                                                             </div>
                                                         ) : (
                                                             <>
-                                                                {/* Main Tasks */}
-                                                                {staffData?.tasks.map(task => (
-                                                                    <div
-                                                                        key={task.id}
-                                                                        onClick={() => onTaskClick(task)}
-                                                                        className="bg-slate-700/30 rounded-xl p-3 border border-slate-600/30 active:scale-[0.98] transition-transform cursor-pointer"
-                                                                    >
-                                                                        <div className="flex justify-between items-start mb-2">
-                                                                            <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-blue-500/20 text-blue-400">
-                                                                                {StatusLabels[task.status]}
-                                                                            </span>
-                                                                            <span className="text-[10px] text-slate-500 font-mono">#{task.orderNumber}</span>
-                                                                        </div>
-                                                                        <h4 className="font-medium text-white text-sm mb-1 line-clamp-1">{task.title}</h4>
-                                                                        {task.address && (
-                                                                            <div className="flex items-center gap-1.5 text-amber-400/80 text-[11px]">
-                                                                                <MapPin className="w-3 h-3" />
-                                                                                <span className="truncate">{task.address}</span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
+                                                                {staffData.map(item => {
+                                                                    if (item.type === 'routine') {
+                                                                        const task = item.data as RoutineTask;
+                                                                        return (
+                                                                            <div key={task.id} className={`bg-slate-800/80 border ${task.isCompleted ? 'border-green-500/30' : 'border-purple-500/30'} rounded-xl p-4 relative overflow-hidden shadow-sm transition-all`}>
+                                                                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${task.isCompleted ? 'bg-green-500' : 'bg-purple-500'}`}></div>
 
-                                                                {/* Routine Tasks */}
-                                                                {staffData?.routineTasks.map(task => (
-                                                                    <div
-                                                                        key={task.id}
-                                                                        className={`bg-purple-900/20 rounded-xl p-3 border ${task.isCompleted ? 'border-green-500/30' : 'border-purple-500/30'}`}
-                                                                    >
-                                                                        <div className="flex items-start gap-2">
-                                                                            <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
-                                                                            <div className="flex-1">
-                                                                                <h4 className={`font-medium text-sm ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>
-                                                                                    {task.content}
-                                                                                </h4>
-                                                                                {task.customerName && (
-                                                                                    <p className="text-xs text-sky-400 mt-1">{task.customerName}</p>
-                                                                                )}
+                                                                                {/* Header: Alert Icon + Content + Check Button */}
+                                                                                <div className="flex justify-between items-start gap-3 mb-2">
+                                                                                    <div className="flex items-start gap-2 flex-1">
+                                                                                        <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5 animate-pulse" />
+                                                                                        <h4 className={`font-medium text-sm ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>{task.content}</h4>
+                                                                                    </div>
+
+                                                                                    <button
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            onToggleRoutineTask(task.id);
+                                                                                        }}
+                                                                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${task.isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10'}`}
+                                                                                    >
+                                                                                        {task.isCompleted ? <Check className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5 opacity-50" />}
+                                                                                    </button>
+                                                                                </div>
+
+                                                                                <div className="space-y-1.5 mb-2 pl-7">
+                                                                                    <div className="flex items-center justify-between gap-2">
+                                                                                        {task.customerName ? (
+                                                                                            <div className="flex items-center gap-2 text-sky-400 text-xs">
+                                                                                                <User className="w-3 h-3 text-sky-500/70" /> {task.customerName}
+                                                                                            </div>
+                                                                                        ) : <div />}
+
+                                                                                        {task.district && (
+                                                                                            <span className="text-[9px] font-bold text-slate-400 bg-slate-900/30 px-1.5 py-0.5 rounded uppercase whitespace-nowrap">{task.district}</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    {task.address && (
+                                                                                        <div className="flex items-center gap-2 text-amber-300/90 text-xs">
+                                                                                            <MapPin className="w-3 h-3 text-amber-500/70" />
+                                                                                            <span className="truncate">{task.address}</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {task.phoneNumber && (
+                                                                                        <div className="flex items-center gap-2 text-emerald-400 text-xs">
+                                                                                            <Phone className="w-3 h-3 text-emerald-500/70" />
+                                                                                            <a href={`tel:${task.phoneNumber}`} className="hover:text-emerald-300 transition-colors">{task.phoneNumber}</a>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 border-t border-white/5 pt-2 ml-7">
+                                                                                    <span className="flex items-center gap-1">
+                                                                                        <Clock className="w-3 h-3" />
+                                                                                        {new Date(task.createdAt?.seconds * 1000).toLocaleDateString('tr-TR')}
+                                                                                    </span>
+                                                                                    <span className={task.isCompleted ? 'text-green-400 font-bold' : 'text-purple-400 font-medium'}>
+                                                                                        {task.isCompleted ? 'Tamamlandı' : 'Tamamlanmadı'}
+                                                                                    </span>
+                                                                                </div>
                                                                             </div>
-                                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${task.isCompleted ? 'bg-green-500/20 text-green-400' : 'bg-purple-500/20 text-purple-400'
-                                                                                }`}>
-                                                                                {task.isCompleted ? 'Tamam' : 'Bekliyor'}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
+                                                                        );
+                                                                    } else {
+                                                                        const task = item.data as Task;
+                                                                        let cardStyle = "bg-slate-800 border-slate-700/50";
+                                                                        let badgeStyle = "bg-blue-500/20 text-blue-400";
+                                                                        let shadowStyle = "";
+
+                                                                        if (task.checkStatus === 'missing') {
+                                                                            cardStyle = "bg-orange-950/30 border-orange-500/50";
+                                                                            badgeStyle = "bg-orange-500/20 text-orange-400";
+                                                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
+                                                                        } else if (task.checkStatus === 'clean') {
+                                                                            cardStyle = "bg-emerald-950/30 border-emerald-500/50";
+                                                                            badgeStyle = "bg-emerald-500/20 text-emerald-400";
+                                                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]";
+                                                                        }
+
+                                                                        return (
+                                                                            <div
+                                                                                key={task.id}
+                                                                                className={`rounded-2xl p-4 border transition-all relative overflow-hidden ${cardStyle} ${shadowStyle}`}
+                                                                            >
+                                                                                <div className="flex justify-between items-start mb-2 relative z-10">
+                                                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
+                                                                                        {StatusLabels[task.status]}
+                                                                                    </span>
+                                                                                    <div className="flex flex-col items-end">
+                                                                                        <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                                                        {task.district && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{task.district}</span>}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div className="relative z-10">
+                                                                                    <h4 className={`font-bold text-sm mb-2 line-clamp-2 ${task.checkStatus === 'missing' ? 'text-orange-100' : task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-white'}`}>
+                                                                                        {task.title}
+                                                                                    </h4>
+
+                                                                                    <div className="flex items-center gap-2 text-amber-300/90 text-xs mb-3">
+                                                                                        <MapPin className="w-3 h-3 shrink-0 text-amber-500/70" />
+                                                                                        <span className="truncate">{task.address || 'Adres Girilmemiş'}</span>
+                                                                                    </div>
+
+                                                                                    <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                                                                                        <button
+                                                                                            onClick={() => onTaskClick(task)}
+                                                                                            className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
+                                                                                        >
+                                                                                            <Calendar className="w-3.5 h-3.5" /> Detay
+                                                                                        </button>
+
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <button
+                                                                                                onClick={(e) => handleShareTask(task, e)}
+                                                                                                className="w-8 h-8 rounded-full bg-white/5 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                                                            >
+                                                                                                <Share2 className="w-3.5 h-3.5" />
+                                                                                            </button>
+
+                                                                                            {task.phone && (
+                                                                                                <button
+                                                                                                    onClick={(e) => {
+                                                                                                        e.stopPropagation();
+                                                                                                        window.open(`tel:${task.phone}`);
+                                                                                                    }}
+                                                                                                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-white/10 transition-colors"
+                                                                                                >
+                                                                                                    <Phone className="w-3.5 h-3.5" />
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                })}
                                                             </>
                                                         )}
                                                     </div>
