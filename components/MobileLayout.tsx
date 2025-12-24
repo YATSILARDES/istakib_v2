@@ -245,7 +245,7 @@ export default function MobileLayout({
             // Filter tasks: TO_CHECK, no checkStatus, scheduled for today or past
             const staffTasks = tasks.filter(t => {
                 // Basic filters (status, checkStatus, assignee)
-                const basicMatch = t.status === TaskStatus.TO_CHECK &&
+                const basicMatch = t.status !== TaskStatus.CHECK_COMPLETED &&
                     !t.checkStatus &&
                     (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() || t.assignee === staff.name);
 
