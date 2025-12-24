@@ -158,7 +158,10 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
             if (tasks && Array.isArray(tasks)) {
                 tasks.forEach(t => {
                     if (!t) return;
-                    const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
+                    // MATCH MOBILE FILTERING:
+                    // 1. Hide CHECK_COMPLETED
+                    // 2. Hide if checkStatus exists (missing/clean)
+                    const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && !t.checkStatus;
                     if (t.assignee && isTaskActive) {
                         const date = getTaskDate(t);
                         if (isToday(date) || isOverdue(date)) {
@@ -223,7 +226,11 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
         try {
             const combined = [
                 ...tasks.filter(t => {
-                    const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && t.status !== TaskStatus.DEPOSIT_PAID;
+                    // MATCH MOBILE FILTERING:
+                    // 1. Hide CHECK_COMPLETED
+                    // 2. Hide if checkStatus exists (missing/clean)
+                    // 3. Allow DEPOSIT_PAID (removed exclusion)
+                    const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && !t.checkStatus;
                     return (t.assigneeEmail === staffEmail || t.assignee === staffName) && isTaskActive;
                 }).map(t => ({
                     type: 'main' as const,

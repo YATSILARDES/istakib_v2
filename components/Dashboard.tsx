@@ -49,7 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         const myTasks = tasks.filter(t =>
             (t.assignee === currentUser.name || t.assigneeEmail === currentUser.email) &&
             t.status !== TaskStatus.CHECK_COMPLETED &&
-            t.status !== TaskStatus.DEPOSIT_PAID
+            !t.checkStatus // MATCH MOBILE: Hide if checkStatus exists, Allow DEPOSIT_PAID
         ).length;
         // Count Routine Tasks assigned to me (uncompleted)
         const myRoutine = routineTasks.filter(t =>

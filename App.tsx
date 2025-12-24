@@ -1,4 +1,4 @@
-/// <reference types="vite/client" />
+﻿/// <reference types="vite/client" />
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, Loader2 } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
@@ -106,12 +106,12 @@ function App() {
             const normalizedTargetEmails = allTargetEmails.map(e => e.toLowerCase());
 
             if (normalizedTargetEmails.includes(currentUserEmail)) {
-              const message = `🔔 ${task.title}: ${StatusLabels[task.status]} aşamasına geldi.`;
+              const message = `ğŸ”” ${task.title}: ${StatusLabels[task.status]} aÅŸamasÄ±na geldi.`;
 
-              // 1. Masaüstü Bildirimi (Tarayıcı izni varsa)
+              // 1. MasaÃ¼stÃ¼ Bildirimi (TarayÄ±cÄ± izni varsa)
               try {
                 if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('İş Durumu Güncellendi', {
+                  new Notification('Ä°ÅŸ Durumu GÃ¼ncellendi', {
                     body: message,
                     icon: '/icon.png'
                   });
@@ -120,7 +120,7 @@ function App() {
                 console.log('Notification API not supported');
               }
 
-              // 2. Uygulama İçi Bildirim (Toast)
+              // 2. Uygulama Ä°Ã§i Bildirim (Toast)
               setToast({ message, visible: true });
               setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
 
@@ -333,7 +333,7 @@ function App() {
       } else {
         await addDoc(collection(db, 'tasks'), {
           orderNumber: nextOrderNumber,
-          title: taskData.title || 'Yeni Müşteri',
+          title: taskData.title || 'Yeni MÃ¼ÅŸteri',
           jobDescription: taskData.jobDescription || '',
           status: taskData.status || TaskStatus.TO_CHECK,
           assignee: taskData.assignee || '',
@@ -357,7 +357,7 @@ function App() {
       setIsModalOpen(false);
     } catch (e) {
       console.error("Error saving task: ", e);
-      setError("Kayıt sırasında hata oluştu.");
+      setError("KayÄ±t sÄ±rasÄ±nda hata oluÅŸtu.");
     }
   };
 
@@ -367,7 +367,7 @@ function App() {
       setIsModalOpen(false);
     } catch (e) {
       console.error("Error deleting task: ", e);
-      setError("Silme sırasında hata oluştu.");
+      setError("Silme sÄ±rasÄ±nda hata oluÅŸtu.");
     }
   };
 
@@ -452,7 +452,7 @@ function App() {
 
       await addDoc(collection(db, 'tasks'), {
         orderNumber: nextOrderNumber,
-        title: routineTask.customerName || 'İsimsiz Müşteri',
+        title: routineTask.customerName || 'Ä°simsiz MÃ¼ÅŸteri',
         jobDescription: '',
         description: '',
         status: targetStatus,
@@ -470,12 +470,12 @@ function App() {
 
       await deleteDoc(doc(db, 'routine_tasks', taskId));
 
-      setToast({ message: 'Eksik başarıyla karta dönüştürüldü.', visible: true });
+      setToast({ message: 'Eksik baÅŸarÄ±yla karta dÃ¶nÃ¼ÅŸtÃ¼rÃ¼ldÃ¼.', visible: true });
       setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
 
     } catch (e) {
       console.error("Convert routine error:", e);
-      setError("Dönüştürme işlemi başarısız.");
+      setError("DÃ¶nÃ¼ÅŸtÃ¼rme iÅŸlemi baÅŸarÄ±sÄ±z.");
     }
   };
 
@@ -494,7 +494,7 @@ function App() {
       }
     } catch (error) {
       console.error("Reorder Error:", error);
-      alert("Sıralama güncellenirken hata oluştu.");
+      alert("SÄ±ralama gÃ¼ncellenirken hata oluÅŸtu.");
     }
   };
 
@@ -556,7 +556,7 @@ function App() {
   };
 
   const handleRemoveStaff = async (name: string) => {
-    if (!confirm(`${name} isimli personeli silmek istediğinize emin misiniz?`)) return;
+    if (!confirm(`${name} isimli personeli silmek istediÄŸinize emin misiniz?`)) return;
 
     const currentPinned = appSettings.pinnedStaff || [];
     const newPinned = currentPinned.filter(p => p !== name);
@@ -584,7 +584,7 @@ function App() {
 
   // --- Render ---
 
-  if (loading) return <div className="h-screen bg-slate-900 flex items-center justify-center text-white">Yükleniyor...</div>;
+  if (loading) return <div className="h-screen bg-slate-900 flex items-center justify-center text-white">YÃ¼kleniyor...</div>;
   if (!user) return <Login />;
 
   if (permissionsLoading) {
@@ -601,7 +601,7 @@ function App() {
   const allNames = Array.from(new Set([...taskAssignees, ...pinnedStaffNames, ...registeredStaff.map(s => s.name)]));
   const allStaff: StaffMember[] = allNames.map(name => {
     const registered = registeredStaff.find(s => s.name === name);
-    return registered || { name, email: '' }; // Kayıtlı değilse emailsiz döndür
+    return registered || { name, email: '' }; // KayÄ±tlÄ± deÄŸilse emailsiz dÃ¶ndÃ¼r
   });
 
   // Tab Switching Logic
@@ -699,6 +699,68 @@ function App() {
     });
   }
 
+
+  // --- MATCH MOBILE LAYOUT FILTERING FOR DESKTOP SIDE PANEL ---
+  const mobileLikeMyTasks = tasks.filter(t => {
+    // 1. Assignment Match
+    const emailMatch = t.assigneeEmail && user?.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
+    const nameMatch = userPermissions?.name && t.assignee === userPermissions.name;
+    if (!emailMatch && !nameMatch) return false;
+
+    // 2. Status Filters (Hide CHECK_COMPLETED, Hide if checkStatus exists)
+    if (t.status === TaskStatus.CHECK_COMPLETED) return false;
+    if (t.checkStatus) return false;
+
+    // 3. Date Filter (Hide Future)
+    let taskDate: Date | null = null;
+    if (t.scheduledDate) {
+      taskDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+    } else if (t.date) {
+      const d = new Date(t.date);
+      if (!isNaN(d.getTime())) taskDate = d;
+    }
+
+    if (taskDate) {
+      const today = new Date();
+      taskDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      if (taskDate.getTime() > today.getTime()) return false; // Future -> Hide
+    }
+
+    return true;
+  });
+
+  const mobileLikeRoutineTasks = routineTasks.filter(t => {
+    // 1. Assignment Match
+    const emailMatch = t.assigneeEmail && user?.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
+    const nameMatch = userPermissions?.name && t.assignee === userPermissions.name;
+    if (!emailMatch && !nameMatch) return false;
+
+    // 2. Date Filter
+    let filterDate: Date | null = null;
+    if (t.scheduledDate) {
+      filterDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+    } else if (t.createdAt) {
+      // Legacy Schedule check logic from MobileLayout
+      const d = new Date(t.createdAt.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
+      const today = new Date();
+      d.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      if (d.getTime() > today.getTime()) return false; // Hide Future CreatedAt
+    }
+
+    if (filterDate) {
+      const today = new Date();
+      filterDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      // Show if Today or (Past AND Not Completed)
+      if (filterDate.getTime() > today.getTime()) return false;
+      if (filterDate.getTime() < today.getTime() && t.isCompleted) return false; // Hide Past Completed as per Mobile
+    }
+
+    return true;
+  });
+
   // RETURN RENDER
   const uniqueUsers = (() => {
     const allEmails = new Set<string>();
@@ -760,7 +822,7 @@ function App() {
       {activeTab === 'assignment' && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col">
           <div className="flex items-center justify-between p-4 border-b bg-slate-50">
-            <h2 className="font-bold text-lg">Görev Dağıtımı</h2>
+            <h2 className="font-bold text-lg">GÃ¶rev DaÄŸÄ±tÄ±mÄ±</h2>
             <button onClick={() => setActiveTab('dashboard')} className="p-2 bg-slate-200 rounded-full"><X className="w-6 h-6" /></button>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -852,11 +914,11 @@ function App() {
               {/* Global Toolbar */}
               <div className="px-6 py-2 flex items-center justify-between border-b border-[#34495e] bg-[#2c3e50] shadow-sm shrink-0 z-10 w-full text-white">
                 <div className="flex items-center gap-4">
-                  {/* Removed 'Panel'e Dön' from here */}
+                  {/* Removed 'Panel'e DÃ¶n' from here */}
                   <div>
-                    {/* <h1 className="font-bold text-lg tracking-tight text-white">ONAY MÜHENDİSLİK</h1> */}
+                    {/* <h1 className="font-bold text-lg tracking-tight text-white">ONAY MÃœHENDÄ°SLÄ°K</h1> */}
                     <div className="flex items-center gap-2">
-                      <p className="text-xs text-slate-400">İş Takip V2</p>
+                      <p className="text-xs text-slate-400">Ä°ÅŸ Takip V2</p>
                       {import.meta.env.DEV && (
                         <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
                       )}
@@ -877,7 +939,7 @@ function App() {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
-                      placeholder="Müşteri Ara..."
+                      placeholder="MÃ¼ÅŸteri Ara..."
                     />
                     {searchTerm && (
                       <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
@@ -893,7 +955,7 @@ function App() {
                     <button
                       onClick={() => setViewMode('dashboard')}
                       className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-2 rounded-full transition-all hover:rotate-90 border border-slate-600 shadow-sm"
-                      title="Panele Dön"
+                      title="Panele DÃ¶n"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -906,10 +968,10 @@ function App() {
                     <div className="hidden md:block text-right">
                       <div className="text-xs font-bold text-white leading-tight">{user?.email?.split('@')[0]}</div>
                       <div className="flex items-center gap-2 justify-end">
-                        <div className="text-[10px] text-slate-400 font-medium">{userPermissions?.role === 'admin' ? 'Yönetici' : 'Personel'}</div>
+                        <div className="text-[10px] text-slate-400 font-medium">{userPermissions?.role === 'admin' ? 'YÃ¶netici' : 'Personel'}</div>
                         <button onClick={handleLogout} className="text-[10px] font-bold text-red-400 hover:text-red-300 hover:underline transition-colors flex items-center gap-1">
                           <LogOut className="w-3 h-3" />
-                          Çıkış
+                          Ã‡Ä±kÄ±ÅŸ
                         </button>
                       </div>
                     </div>
@@ -1007,7 +1069,7 @@ function App() {
                     <div className="flex-1 flex overflow-hidden">
                       <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
                         <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
-                          <span>✅ Hazır / Sorunsuz İşler</span>
+                          <span>âœ… HazÄ±r / Sorunsuz Ä°ÅŸler</span>
                           {/* IF CHECK_COMPLETED: Clean = Clean check AND Project Drawn. ELSE: Clean Check */}
                           <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn)).length}</span>
                         </div>
@@ -1025,7 +1087,7 @@ function App() {
                       </div>
                       <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
                         <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-                          <span>⚠️ Eksiği Olan İşler {boardFilter === TaskStatus.CHECK_COMPLETED ? '(Proje/Kontrol)' : ''}</span>
+                          <span>âš ï¸ EksiÄŸi Olan Ä°ÅŸler {boardFilter === TaskStatus.CHECK_COMPLETED ? '(Proje/Kontrol)' : ''}</span>
                           {/* IF CHECK_COMPLETED: Missing = Missing Check OR Project NOT Drawn. ELSE: Missing Check */}
                           <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing' || (boardFilter === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length}</span>
                         </div>
@@ -1043,16 +1105,16 @@ function App() {
                       </div>
                     </div>
                   ) : (
-                    <KanbanBoard
-                      tasks={visibleTasks}
-                      routineTasks={visibleRoutineTasks}
-                      myTasks={[]}
-                      onTaskClick={handleTaskClick}
-                      onToggleRoutineTask={handleToggleRoutineTask}
-                      visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
-                      showRoutineColumn={false}
-                      staffName={userPermissions?.name}
-                    />
+                  <KanbanBoard
+                    tasks={visibleTasks}
+                    routineTasks={mobileLikeRoutineTasks}
+                    myTasks={mobileLikeMyTasks}
+                    onTaskClick={handleTaskClick}
+                    onToggleRoutineTask={handleToggleRoutineTask}
+                    visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
+                    showRoutineColumn={false}
+                    staffName={userPermissions?.name}
+                  />
                   )}
                 </div>
               )}
