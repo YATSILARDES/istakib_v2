@@ -12,6 +12,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.istakibi.android.ui.screens.DashboardScreen
 import com.istakibi.android.ui.screens.LoginScreen
+import com.istakibi.android.ui.screens.TaskDetailScreen
+import com.google.firebase.auth.FirebaseAuth
 import com.istakibi.android.ui.theme.IsTakibiAndroidTheme
 
 class MainActivity : ComponentActivity() {
@@ -38,10 +40,24 @@ class MainActivity : ComponentActivity() {
                         composable("dashboard") {
                             DashboardScreen(
                                 onTaskClick = { taskId ->
-                                    // Gelecekte detay sayfasına gitmek için burası kullanılacak
-                                    println("Task tıklandı: $taskId")
+                                    navController.navigate("detail/$taskId")
+                                },
+                                onSignOut = {
+                                    FirebaseAuth.getInstance().signOut()
+                                    navController.navigate("login") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 }
                             )
+                        }
+                        composable("detail/{taskId}") { backStackEntry ->
+                            val taskId = backStackEntry.arguments?.getString("taskId")
+                            if (taskId != null) {
+                                TaskDetailScreen(
+                                    taskId = taskId,
+                                    onBackClick = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
                 }

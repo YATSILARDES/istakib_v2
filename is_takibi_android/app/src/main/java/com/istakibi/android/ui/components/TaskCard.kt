@@ -20,12 +20,44 @@ fun TaskCard(
     task: Task,
     onClick: () -> Unit
 ) {
+    val statusLabel = when (task.status) {
+        "TO_CHECK" -> "Kontrol Bekliyor"
+        "CHECK_COMPLETED" -> "Kontrol Yapıldı"
+        "DEPOSIT_PAID" -> "Depozito Yatırıldı"
+        "GAS_OPENING" -> "Gaz Açılımı"
+        "GAS_OPENED" -> "Gaz Açıldı"
+        "BILL_CUT" -> "Fatura Kesildi"
+        else -> task.status
+    }
+
     val statusColor = when (task.status) {
-        "Kontrol Bekliyor" -> Color(0xFFF59E0B) // amber
-        "Kontrol Yapıldı" -> Color(0xFF10B981) // emerald
-        "Depozito Yatırıldı" -> Color(0xFF3B82F6) // blue
-        "Gaz Açıldı" -> Color(0xFF8B5CF6) // violet
+        "TO_CHECK" -> Color(0xFFF59E0B) // amber
+        "CHECK_COMPLETED" -> Color(0xFF10B981) // emerald
+        "DEPOSIT_PAID" -> Color(0xFF3B82F6) // blue
+        "GAS_OPENING" -> Color(0xFF8B5CF6) // violet
+        "GAS_OPENED" -> Color(0xFF06B6D4) // cyan
+        "BILL_CUT" -> Color(0xFF64748B) // slate
         else -> Color(0xFF64748B)
+    }
+
+    // Determine Card Colors based on checkStatus
+    val isMissing = task.checkStatus == "missing"
+    val isClean = task.checkStatus == "clean"
+
+    val containerColor = when {
+        isMissing -> Color(0xFFFEE2E2) // Red 100
+        isClean -> Color(0xFFDCFCE7) // Green 100
+        else -> Color(0xFF1E293B) // Slate 800
+    }
+
+    val contentColor = when {
+        isMissing || isClean -> Color.Black
+        else -> Color.White
+    }
+
+    val subTextColor = when {
+        isMissing || isClean -> Color(0xFF374151) // Gray 700
+        else -> Color(0xFF94A3B8) // Slate 400
     }
 
     Card(
@@ -34,7 +66,7 @@ fun TaskCard(
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E293B) // slate-800
+            containerColor = containerColor
         )
     ) {
         Column(
@@ -48,7 +80,7 @@ fun TaskCard(
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
-                    text = task.status.uppercase(),
+                    text = statusLabel,
                     color = statusColor,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
@@ -60,7 +92,7 @@ fun TaskCard(
             // Müşteri Adı
             Text(
                 text = task.title,
-                color = Color.White,
+                color = contentColor,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -68,22 +100,24 @@ fun TaskCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             // Adres
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF59E0B).copy(alpha = 0.1f))
-                    .padding(8.dp)
-            ) {
-                Text(
-                    text = "📍 ",
-                    fontSize = 12.sp
-                )
-                Text(
-                    text = task.address,
-                    color = Color(0xFFFCD34D), // amber-300
-                    fontSize = 12.sp
-                )
+            if (!task.address.isNullOrEmpty()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isMissing || isClean) Color.White.copy(alpha=0.5f) else Color(0xFFF59E0B).copy(alpha = 0.1f))
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = "📍 ",
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = task.address,
+                        color = if (isMissing || isClean) Color.Black else Color(0xFFFCD34D), // amber-300
+                        fontSize = 12.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -96,32 +130,24 @@ fun TaskCard(
                 Button(
                     onClick = { },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(alpha = 0.1f)
+                        containerColor = if (isMissing || isClean) Color.Black.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.1f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("📅 Detay", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                    Text("📅 Detay", color = subTextColor, fontSize = 12.sp)
                 }
 
                 Row {
-                    IconButton(
-                        onClick = { },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF3B82F6).copy(alpha = 0.2f))
-                    ) {
-                        Text("📤", fontSize = 16.sp)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF10B981).copy(alpha = 0.2f))
-                    ) {
-                        Text("📞", fontSize = 16.sp)
+                    if (!task.phone.isNullOrEmpty()) {
+                        IconButton(
+                            onClick = { },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF10B981).copy(alpha = 0.2f))
+                        ) {
+                            Text("📞", fontSize = 16.sp)
+                        }
                     }
                 }
             }

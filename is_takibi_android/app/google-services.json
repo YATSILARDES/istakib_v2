@@ -1,0 +1,29 @@
+{
+    "project_info": {
+        "project_number": "307165484762",
+        "project_id": "is-takip-11d57",
+        "storage_bucket": "is-takip-11d57.firebasestorage.app"
+    },
+    "client": [
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:307165484762:android:c4b1a1883a5dcfdadbb7e3",
+                "android_client_info": {
+                    "package_name": "com.istakibi.android"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyA5rxmOB-AgBVzqoGb0l32atBO6bU5-sIU"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        }
+    ],
+    "configuration_version": "1"
+}

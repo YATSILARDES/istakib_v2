@@ -320,9 +320,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     className={`
                       h-28 flex flex-col justify-between px-3 py-3 rounded-xl border transition-all cursor-pointer group relative shadow-md hover:shadow-xl hover:-translate-y-1
                       ${task.checkStatus === 'missing'
-                        ? 'bg-gradient-to-br from-white to-orange-50 border-l-[6px] border-l-orange-500 border-slate-200'
+                        ? 'bg-red-100 border-l-[8px] border-l-red-600 border-red-200 shadow-[0_0_15px_-5px_rgba(220,38,38,0.4)]'
                         : task.checkStatus === 'clean'
-                          ? 'bg-gradient-to-br from-white to-emerald-50 border-l-[6px] border-l-emerald-500 border-slate-200'
+                          ? 'bg-green-100 border-l-[8px] border-l-green-600 border-green-200 shadow-[0_0_15px_-5px_rgba(22,163,74,0.4)]'
                           : (!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED)
                             ? 'bg-gradient-to-br from-white to-orange-50 border-l-[6px] border-l-orange-500 border-slate-200 shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]'
                             : 'bg-gradient-to-br from-white to-slate-50 border-l-[6px] border-l-slate-400 border-slate-200 hover:border-l-blue-500'
@@ -330,14 +330,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     `}
                   >
                     {/* Row Number Badge - Compact */}
-                    <div className={`absolute top-2 right-2 text-[10px] font-mono font-bold opacity-75 ${task.checkStatus === 'missing' ? 'text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded' :
-                      task.checkStatus === 'clean' ? 'text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded' : 'text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded'
+                    <div className={`absolute top-2 right-2 text-[10px] font-mono font-bold opacity-90 ${task.checkStatus === 'missing' ? 'text-red-700 bg-red-200 px-1.5 py-0.5 rounded border border-red-300' :
+                      task.checkStatus === 'clean' ? 'text-green-700 bg-green-200 px-1.5 py-0.5 rounded border border-green-300' : 'text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded'
                       }`}>
                       #{task.orderNumber}
                     </div>
 
                     <div className="flex items-center gap-2 mb-1 pr-8">
-                      <h4 className="font-bold text-sm leading-snug text-slate-800 group-hover:text-blue-700 transition-colors line-clamp-1">
+                      <h4 className={`font-bold text-sm leading-snug transition-colors line-clamp-1 ${task.checkStatus === 'missing' ? 'text-red-900 group-hover:text-red-700' : task.checkStatus === 'clean' ? 'text-green-900 group-hover:text-green-700' : 'text-slate-800 group-hover:text-blue-700'}`}>
                         {task.title}
                       </h4>
 
