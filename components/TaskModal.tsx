@@ -332,8 +332,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">Telefon</label>
                         <div className="flex gap-2">
-                          <input type="tel" value={formData.phone || ''} onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                          <input type="text" inputMode="text" value={formData.phone || ''} onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="05XX XXX XX XX" />
                           {formData.phone && (
                             <a href={`tel:${formData.phone}`} className="bg-green-600 hover:bg-green-500 text-white p-2.5 rounded-lg">
                               <PhoneCall className="w-5 h-5" />
