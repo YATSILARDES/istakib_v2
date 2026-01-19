@@ -222,8 +222,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                 date: d,
                 label: safeFormatDate(d),
                 isToday: isToday(d),
-                tasks: [] as Task[],
-                routine: [] as RoutineTask[]
+                items: [] as Array<{ type: 'main' | 'routine', data: Task | RoutineTask }>
             });
         }
 
@@ -257,14 +256,20 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
             combined.forEach(item => {
                 const dayObj = days.find(day => isSameDay(day.date, item.date));
                 if (dayObj) {
-                    if (item.type === 'main') dayObj.tasks.push(item.data as Task);
-                    else dayObj.routine.push(item.data as RoutineTask);
+                    dayObj.items.push(item);
                 }
             });
 
             days.forEach(day => {
-                day.tasks.sort((a, b) => (a.dailyOrder || 0) - (b.dailyOrder || 0));
-                day.routine.sort((a, b) => (a.dailyOrder || 0) - (b.dailyOrder || 0));
+                day.items.sort((a, b) => {
+                    const orderA = a.dailyOrder || 0;
+                    const orderB = b.dailyOrder || 0;
+                    if (orderA === 0 && orderB === 0) {
+                        if (a.type === b.type) return 0;
+                        return a.type === 'routine' ? -1 : 1;
+                    }
+                    return orderA - orderB;
+                });
             });
 
         } catch (error) {
@@ -310,49 +315,53 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 
                                     {/* Tasks Container */}
                                     <div className="flex-1 p-2 space-y-2 overflow-y-auto custom-scrollbar">
-                                        {/* Routine Tasks */}
-                                        {day.routine.map(t => (
-                                            <div key={t.id} className="bg-purple-50 border border-purple-100 p-2 rounded-lg group/item">
-                                                <div className="flex gap-2">
-                                                    <div className="mt-0.5 bg-slate-700/20 text-slate-500 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0">
-                                                        {day.routine.indexOf(t) + 1}
-                                                    </div>
-                                                    <button
-                                                        onClick={() => onToggleRoutineTask(t.id, t.isCompleted)}
-                                                        className="mt-0.5 w-4 h-4 rounded border border-purple-300 bg-white flex items-center justify-center hover:bg-purple-500 hover:border-purple-500 hover:text-white transition-colors shrink-0"
-                                                    >
-                                                        <CheckCircle2 className="w-3 h-3 opacity-0 group-hover/item:opacity-100" />
-                                                    </button>
-                                                    <div className="min-w-0">
-                                                        <div className="text-[10px] font-bold text-purple-900 truncate">{t.customerName}</div>
-                                                        <div className="text-[10px] text-purple-700 leading-tight">{t.content}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-
-                                        {/* Main Tasks */}
-                                        {day.tasks.map(t => (
-                                            <div
-                                                key={t.id}
-                                                onClick={() => onTaskClick(t)}
-                                                className="bg-slate-50 border border-slate-200 p-2 rounded-lg group/task cursor-pointer hover:border-orange-300 hover:shadow-md transition-all active:scale-95"
-                                            >
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <div className="flex items-center gap-1">
-                                                        <div className="bg-slate-200 text-slate-500 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold">
-                                                            {day.tasks.indexOf(t) + 1}
+                                        {day.items.map((item, index) => {
+                                            if (item.type === 'routine') {
+                                                const t = item.data as RoutineTask;
+                                                return (
+                                                    <div key={t.id} className="bg-purple-50 border border-purple-100 p-2 rounded-lg group/item">
+                                                        <div className="flex gap-2">
+                                                            <div className="mt-0.5 bg-slate-700/20 text-slate-500 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0">
+                                                                {index + 1}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => onToggleRoutineTask(t.id, t.isCompleted)}
+                                                                className="mt-0.5 w-4 h-4 rounded border border-purple-300 bg-white flex items-center justify-center hover:bg-purple-500 hover:border-purple-500 hover:text-white transition-colors shrink-0"
+                                                            >
+                                                                <CheckCircle2 className="w-3 h-3 opacity-0 group-hover/item:opacity-100" />
+                                                            </button>
+                                                            <div className="min-w-0">
+                                                                <div className="text-[10px] font-bold text-purple-900 truncate">{t.customerName}</div>
+                                                                <div className="text-[10px] text-purple-700 leading-tight">{t.content}</div>
+                                                            </div>
                                                         </div>
-                                                        <span className="text-[9px] font-bold bg-white border border-slate-100 px-1 rounded text-slate-500">#{t.orderNumber}</span>
                                                     </div>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500' : 'bg-blue-500'}`} />
-                                                </div>
-                                                <div className="text-[10px] font-bold text-slate-700 mb-1">{t.title}</div>
-                                                <div className="text-[9px] text-slate-500 truncate">{t.district}</div>
-                                            </div>
-                                        ))}
+                                                );
+                                            } else {
+                                                const t = item.data as Task;
+                                                return (
+                                                    <div
+                                                        key={t.id}
+                                                        onClick={() => onTaskClick(t)}
+                                                        className="bg-slate-50 border border-slate-200 p-2 rounded-lg group/task cursor-pointer hover:border-orange-300 hover:shadow-md transition-all active:scale-95"
+                                                    >
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <div className="flex items-center gap-1">
+                                                                <div className="bg-slate-200 text-slate-500 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold">
+                                                                    {index + 1}
+                                                                </div>
+                                                                <span className="text-[9px] font-bold bg-white border border-slate-100 px-1 rounded text-slate-500">#{t.orderNumber}</span>
+                                                            </div>
+                                                            <div className={`w-1.5 h-1.5 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500' : 'bg-blue-500'}`} />
+                                                        </div>
+                                                        <div className="text-[10px] font-bold text-slate-700 mb-1">{t.title}</div>
+                                                        <div className="text-[9px] text-slate-500 truncate">{t.district}</div>
+                                                    </div>
+                                                );
+                                            }
+                                        })}
 
-                                        {day.routine.length === 0 && day.tasks.length === 0 && (
+                                        {day.items.length === 0 && (
                                             <div className="h-20 flex items-center justify-center opacity-30">
                                                 <div className="w-1 h-1 bg-slate-400 rounded-full mx-0.5" />
                                                 <div className="w-1 h-1 bg-slate-400 rounded-full mx-0.5" />
@@ -416,68 +425,74 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                         </div>
                                     ) : (
                                         <>
-                                            {/* Routine Tasks Section */}
-                                            {staff.activeRoutine.length > 0 && (
+                                            <>
                                                 <div className="space-y-2">
-                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1 flex items-center gap-1">
-                                                        <div className="w-1 h-1 bg-purple-400 rounded-full" /> Eksikler ({staff.activeRoutine.length})
-                                                    </div>
-                                                    {staff.activeRoutine.map((t, index) => (
-                                                        <div key={t.id} className="bg-purple-50 border border-purple-100 p-2.5 rounded-xl flex flex-row gap-2 hover:bg-purple-100 transition-colors group/item">
-                                                            <div className="mt-0.5 bg-slate-700/10 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">
-                                                                {index + 1}
-                                                            </div>
-                                                            <button
-                                                                onClick={() => onToggleRoutineTask(t.id, t.isCompleted)}
-                                                                className="mt-0.5 w-5 h-5 rounded border border-purple-300 bg-white flex items-center justify-center hover:bg-purple-500 hover:border-purple-500 hover:text-white transition-colors shrink-0"
-                                                                title="Tamamlandı İşaretle"
-                                                            >
-                                                                <CheckCircle2 className="w-3.5 h-3.5 opacity-0 group-hover/item:opacity-100" />
-                                                            </button>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex justify-between items-start">
-                                                                    <span className="font-bold text-xs text-purple-900 line-clamp-1">{t.customerName || 'İsimsiz Müşteri'}</span>
-                                                                    {t.district && <span className="text-[9px] bg-white/50 px-1.5 py-0.5 rounded text-purple-700 font-bold">{t.district}</span>}
-                                                                </div>
-                                                                <p className="text-[10px] text-purple-800/80 line-clamp-1">{t.content}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            {/* Main Tasks Section */}
-                                            {staff.activeTasks.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1 flex items-center gap-1">
-                                                        <div className="w-1 h-1 bg-blue-400 rounded-full" /> Ana İşler ({staff.activeTasks.length})
-                                                    </div>
-                                                    {staff.activeTasks.map(t => (
-                                                        <div
-                                                            key={t.id}
-                                                            onClick={() => onTaskClick(t)}
-                                                            className="bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm hover:border-orange-300 transition-colors group/task flex flex-col gap-2 cursor-pointer hover:shadow-md active:scale-95"
-                                                        >
-                                                            <div>
-                                                                <div className="flex justify-between items-start mb-1">
-                                                                    <div className="flex items-center gap-1">
-                                                                        <div className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold">
-                                                                            {staff.activeTasks.indexOf(t) + 1}
-                                                                        </div>
-                                                                        <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 rounded">#{t.orderNumber}</span>
-                                                                        <span className="text-xs font-bold text-slate-700">{t.title}</span>
+                                                    {/* Unified List */}
+                                                    {[
+                                                        ...staff.activeRoutine.map(t => ({ type: 'routine' as const, data: t, dailyOrder: t.dailyOrder || 0 })),
+                                                        ...staff.activeTasks.map(t => ({ type: 'main' as const, data: t, dailyOrder: t.dailyOrder || 0 }))
+                                                    ].sort((a, b) => {
+                                                        const orderA = a.dailyOrder || 0;
+                                                        const orderB = b.dailyOrder || 0;
+                                                        if (orderA === 0 && orderB === 0) {
+                                                            if (a.type === b.type) return 0;
+                                                            return a.type === 'routine' ? -1 : 1;
+                                                        }
+                                                        return orderA - orderB;
+                                                    }).map((item, index) => {
+                                                        if (item.type === 'routine') {
+                                                            const t = item.data as RoutineTask;
+                                                            return (
+                                                                <div key={t.id} className="bg-purple-50 border border-purple-100 p-2.5 rounded-xl flex flex-row gap-2 hover:bg-purple-100 transition-colors group/item">
+                                                                    <div className="mt-0.5 bg-slate-700/10 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">
+                                                                        {index + 1}
                                                                     </div>
-                                                                    <div className={`w-2 h-2 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
+                                                                    <button
+                                                                        onClick={() => onToggleRoutineTask(t.id, t.isCompleted)}
+                                                                        className="mt-0.5 w-5 h-5 rounded border border-purple-300 bg-white flex items-center justify-center hover:bg-purple-500 hover:border-purple-500 hover:text-white transition-colors shrink-0"
+                                                                        title="Tamamlandı İşaretle"
+                                                                    >
+                                                                        <CheckCircle2 className="w-3.5 h-3.5 opacity-0 group-hover/item:opacity-100" />
+                                                                    </button>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex justify-between items-start">
+                                                                            <span className="font-bold text-xs text-purple-900 line-clamp-1">{t.customerName || 'İsimsiz Müşteri'}</span>
+                                                                            {t.district && <span className="text-[9px] bg-white/50 px-1.5 py-0.5 rounded text-purple-700 font-bold">{t.district}</span>}
+                                                                        </div>
+                                                                        <p className="text-[10px] text-purple-800/80 line-clamp-1">{t.content}</p>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex items-center justify-between text-[10px]">
-                                                                    <span className="text-slate-500">{StatusLabels[t.status]}</span>
-                                                                    {t.district && <span className="font-medium text-slate-400">{t.district}</span>}
+                                                            );
+                                                        } else {
+                                                            const t = item.data as Task;
+                                                            return (
+                                                                <div
+                                                                    key={t.id}
+                                                                    onClick={() => onTaskClick(t)}
+                                                                    className="bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm hover:border-orange-300 transition-colors group/task flex flex-col gap-2 cursor-pointer hover:shadow-md active:scale-95"
+                                                                >
+                                                                    <div>
+                                                                        <div className="flex justify-between items-start mb-1">
+                                                                            <div className="flex items-center gap-1">
+                                                                                <div className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold">
+                                                                                    {index + 1}
+                                                                                </div>
+                                                                                <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 rounded">#{t.orderNumber}</span>
+                                                                                <span className="text-xs font-bold text-slate-700">{t.title}</span>
+                                                                            </div>
+                                                                            <div className={`w-2 h-2 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
+                                                                        </div>
+                                                                        <div className="flex items-center justify-between text-[10px]">
+                                                                            <span className="text-slate-500">{StatusLabels[t.status]}</span>
+                                                                            {t.district && <span className="font-medium text-slate-400">{t.district}</span>}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                            );
+                                                        }
+                                                    })}
                                                 </div>
-                                            )}
+                                            </>
                                         </>
                                     )}
                                 </div>
