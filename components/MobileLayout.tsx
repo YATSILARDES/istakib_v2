@@ -309,17 +309,12 @@ export default function MobileLayout({
                 if (dayA !== dayB) return dayA - dayB;
 
                 // 2. Daily Order Sort
-                const orderA = a.dailyOrder;
-                const orderB = b.dailyOrder;
-                if (orderA !== 0 && orderB !== 0) return orderA - orderB;
-                if (orderA !== 0) return -1;
-                if (orderB !== 0) return 1;
-
-                // 3. Fallback: Routine first
-                if (a.type !== b.type) return a.type === 'routine' ? -1 : 1;
-
-                // 4. Fallback: Time
-                return timeA - timeB;
+                // Matched with AssignmentView Week Sorting
+                if (a.dailyOrder === 0 && b.dailyOrder === 0) {
+                    if (a.type === b.type) return 0;
+                    return a.type === 'routine' ? -1 : 1;
+                }
+                return a.dailyOrder - b.dailyOrder;
             });
 
             grouped[staff.name] = combined;
@@ -365,23 +360,12 @@ export default function MobileLayout({
             if (dayA !== dayB) return dayA - dayB;
 
             // 2. Daily Order Sort
-            const orderA = a.dailyOrder;
-            const orderB = b.dailyOrder;
-
-            // If both have order, use it
-            if (orderA !== 0 && orderB !== 0) return orderA - orderB;
-
-            // If one has order, it comes first? Or last? 
-            // In Calendar we append new items (order=0) at the end. 
-            // So ordered items (1,2,3) come before 0.
-            if (orderA !== 0) return -1;
-            if (orderB !== 0) return 1;
-
-            // 3. Fallback: Routine first (Legacy preference)
-            if (a.type !== b.type) return a.type === 'routine' ? -1 : 1;
-
-            // 4. Fallback: Time
-            return timeA - timeB;
+            // Matched with AssignmentView Week Sorting
+            if (a.dailyOrder === 0 && b.dailyOrder === 0) {
+                if (a.type === b.type) return 0;
+                return a.type === 'routine' ? -1 : 1;
+            }
+            return a.dailyOrder - b.dailyOrder;
         });
     }, [displayedTasks, displayedRoutineTasks, activeTab]);
 
@@ -627,6 +611,9 @@ export default function MobileLayout({
                                                         {/* Header: Alert Icon + Content + Check Button */}
                                                         <div className="flex justify-between items-start gap-3 mb-2">
                                                             <div className="flex items-start gap-2 flex-1">
+                                                                <div className="bg-slate-700/50 text-slate-300 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                                                                    {index + 1}
+                                                                </div>
                                                                 <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5 animate-pulse" />
                                                                 <h4 className={`font-medium text-sm ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>{task.content}</h4>
                                                             </div>
@@ -705,8 +692,13 @@ export default function MobileLayout({
                                                                 {StatusLabels[task.status]}
                                                             </span>
                                                             <div className="flex flex-col items-end">
-                                                                <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
-                                                                {task.district && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{task.district}</span>}
+                                                                <div className="flex items-center gap-1">
+                                                                    <div className="bg-blue-500/20 text-blue-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold">
+                                                                        {index + 1}
+                                                                    </div>
+                                                                    <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                                </div>
+                                                                {task.district && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{task.district}</span>}
                                                             </div>
                                                         </div>
 
@@ -860,6 +852,9 @@ export default function MobileLayout({
                                                                                 {/* Header: Alert Icon + Content + Check Button */}
                                                                                 <div className="flex justify-between items-start gap-3 mb-2">
                                                                                     <div className="flex items-start gap-2 flex-1">
+                                                                                        <div className="bg-slate-700/50 text-slate-300 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                                                                                            {staffData.indexOf(item) + 1}
+                                                                                        </div>
                                                                                         <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5 animate-pulse" />
                                                                                         <h4 className={`font-medium text-sm ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>{task.content}</h4>
                                                                                     </div>
@@ -938,8 +933,13 @@ export default function MobileLayout({
                                                                                         {StatusLabels[task.status]}
                                                                                     </span>
                                                                                     <div className="flex flex-col items-end">
-                                                                                        <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
-                                                                                        {task.district && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{task.district}</span>}
+                                                                                        <div className="flex items-center gap-1">
+                                                                                            <div className="bg-blue-500/20 text-blue-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold">
+                                                                                                {staffData.indexOf(item) + 1}
+                                                                                            </div>
+                                                                                            <span className="text-xs text-slate-500 font-mono">#{task.orderNumber}</span>
+                                                                                        </div>
+                                                                                        {task.district && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{task.district}</span>}
                                                                                     </div>
                                                                                 </div>
 

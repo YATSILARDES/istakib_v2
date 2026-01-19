@@ -191,6 +191,12 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
             console.error("Error calculating staff stats:", error);
         }
 
+        // SORT ARRAYS
+        statsMap.forEach(stat => {
+            stat.activeTasks.sort((a, b) => (a.dailyOrder || 0) - (b.dailyOrder || 0));
+            stat.activeRoutine.sort((a, b) => (a.dailyOrder || 0) - (b.dailyOrder || 0));
+        });
+
         return Array.from(statsMap.values()).sort((a, b) => {
             const totalA = a.activeTasks.length + a.activeRoutine.length;
             const totalB = b.activeTasks.length + b.activeRoutine.length;
@@ -308,6 +314,9 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                         {day.routine.map(t => (
                                             <div key={t.id} className="bg-purple-50 border border-purple-100 p-2 rounded-lg group/item">
                                                 <div className="flex gap-2">
+                                                    <div className="mt-0.5 bg-slate-700/20 text-slate-500 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0">
+                                                        {day.routine.indexOf(t) + 1}
+                                                    </div>
                                                     <button
                                                         onClick={() => onToggleRoutineTask(t.id, t.isCompleted)}
                                                         className="mt-0.5 w-4 h-4 rounded border border-purple-300 bg-white flex items-center justify-center hover:bg-purple-500 hover:border-purple-500 hover:text-white transition-colors shrink-0"
@@ -330,7 +339,12 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                 className="bg-slate-50 border border-slate-200 p-2 rounded-lg group/task cursor-pointer hover:border-orange-300 hover:shadow-md transition-all active:scale-95"
                                             >
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <span className="text-[9px] font-bold bg-white border border-slate-100 px-1 rounded text-slate-500">#{t.orderNumber}</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <div className="bg-slate-200 text-slate-500 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold">
+                                                            {day.tasks.indexOf(t) + 1}
+                                                        </div>
+                                                        <span className="text-[9px] font-bold bg-white border border-slate-100 px-1 rounded text-slate-500">#{t.orderNumber}</span>
+                                                    </div>
                                                     <div className={`w-1.5 h-1.5 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500' : 'bg-blue-500'}`} />
                                                 </div>
                                                 <div className="text-[10px] font-bold text-slate-700 mb-1">{t.title}</div>
@@ -408,8 +422,11 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1 flex items-center gap-1">
                                                         <div className="w-1 h-1 bg-purple-400 rounded-full" /> Eksikler ({staff.activeRoutine.length})
                                                     </div>
-                                                    {staff.activeRoutine.map(t => (
+                                                    {staff.activeRoutine.map((t, index) => (
                                                         <div key={t.id} className="bg-purple-50 border border-purple-100 p-2.5 rounded-xl flex flex-row gap-2 hover:bg-purple-100 transition-colors group/item">
+                                                            <div className="mt-0.5 bg-slate-700/10 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">
+                                                                {index + 1}
+                                                            </div>
                                                             <button
                                                                 onClick={() => onToggleRoutineTask(t.id, t.isCompleted)}
                                                                 className="mt-0.5 w-5 h-5 rounded border border-purple-300 bg-white flex items-center justify-center hover:bg-purple-500 hover:border-purple-500 hover:text-white transition-colors shrink-0"
@@ -444,6 +461,9 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                             <div>
                                                                 <div className="flex justify-between items-start mb-1">
                                                                     <div className="flex items-center gap-1">
+                                                                        <div className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold">
+                                                                            {staff.activeTasks.indexOf(t) + 1}
+                                                                        </div>
                                                                         <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 rounded">#{t.orderNumber}</span>
                                                                         <span className="text-xs font-bold text-slate-700">{t.title}</span>
                                                                     </div>
