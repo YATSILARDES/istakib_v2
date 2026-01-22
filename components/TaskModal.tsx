@@ -51,6 +51,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
 
   useEffect(() => {
+    if (!isOpen) return;
+
     setIsDeleting(false); // Reset delete state on open/change
     setActiveTab('personal'); // Reset tab
     setShowScanner(false);
@@ -61,7 +63,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     if (task) {
       setFormData({ ...task });
     } else {
-      // Reset for new task
+      // Reset for new task (Initial Reset)
       setFormData({
         title: '',
         jobDescription: '',
@@ -76,7 +78,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         generalNote: '',
         teamNote: '',
         checkStatus: null,
-        orderNumber: nextOrderNumber,
+        orderNumber: nextOrderNumber, // Set initial order number
         gasOpeningDate: '',
         gasNote: '',
         serviceSerialNumber: '',
@@ -85,7 +87,17 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         isProjectDrawn: false
       });
     }
-  }, [task, isOpen, nextOrderNumber]);
+  }, [task, isOpen]); // Removed nextOrderNumber from dependency to prevent full reset
+
+  // Separate effect to update order number dynamically without wiping form
+  useEffect(() => {
+    if (isOpen && !task) {
+      setFormData(prev => ({
+        ...prev,
+        orderNumber: nextOrderNumber
+      }));
+    }
+  }, [nextOrderNumber, isOpen, task]);
 
   if (!isOpen) return null;
 

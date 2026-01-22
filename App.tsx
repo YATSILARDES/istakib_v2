@@ -354,7 +354,6 @@ function App() {
           createdAt: serverTimestamp()
         });
       }
-      setIsModalOpen(false);
     } catch (e) {
       console.error("Error saving task: ", e);
       setError("Kayıt sırasında hata oluştu.");
@@ -364,7 +363,7 @@ function App() {
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteDoc(doc(db, 'tasks', taskId));
-      setIsModalOpen(false);
+
     } catch (e) {
       console.error("Error deleting task: ", e);
       setError("Silme sırasında hata oluştu.");
