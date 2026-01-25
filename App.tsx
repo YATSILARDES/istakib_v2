@@ -241,13 +241,22 @@ function App() {
       }
     });
 
-    if (messaging) {
-      onMessage(messaging, (payload) => {
-        console.log('Message received. ', payload);
-        setToast({ message: payload.notification?.title || 'Yeni Bildirim', visible: true });
-        playNotificationSound();
-      });
-    }
+    const setupMessaging = async () => {
+      try {
+        const supported = await isSupported();
+        if (supported && messaging) {
+          onMessage(messaging, (payload) => {
+            console.log('Message received. ', payload);
+            setToast({ message: payload.notification?.title || 'Yeni Bildirim', visible: true });
+            playNotificationSound();
+          });
+        }
+      } catch (error) {
+        // Silently ignore messaging errors on unsupported browsers
+        console.log('Firebase Messaging not supported (onMessage check).');
+      }
+    };
+    setupMessaging();
 
     return () => unsubscribe();
   }, []);

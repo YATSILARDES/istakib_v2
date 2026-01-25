@@ -150,7 +150,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
             {/* Footer */}
             <div className="px-4 py-4 border-t border-[#34495e]/50">
                 <div className="text-[10px] text-slate-600 text-center">
-                    v0.0.38
+                    v0.0.39
                 </div>
             </div>
         </div>
