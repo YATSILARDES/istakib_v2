@@ -29,7 +29,7 @@ import { playNotificationSound } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { getToken, onMessage } from 'firebase/messaging';
+import { getToken, onMessage, isSupported } from 'firebase/messaging';
 import { messaging } from './src/firebase';
 
 const ADMIN_EMAILS = ['canercelik1994@gmail.com', 'admin@onaymuhendislik.com', 'demo@onay.com', 'caner192@hotmail.com'];
@@ -207,28 +207,36 @@ function App() {
         // --- PRESENCE TRACKING END ---
 
         try {
-          const permission = await Notification.requestPermission();
-          if (permission === 'granted') {
-            if ('serviceWorker' in navigator) {
+          const supported = await isSupported();
+          if (supported && 'serviceWorker' in navigator) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
               const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
 
-              const token = await getToken(messaging, {
-                vapidKey: "BAURdcxGoBuc1kI8ImEAu1epIqemw2Lg3zys-O4R9qg175P6l5ycnlGWMx84elDgQDgd8RNBISqdJm59s5mdSmY",
-                serviceWorkerRegistration: registration
-              });
+              if (messaging) {
+                const token = await getToken(messaging, {
+                  vapidKey: "BAURdcxGoBuc1kI8ImEAu1epIqemw2Lg3zys-O4R9qg175P6l5ycnlGWMx84elDgQDgd8RNBISqdJm59s5mdSmY",
+                  serviceWorkerRegistration: registration
+                });
 
-              if (token && messaging) {
-                await setDoc(doc(db, 'fcm_tokens', currentUser.email!), {
-                  token,
-                  email: currentUser.email,
-                  platform: window.innerWidth < 768 ? 'mobile' : 'desktop',
-                  lastSeen: serverTimestamp()
-                }, { merge: true });
+                if (token) {
+                  await setDoc(doc(db, 'fcm_tokens', currentUser.email!), {
+                    token,
+                    email: currentUser.email,
+                    platform: window.innerWidth < 768 ? 'mobile' : 'desktop',
+                    lastSeen: serverTimestamp()
+                  }, { merge: true });
+                }
               }
             }
           }
-        } catch (error) {
-          console.error('Notification setup error:', error);
+        } catch (error: any) {
+          // Suppress known errors for unsupported browsers
+          if (error?.code === 'messaging/unsupported-browser' || error?.message?.includes('unsupported-browser')) {
+            console.log('Firebase Messaging not supported on this browser.');
+          } else {
+            console.error('Notification setup error:', error);
+          }
         }
       }
     });

@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, ChevronDown, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2, Package } from 'lucide-react';
 import StockCombisView from './StockCombisView';
+import StockRadiatorsView from './StockRadiatorsView';
+import StockGenericView from './StockGenericView';
 import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission, StaffMember } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -36,6 +38,7 @@ export default function MobileLayout({
     onOpenAssignmentModal
 }: MobileLayoutProps) {
     const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile' | 'stock'>('home');
+    const [stockCategory, setStockCategory] = useState<'combis' | 'radiators' | 'heatpumps' | 'thermosiphons' | 'acs' | 'electric_combis' | 'others'>('combis');
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedStaff, setExpandedStaff] = useState<string | null>(null);
@@ -1084,14 +1087,43 @@ export default function MobileLayout({
                 {/* VIEW: STOCK */}
                 {activeTab === 'stock' && (
                     <div className="h-full overflow-hidden flex flex-col">
-                        <div className="px-5 pt-8 pb-4 bg-slate-900 shrink-0">
+                        <div className="px-5 pt-8 pb-4 bg-slate-900 shrink-0 space-y-4">
                             <h1 className="text-2xl font-bold text-white">Stok Takibi</h1>
+
+                            {/* Stock Category Selector */}
+                            <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+                                {[
+                                    { id: 'combis', label: 'Kombiler' },
+                                    { id: 'radiators', label: 'Radyatörler' },
+                                    { id: 'heatpumps', label: 'Isı Pompaları' },
+                                    { id: 'thermosiphons', label: 'Termosifonlar' },
+                                    { id: 'acs', label: 'Klimalar' },
+                                    { id: 'electric_combis', label: 'Elektrikli Kombiler' },
+                                    { id: 'others', label: 'Diğerleri' }
+                                ].map(cat => (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => setStockCategory(cat.id as any)}
+                                        className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-bold transition-all ${stockCategory === cat.id
+                                            ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                                            : 'bg-slate-800 text-slate-400 border border-slate-700'
+                                            }`}
+                                    >
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
+
                         <div className="flex-1 overflow-hidden relative">
-                            {/* StockCombisView handles its own scrolling and has dark theme. 
-                             We just need to constrain it and provide bottom padding for nav bar. */}
                             <div className="absolute inset-0 bg-slate-900 pb-[72px] overflow-hidden">
-                                <StockCombisView />
+                                {stockCategory === 'combis' && <StockCombisView />}
+                                {stockCategory === 'radiators' && <StockRadiatorsView />}
+                                {stockCategory === 'heatpumps' && <StockGenericView collectionName="stock_heatpumps" title="Isı Pompası Stok" itemLabel="Isı Pompası" />}
+                                {stockCategory === 'thermosiphons' && <StockGenericView collectionName="stock_thermosiphons" title="Termosifon Stok" itemLabel="Termosifon" />}
+                                {stockCategory === 'acs' && <StockGenericView collectionName="stock_acs" title="Klima Stok" itemLabel="Klima" />}
+                                {stockCategory === 'electric_combis' && <StockGenericView collectionName="stock_electric_combis" title="Elektrikli Kombi Stok" itemLabel="Elektrikli Kombi" />}
+                                {stockCategory === 'others' && <StockGenericView collectionName="stock_others" title="Diğer Stoklar" itemLabel="Ürün" />}
                             </div>
                         </div>
                     </div>
