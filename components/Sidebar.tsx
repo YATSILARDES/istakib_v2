@@ -16,9 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
         { id: 'archive', label: 'Arşiv', icon: FolderOpen },
     ];
 
-    if (isAdmin) {
-        menuItems.push({ id: 'settings', label: 'Ayarlar', icon: Settings });
-    }
+
 
     return (
         <div

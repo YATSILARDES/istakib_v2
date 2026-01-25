@@ -13,7 +13,9 @@ import MobileAdminPanel from './components/MobileAdminPanel';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import FieldStaffStatusModal from './components/FieldStaffStatusModal';
-
+import TopBar from './components/TopBar';
+import ProfileSettingsModal from './components/ProfileSettingsModal';
+import ChangePasswordModal from './components/ChangePasswordModal';
 // NEW VIEWS
 import AssignmentView from './components/AssignmentView';
 import RoutineTasksView from './components/RoutineTasksView';
@@ -50,6 +52,11 @@ function App() {
 
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isFieldStaffModalOpen, setIsFieldStaffModalOpen] = useState(false);
+
+  // New Modal States
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
   const [appSettings, setAppSettings] = useState<AppSettings>({ notifications: {}, pinnedStaff: [] });
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
 
@@ -603,13 +610,7 @@ function App() {
     return registered || { name, email: '' }; // Kayıtlı değilse emailsiz döndür
   });
 
-  // Tab Switching Logic
   const handleTabChange = (tab: string) => {
-    if (tab === 'settings') {
-      setIsAdminPanelOpen(true);
-      return;
-    }
-
     // RESET ALL FILTERS
     setBoardFilter(undefined);
     setIsMissingFilterActive(false);
@@ -841,6 +842,8 @@ function App() {
         </div>
       )}
 
+
+
       {isModalOpen && (
         <TaskModal
           task={selectedTask}
@@ -960,21 +963,15 @@ function App() {
                     </button>
                   )}
 
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold text-xs ring-2 ring-slate-600">
-                      {user?.email?.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="hidden md:block text-right">
-                      <div className="text-xs font-bold text-white leading-tight">{user?.email?.split('@')[0]}</div>
-                      <div className="flex items-center gap-2 justify-end">
-                        <div className="text-[10px] text-slate-400 font-medium">{userPermissions?.role === 'admin' ? 'Yönetici' : 'Personel'}</div>
-                        <button onClick={handleLogout} className="text-[10px] font-bold text-red-400 hover:text-red-300 hover:underline transition-colors flex items-center gap-1">
-                          <LogOut className="w-3 h-3" />
-                          Çıkış
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <TopBar
+                    user={user}
+                    userPermissions={userPermissions}
+                    onOpenAdmin={() => setIsAdminPanelOpen(true)}
+                    onLogout={handleLogout}
+                    onOpenProfile={() => setIsProfileModalOpen(true)}
+                    onOpenPassword={() => setIsPasswordModalOpen(true)}
+                    variant="dark"
+                  />
                 </div>
               </div>
 
@@ -1133,8 +1130,19 @@ function App() {
           isAdmin={!!isAdmin}
           existingTasks={tasks}
         />
-      )
-      }
+      )}
+
+
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        userPermissions={userPermissions}
+      />
+
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
 
       {/* Mobile Admin Panel */}
       <MobileAdminPanel
