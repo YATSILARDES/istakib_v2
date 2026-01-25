@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { getMessaging } from "firebase/messaging";
+import { getMessaging, isSupported } from "firebase/messaging";
 
 // TODO: Firebase Console'dan projenizin ayarlarını alıp buraya yapıştırın.
 // https://console.firebase.google.com/
@@ -27,4 +27,16 @@ export const db = initializeFirestore(app, {
 });
 
 export const storage = getStorage(app);
-export const messaging = getMessaging(app);
+
+
+let messagingInstance: any = null;
+try {
+    // Only init messaging if supported (checks for window, indexedDB, ServiceWorker)
+    // And implicitly checks for Secure Context (HTTPS/localhost)
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        messagingInstance = getMessaging(app);
+    }
+} catch (e) {
+    console.warn("Firebase Messaging not supported (likely due to insecure origin or missing SW support):", e);
+}
+export const messaging = messagingInstance;

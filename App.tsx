@@ -19,6 +19,9 @@ import ChangePasswordModal from './components/ChangePasswordModal';
 // NEW VIEWS
 import AssignmentView from './components/AssignmentView';
 import RoutineTasksView from './components/RoutineTasksView';
+import StockRadiatorsView from './components/StockRadiatorsView';
+import StockCombisView from './components/StockCombisView';
+import StockGenericView from './components/StockGenericView';
 
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
 
@@ -214,7 +217,7 @@ function App() {
                 serviceWorkerRegistration: registration
               });
 
-              if (token) {
+              if (token && messaging) {
                 await setDoc(doc(db, 'fcm_tokens', currentUser.email!), {
                   token,
                   email: currentUser.email,
@@ -230,11 +233,13 @@ function App() {
       }
     });
 
-    onMessage(messaging, (payload) => {
-      console.log('Message received. ', payload);
-      setToast({ message: payload.notification?.title || 'Yeni Bildirim', visible: true });
-      playNotificationSound();
-    });
+    if (messaging) {
+      onMessage(messaging, (payload) => {
+        console.log('Message received. ', payload);
+        setToast({ message: payload.notification?.title || 'Yeni Bildirim', visible: true });
+        playNotificationSound();
+      });
+    }
 
     return () => unsubscribe();
   }, []);
@@ -878,7 +883,7 @@ function App() {
 
 
         <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-100 relative">
-          {(activeTab === 'assignment' || activeTab === 'routine_pool') ? (
+          {((activeTab as string) === 'assignment' || (activeTab as string) === 'routine_pool' || (activeTab as string).startsWith('stock_')) ? (
             <>
               {activeTab === 'assignment' && (
                 <div className="relative h-full bg-white">
@@ -908,6 +913,42 @@ function App() {
                     onConvertTask={handleConvertRoutineTask}
                     onUpdateTask={handleUpdateRoutineTask}
                   />
+                </div>
+              )}
+              {activeTab === 'stock_radiators' && (
+                <div className="relative h-full bg-white">
+                  <StockRadiatorsView />
+                </div>
+              )}
+              {activeTab === 'stock_combis' && (
+                <div className="relative h-full bg-white">
+                  <StockCombisView />
+                </div>
+              )}
+              {/* GENERIC STOCK VIEWS */}
+              {(activeTab as string) === 'stock_heatpumps' && (
+                <div className="relative h-full bg-white">
+                  <StockGenericView collectionName="stock_heatpumps" title="Isı Pompası Stok" itemLabel="Isı Pompası" />
+                </div>
+              )}
+              {(activeTab as string) === 'stock_thermosiphons' && (
+                <div className="relative h-full bg-white">
+                  <StockGenericView collectionName="stock_thermosiphons" title="Termosifon Stok" itemLabel="Termosifon" />
+                </div>
+              )}
+              {(activeTab as string) === 'stock_acs' && (
+                <div className="relative h-full bg-white">
+                  <StockGenericView collectionName="stock_acs" title="Klima Stok" itemLabel="Klima" />
+                </div>
+              )}
+              {(activeTab as string) === 'stock_electric_combis' && (
+                <div className="relative h-full bg-white">
+                  <StockGenericView collectionName="stock_electric_combis" title="Elektrikli Kombi Stok" itemLabel="Elektrikli Kombi" />
+                </div>
+              )}
+              {(activeTab as string) === 'stock_others' && (
+                <div className="relative h-full bg-white">
+                  <StockGenericView collectionName="stock_others" title="Diğer Stoklar" itemLabel="Ürün" />
                 </div>
               )}
             </>

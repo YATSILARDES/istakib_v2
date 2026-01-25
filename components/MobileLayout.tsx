@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, ChevronDown, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2 } from 'lucide-react';
+import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, ChevronDown, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2, Package } from 'lucide-react';
+import StockCombisView from './StockCombisView';
 import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission, StaffMember } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -34,7 +35,7 @@ export default function MobileLayout({
     onOpenRoutineModal,
     onOpenAssignmentModal
 }: MobileLayoutProps) {
-    const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile'>('home');
+    const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile' | 'stock'>('home');
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedStaff, setExpandedStaff] = useState<string | null>(null);
@@ -1080,6 +1081,22 @@ export default function MobileLayout({
                     </div>
                 )}
 
+                {/* VIEW: STOCK */}
+                {activeTab === 'stock' && (
+                    <div className="h-full overflow-hidden flex flex-col">
+                        <div className="px-5 pt-8 pb-4 bg-slate-900 shrink-0">
+                            <h1 className="text-2xl font-bold text-white">Stok Takibi</h1>
+                        </div>
+                        <div className="flex-1 overflow-hidden relative">
+                            {/* StockCombisView handles its own scrolling and has dark theme. 
+                             We just need to constrain it and provide bottom padding for nav bar. */}
+                            <div className="absolute inset-0 bg-slate-900 pb-[72px] overflow-hidden">
+                                <StockCombisView />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </div>
 
             {/* BOTTOM NAVIGATION BAR - Premium Design */}
@@ -1106,6 +1123,18 @@ export default function MobileLayout({
                         <List className={`w-5 h-5 transition-colors ${activeTab === 'tasks' ? 'text-white' : 'text-slate-500'}`} />
                     </div>
                     <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'tasks' ? 'text-purple-400' : 'text-slate-500'}`}>İşlerim</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('stock')}
+                    className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'stock'
+                        ? 'bg-gradient-to-br from-orange-500/20 to-orange-600/10 shadow-lg shadow-orange-500/10'
+                        : 'hover:bg-white/5'}`}
+                >
+                    <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'stock' ? 'bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30' : ''}`}>
+                        <Package className={`w-5 h-5 transition-colors ${activeTab === 'stock' ? 'text-white' : 'text-slate-500'}`} />
+                    </div>
+                    <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'stock' ? 'text-orange-400' : 'text-slate-500'}`}>Stok</span>
                 </button>
 
                 <button

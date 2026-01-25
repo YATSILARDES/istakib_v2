@@ -1,7 +1,7 @@
 {
   "name": "workflow-ai-voice-assistant",
   "private": true,
-  "version": "0.0.35",
+  "version": "0.0.36",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "@capacitor/core": "^7.4.4",
     "@google/genai": "^1.30.0",
     "browser-image-compression": "^2.0.2",
+    "date-fns": "^4.1.0",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.6.2",
     "firebase": "^11.0.2",
@@ -26,6 +27,8 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-leaflet": "^5.0.0",
+    "tesseract.js": "^7.0.0",
+    "vconsole": "^3.15.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -33,6 +36,7 @@
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-react": "^5.0.0",
     "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",

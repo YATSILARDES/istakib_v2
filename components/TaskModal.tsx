@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, StatusLabels } from '../types';
 import { X, Save, Calendar, MapPin, Phone, FileText, User, Trash2, AlertTriangle, CheckCircle2, PhoneCall, Share2, Flame, Wrench, ClipboardCheck, ScanBarcode, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
-import Scanner from './Scanner';
+import { Scanner } from './Scanner';
 import CameraCapture from './CameraCapture';
 import LocationPreviewModal from './LocationPreviewModal';
 

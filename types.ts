@@ -108,3 +108,46 @@ export interface RoutineTask {
   completedAt?: any; // Tamamlanma Zamanı
   dailyOrder?: number; // Günlük Sıralama
 }
+
+export interface BarcodeData {
+  originalCode: string;
+  year: number;
+  week: number;
+  productionDate: any;
+  expiryDate: any;
+  status: 'safe' | 'warning' | 'expired' | 'invalid';
+  monthsLeft: number;
+  scannedAt?: any;
+}
+
+export interface StockCombi {
+  id: string;
+  brand: string;
+  model: string;
+  capacity: string;
+  quantity: number;
+  barcodes?: BarcodeData[];
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface StockRadiator {
+  id: string;
+  brand: string;
+  height: string; // Yükseklik (örn: 600)
+  length: string; // Uzunluk (örn: 1000)
+  quantity: number;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface StockGenericItem {
+  id: string;
+  brand: string;
+  model: string;
+  feature: string; // Generic field for Capacity, KW, BTU, Liters etc.
+  quantity: number;
+  barcodes?: BarcodeData[];
+  createdAt?: any;
+  updatedAt?: any;
+}
