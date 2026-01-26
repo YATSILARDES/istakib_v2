@@ -13,7 +13,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
     const [ocrLoading, setOcrLoading] = useState(false);
     const [ocrProgress, setOcrProgress] = useState(0);
     // User requested direct Photo/OCR mode, so we default to true
-    const [customCameraOpen, setCustomCameraOpen] = useState(false);
+    const [customCameraOpen, setCustomCameraOpen] = useState(true);
 
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const isRunning = useRef(false);
@@ -29,14 +29,10 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
 
         const startCamera = async () => {
             try {
-                // Ensure any previous scanner is stopped
-                if (scannerRef.current && isRunning.current) {
-                    await scannerRef.current.stop();
-                    scannerRef.current.clear();
-                    isRunning.current = false;
-                }
+                // We rely on the cleanup of the other useEffect to stop the scanner.
+                // Redundant stop() here causes "Cannot transition to a new state" race condition.
 
-                // Small delay to ensure cleanup
+                // Small delay to ensure cleanup and camera release
                 await new Promise(resolve => setTimeout(resolve, 300));
 
                 if (!active) return;
