@@ -13,7 +13,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
     const [ocrLoading, setOcrLoading] = useState(false);
     const [ocrProgress, setOcrProgress] = useState(0);
     // User requested direct Photo/OCR mode, so we default to true
-    const [customCameraOpen, setCustomCameraOpen] = useState(true);
+    const [customCameraOpen, setCustomCameraOpen] = useState(false);
 
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const isRunning = useRef(false);
