@@ -40,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
                 { id: 'stock_thermosiphons', label: 'Termosifonlar' },
                 { id: 'stock_acs', label: 'Klimalar' },
                 { id: 'stock_electric_combis', label: 'Elektrikli Kombiler' },
+                { id: 'stock_instant_heaters', label: 'DDEİ (Ani Isıtıcılar)' },
                 { id: 'stock_others', label: 'Diğerleri' }
             ]
         },

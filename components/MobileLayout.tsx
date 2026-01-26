@@ -38,7 +38,7 @@ export default function MobileLayout({
     onOpenAssignmentModal
 }: MobileLayoutProps) {
     const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile' | 'stock'>('home');
-    const [stockCategory, setStockCategory] = useState<'combis' | 'radiators' | 'heatpumps' | 'thermosiphons' | 'acs' | 'electric_combis' | 'others'>('combis');
+    const [stockCategory, setStockCategory] = useState<'combis' | 'radiators' | 'heatpumps' | 'thermosiphons' | 'acs' | 'electric_combis' | 'instant_heaters' | 'others'>('combis');
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedStaff, setExpandedStaff] = useState<string | null>(null);
@@ -1079,7 +1079,7 @@ export default function MobileLayout({
 
                         {/* Version Footer */}
                         <div className="text-center pt-4">
-                            <p className="text-[10px] text-slate-600">Onay Mühendislik v0.0.40</p>
+                            <p className="text-[10px] text-slate-600">Onay Mühendislik v0.0.41</p>
                         </div>
                     </div>
                 )}
@@ -1099,6 +1099,7 @@ export default function MobileLayout({
                                     { id: 'thermosiphons', label: 'Termosifonlar' },
                                     { id: 'acs', label: 'Klimalar' },
                                     { id: 'electric_combis', label: 'Elektrikli Kombiler' },
+                                    { id: 'instant_heaters', label: 'DDEİ (Ani Isıtıcılar)' },
                                     { id: 'others', label: 'Diğerleri' }
                                 ].map(cat => (
                                     <button
@@ -1123,6 +1124,7 @@ export default function MobileLayout({
                                 {stockCategory === 'thermosiphons' && <StockGenericView collectionName="stock_thermosiphons" title="Termosifon Stok" itemLabel="Termosifon" />}
                                 {stockCategory === 'acs' && <StockGenericView collectionName="stock_acs" title="Klima Stok" itemLabel="Klima" />}
                                 {stockCategory === 'electric_combis' && <StockGenericView collectionName="stock_electric_combis" title="Elektrikli Kombi Stok" itemLabel="Elektrikli Kombi" />}
+                                {stockCategory === 'instant_heaters' && <StockGenericView collectionName="stock_instant_heaters" title="DDEİ (Ani Isıtıcı) Stok" itemLabel="Ani Isıtıcı" />}
                                 {stockCategory === 'others' && <StockGenericView collectionName="stock_others" title="Diğer Stoklar" itemLabel="Ürün" />}
                             </div>
                         </div>

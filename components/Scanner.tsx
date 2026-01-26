@@ -12,7 +12,8 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
     const [error, setError] = useState<string>('');
     const [ocrLoading, setOcrLoading] = useState(false);
     const [ocrProgress, setOcrProgress] = useState(0);
-    const [customCameraOpen, setCustomCameraOpen] = useState(false);
+    // User requested direct Photo/OCR mode, so we default to true
+    const [customCameraOpen, setCustomCameraOpen] = useState(true);
 
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const isRunning = useRef(false);
@@ -20,16 +21,71 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
-    // Auto barcode scanner
+    // Effect to handle Custom Camera Stream
+    useEffect(() => {
+        if (!customCameraOpen) return;
+
+        let active = true;
+
+        const startCamera = async () => {
+            try {
+                // Ensure any previous scanner is stopped
+                if (scannerRef.current && isRunning.current) {
+                    await scannerRef.current.stop();
+                    scannerRef.current.clear();
+                    isRunning.current = false;
+                }
+
+                // Small delay to ensure cleanup
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                if (!active) return;
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+
+                if (!active) {
+                    stream.getTracks().forEach(t => t.stop());
+                    return;
+                }
+
+                streamRef.current = stream;
+
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    videoRef.current.play().catch(e => console.error("Video play error:", e));
+                }
+            } catch (err) {
+                console.error("Camera error:", err);
+                if (active) alert("Kamera açılamadı: " + (err as Error).message);
+            }
+        };
+
+        startCamera();
+
+        return () => {
+            active = false;
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
+            }
+        };
+    }, [customCameraOpen]);
+
+    // Auto barcode scanner (Fallback if they close custom camera)
     useEffect(() => {
         if (customCameraOpen) return;
 
         const initScanner = async () => {
             if (scannerRef.current) return;
+            // ... (rest of scanner init logic is fine to leave or minimal)
+            // But since we default to true, this won't run initially.
+            // If we want to fully remove the old scanner we could, but allowing fallback is safe.
 
             // 1. Check for Secure Context
             if (window.isSecureContext === false) {
-                setError("Kamera erişimi engellendi! (Güvenli Bağlantı Yok)\nÇözüm: Chrome telefonda 'chrome://flags' adresine gidin, 'Insecure origins treated as secure' ayarını bulun, Enabled yapıp bu IP adresini ekleyin.");
+                setError("Kamera erişimi engellendi! (Güvenli Bağlantı Yok)");
                 return;
             }
 
@@ -51,7 +107,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
                 isRunning.current = true;
             } catch (err) {
                 console.error(err);
-                setError("Kamera başlatılamadı veya izin verilmedi.\n(Tarayıcı ayarlarından kamera iznini kontrol edin)");
+                setError("Kamera başlatılamadı.");
             }
         };
 
@@ -67,37 +123,8 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
         };
     }, [onScanSuccess, customCameraOpen]);
 
-    // Open custom camera for OCR
-    const openCustomCamera = async () => {
-        try {
-            if (scannerRef.current && isRunning.current) {
-                await scannerRef.current.stop();
-                scannerRef.current.clear();
-                isRunning.current = false;
-                scannerRef.current = null;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-            });
-            streamRef.current = stream;
-
-            setCustomCameraOpen(true);
-
-            setTimeout(() => {
-                if (videoRef.current && streamRef.current) {
-                    videoRef.current.srcObject = streamRef.current;
-                    videoRef.current.play().catch(e => console.error("Video play error:", e));
-                }
-            }, 100);
-
-        } catch (err) {
-            console.error("Camera error:", err);
-            alert("Kamera açılamadı: " + (err as Error).message);
-        }
-    };
+    // Function to manually switch (if we add a button to switch modes)
+    const openCustomCamera = () => setCustomCameraOpen(true);
 
     const closeCustomCamera = useCallback(() => {
         if (streamRef.current) {

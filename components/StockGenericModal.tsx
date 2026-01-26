@@ -75,7 +75,7 @@ const StockGenericModal: React.FC<StockGenericModalProps> = ({ isOpen, onClose, 
                             type="text"
                             value={brand}
                             onChange={(e) => setBrand(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-400"
+                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-400"
                             placeholder="Örn: Daikin, Baymak..."
                             required
                         />
@@ -87,7 +87,7 @@ const StockGenericModal: React.FC<StockGenericModalProps> = ({ isOpen, onClose, 
                             type="text"
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-400"
+                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-400"
                             placeholder="Örn: 24000 BTU, 12 KW..."
                             required
                         />
@@ -99,7 +99,7 @@ const StockGenericModal: React.FC<StockGenericModalProps> = ({ isOpen, onClose, 
                             type="text"
                             value={feature}
                             onChange={(e) => setFeature(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-400"
+                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-400"
                             placeholder="Örn: 12000 BTU, 65 Litre..."
                         />
                         <p className="text-xs text-slate-500 mt-1">İlgili ürünün kapasite veya ayırt edici özelliği.</p>
@@ -119,7 +119,7 @@ const StockGenericModal: React.FC<StockGenericModalProps> = ({ isOpen, onClose, 
                                 type="number"
                                 value={quantity}
                                 onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                                className="flex-1 p-3 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-bold"
+                                className="flex-1 p-3 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none font-bold"
                             />
                             <button
                                 type="button"

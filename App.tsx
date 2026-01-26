@@ -963,6 +963,11 @@ function App() {
                   <StockGenericView collectionName="stock_electric_combis" title="Elektrikli Kombi Stok" itemLabel="Elektrikli Kombi" />
                 </div>
               )}
+              {(activeTab as string) === 'stock_instant_heaters' && (
+                <div className="relative h-full bg-white">
+                  <StockGenericView collectionName="stock_instant_heaters" title="DDEİ (Ani Isıtıcı) Stok" itemLabel="Ani Isıtıcı" />
+                </div>
+              )}
               {(activeTab as string) === 'stock_others' && (
                 <div className="relative h-full bg-white">
                   <StockGenericView collectionName="stock_others" title="Diğer Stoklar" itemLabel="Ürün" />

@@ -74,7 +74,7 @@ const StockRadiatorModal: React.FC<StockRadiatorModalProps> = ({ isOpen, onClose
                             required
                             value={formData.brand}
                             onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                             placeholder="Örn: Demirdöküm, E.C.A"
                         />
                     </div>
@@ -87,7 +87,7 @@ const StockRadiatorModal: React.FC<StockRadiatorModalProps> = ({ isOpen, onClose
                                 required
                                 value={formData.height}
                                 onChange={e => setFormData({ ...formData, height: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                 placeholder="Örn: 600"
                             />
                         </div>
@@ -99,7 +99,7 @@ const StockRadiatorModal: React.FC<StockRadiatorModalProps> = ({ isOpen, onClose
                                 required
                                 value={formData.length}
                                 onChange={e => setFormData({ ...formData, length: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                 placeholder="Örn: 1000"
                             />
                         </div>
@@ -113,7 +113,7 @@ const StockRadiatorModal: React.FC<StockRadiatorModalProps> = ({ isOpen, onClose
                             min="0"
                             value={formData.quantity}
                             onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                         />
                     </div>
 
