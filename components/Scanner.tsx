@@ -41,6 +41,10 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
 
                 if (!active) return;
 
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error("Tarayıcınız kamera erişimini desteklemiyor veya SSL (Güvenli Bağlantı) eksik.");
+                }
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
                 });
@@ -58,7 +62,24 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
                 }
             } catch (err) {
                 console.error("Camera error:", err);
-                if (active) alert("Kamera açılamadı: " + (err as Error).message);
+                let errorMessage = "Bilinmeyen hata";
+
+                if (err instanceof Error) {
+                    errorMessage = err.message;
+                } else if (typeof err === 'string') {
+                    errorMessage = err;
+                } else if (typeof err === 'object' && err !== null) {
+                    // Try to stringify if it's a custom object
+                    try {
+                        errorMessage = JSON.stringify(err);
+                        // If it's empty object, it might be a DOMException behaving purely
+                        if (errorMessage === '{}') errorMessage = "Kamera erişim izni verilmedi veya desteklenmiyor.";
+                    } catch (e) {
+                        errorMessage = "Hata detayları alınamadı.";
+                    }
+                }
+
+                if (active) alert("Kamera başlatılamadı: " + errorMessage);
             }
         };
 
