@@ -1079,7 +1079,7 @@ export default function MobileLayout({
 
                         {/* Version Footer */}
                         <div className="text-center pt-4">
-                            <p className="text-[10px] text-slate-600">Onay Mühendislik v0.0.39</p>
+                            <p className="text-[10px] text-slate-600">Onay Mühendislik v0.0.40</p>
                         </div>
                     </div>
                 )}
@@ -1116,7 +1116,7 @@ export default function MobileLayout({
                         </div>
 
                         <div className="flex-1 overflow-hidden relative">
-                            <div className="absolute inset-0 bg-slate-900 pb-[72px] overflow-hidden">
+                            <div className="absolute inset-0 bg-slate-900 overflow-hidden">
                                 {stockCategory === 'combis' && <StockCombisView />}
                                 {stockCategory === 'radiators' && <StockRadiatorsView />}
                                 {stockCategory === 'heatpumps' && <StockGenericView collectionName="stock_heatpumps" title="Isı Pompası Stok" itemLabel="Isı Pompası" />}
