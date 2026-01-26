@@ -1079,7 +1079,7 @@ export default function MobileLayout({
 
                         {/* Version Footer */}
                         <div className="text-center pt-4">
-                            <p className="text-[10px] text-slate-600">Onay Mühendislik v0.0.44</p>
+                            <p className="text-[10px] text-slate-600">Onay Mühendislik v0.0.45</p>
                         </div>
                     </div>
                 )}
