@@ -13,6 +13,9 @@ interface KanbanBoardProps {
   myTasks?: Task[]; // Assigned Standard Tasks for the viewer
   staffName?: string; // Staff name for column header
   isCompact?: boolean; // New prop for Split View
+  staffList?: { name: string; email: string }[];
+  hideCreator?: boolean;
+  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
 }
 
 const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
@@ -36,7 +39,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   showRoutineColumn = true,
   myTasks = [], // Destructure NEW prop
   staffName, // Destructure NEW prop
-  isCompact = false
+  isCompact = false,
+  staffList = [],
+  hideCreator = false,
+  onTaskUpdate
 }) => {
   // State to track search queries for each column
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
@@ -319,7 +325,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     onClick={() => onTaskClick(task)}
                     className={`
                       h-28 flex flex-col justify-between px-3 py-3 rounded-xl border transition-all cursor-pointer group relative shadow-md hover:shadow-xl hover:-translate-y-1
-                      ${task.checkStatus === 'missing'
+                      ${task.isWaiting
+                        ? 'bg-blue-100 border-l-[8px] border-l-blue-600 border-blue-200 shadow-[0_0_15px_-5px_rgba(37,99,235,0.4)]'
+                        : (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2)
+                        ? 'bg-orange-100 border-l-[8px] border-l-orange-500 border-orange-300 shadow-[0_0_15px_-5px_rgba(249,115,22,0.4)]'
+                        : task.checkStatus === 'missing'
                         ? 'bg-red-100 border-l-[8px] border-l-red-600 border-red-200 shadow-[0_0_15px_-5px_rgba(220,38,38,0.4)]'
                         : task.checkStatus === 'clean'
                           ? 'bg-green-100 border-l-[8px] border-l-green-600 border-green-200 shadow-[0_0_15px_-5px_rgba(22,163,74,0.4)]'
@@ -363,6 +373,52 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       <div className="flex items-center gap-1.5 text-xs text-sky-700 font-medium bg-sky-50/50 p-1 -ml-1 rounded-lg">
                         <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-sky-500" />
                         <span className="truncate max-w-[200px]">{task.address}</span>
+                      </div>
+                    )}
+
+                    {onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTaskUpdate(task.id, { isWaiting: !task.isWaiting });
+                        }}
+                        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 px-3 py-1 rounded-lg text-[11px] font-bold shadow-md transition-all active:scale-95 border-2 ${
+                          task.isWaiting 
+                            ? 'bg-blue-600 text-white border-blue-400 opacity-90' 
+                            : 'bg-white/90 text-slate-700 border-slate-200 hover:border-blue-500 opacity-0 group-hover:opacity-100 hover:bg-blue-50'
+                        } whitespace-nowrap`}
+                      >
+                        {task.isWaiting ? 'BEKLİYOR' : 'Beklemeye Al'}
+                      </button>
+                    )}
+                    {/* Created By Info */}
+                    {!hideCreator && task.createdBy && (
+                      <div className="absolute bottom-2 right-2 text-[11px] text-slate-500 font-bold flex items-center gap-1 bg-white/50 px-1.5 py-0.5 rounded-md shadow-sm border border-slate-100">
+                        <span className="text-[9px] text-slate-400 font-normal italic">Ekleyen:</span>
+                        {(() => {
+                          const emailLower = task.createdBy?.toLowerCase() || '';
+
+                          // 0. Manual Overrides (Admins)
+                          const knownNames: Record<string, string> = {
+                            'caner192@hotmail.com': 'CANER ÇELİK',
+                            'canercelik1994@gmail.com': 'CANER ÇELİK',
+                            'admin@onaymuhendislik.com': 'CANER ÇELİK',
+                            'demo@onay.com': 'DEMO'
+                          };
+
+                          if (knownNames[emailLower]) return knownNames[emailLower];
+
+                          // 1. Try to find in staffList
+                          const found = staffList.find(s => s.email.toLowerCase() === emailLower);
+                          if (found) return found.name;
+
+                          // 2. Fallback: Parse Name from Email
+                          const emailName = (task.createdBy || '').split('@')[0];
+                          return emailName
+                            .split(/[._]/)
+                            .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+                            .join(' ');
+                        })()}
                       </div>
                     )}
                   </div>

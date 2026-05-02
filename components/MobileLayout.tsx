@@ -21,6 +21,7 @@ interface MobileLayoutProps {
     onOpenAdmin: () => void;
     onOpenRoutineModal: () => void;
     onOpenAssignmentModal: () => void;
+    onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
 }
 
 export default function MobileLayout({
@@ -35,7 +36,8 @@ export default function MobileLayout({
     onToggleRoutineTask,
     onOpenAdmin,
     onOpenRoutineModal,
-    onOpenAssignmentModal
+    onOpenAssignmentModal,
+    onTaskUpdate
 }: MobileLayoutProps) {
     const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile' | 'stock'>('home');
     const [stockCategory, setStockCategory] = useState<'combis' | 'radiators' | 'heatpumps' | 'thermosiphons' | 'acs' | 'electric_combis' | 'instant_heaters' | 'others'>('combis');
@@ -512,7 +514,15 @@ export default function MobileLayout({
                                         let badgeStyle = "bg-blue-500/20 text-blue-400";
                                         let shadowStyle = "";
 
-                                        if (task.checkStatus === 'missing') {
+                                        if (task.isWaiting) {
+                                            cardStyle = "bg-blue-950/20 border-blue-500/40";
+                                            badgeStyle = "bg-blue-500/20 text-blue-400";
+                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(37,99,235,0.2)]";
+                                        } else if (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2) {
+                                            cardStyle = "bg-orange-950/20 border-orange-500/40";
+                                            badgeStyle = "bg-orange-500/20 text-orange-400";
+                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.2)]";
+                                        } else if (task.checkStatus === 'missing') {
                                             cardStyle = "bg-orange-950/30 border-orange-500/50";
                                             badgeStyle = "bg-orange-500/20 text-orange-400";
                                             shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
@@ -572,6 +582,22 @@ export default function MobileLayout({
                                                                     className="w-10 h-10 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/20 transition-all active:scale-95"
                                                                 >
                                                                     <Phone className="w-4 h-4" />
+                                                                </button>
+                                                            )}
+
+                                                            {onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        onTaskUpdate(task.id, { isWaiting: !task.isWaiting });
+                                                                    }}
+                                                                    className={`px-3 py-2 rounded-xl text-[10px] font-bold shadow-sm transition-all active:scale-95 border ${
+                                                                        task.isWaiting 
+                                                                            ? 'bg-blue-600 text-white border-blue-500' 
+                                                                            : 'bg-white/5 text-slate-300 border-white/5'
+                                                                    }`}
+                                                                >
+                                                                    {task.isWaiting ? 'BEKLİYOR' : 'BEKLET'}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -676,7 +702,15 @@ export default function MobileLayout({
                                                 let badgeStyle = "bg-blue-500/20 text-blue-400";
                                                 let shadowStyle = "";
 
-                                                if (task.checkStatus === 'missing') {
+                                                if (task.isWaiting) {
+                                                    cardStyle = "bg-blue-950/20 border-blue-500/40";
+                                                    badgeStyle = "bg-blue-500/20 text-blue-400";
+                                                    shadowStyle = "shadow-[0_0_15px_-5px_rgba(37,99,235,0.2)]";
+                                                } else if (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2) {
+                                                    cardStyle = "bg-orange-950/20 border-orange-500/40";
+                                                    badgeStyle = "bg-orange-500/20 text-orange-400";
+                                                    shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.2)]";
+                                                } else if (task.checkStatus === 'missing') {
                                                     cardStyle = "bg-orange-950/30 border-orange-500/50";
                                                     badgeStyle = "bg-orange-500/20 text-orange-400";
                                                     shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
@@ -741,6 +775,38 @@ export default function MobileLayout({
                                                                             className="w-8 h-8 rounded-full bg-white/5 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-white/10 transition-colors"
                                                                         >
                                                                             <Phone className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    )}
+
+                                                                    {onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                onTaskUpdate(task.id, { isWaiting: !task.isWaiting });
+                                                                            }}
+                                                                            className={`px-2 py-1 rounded-lg text-[9px] font-bold shadow-sm transition-all active:scale-95 border ${
+                                                                                task.isWaiting 
+                                                                                    ? 'bg-blue-600 text-white border-blue-500' 
+                                                                                    : 'bg-white/5 text-slate-400 border-white/10'
+                                                                            }`}
+                                                                        >
+                                                                            {task.isWaiting ? 'BEKLEMEDE' : 'BEKLET'}
+                                                                        </button>
+                                                                    )}
+
+                                                                    {onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                onTaskUpdate(task.id, { isWaiting: !task.isWaiting });
+                                                                            }}
+                                                                            className={`px-2 py-1 rounded-lg text-[9px] font-bold shadow-sm transition-all active:scale-95 border ${
+                                                                                task.isWaiting 
+                                                                                    ? 'bg-blue-600 text-white border-blue-500' 
+                                                                                    : 'bg-white/5 text-slate-400 border-white/10'
+                                                                            }`}
+                                                                        >
+                                                                            {task.isWaiting ? 'BEKLEMEDE' : 'BEKLET'}
                                                                         </button>
                                                                     )}
                                                                 </div>
@@ -917,7 +983,15 @@ export default function MobileLayout({
                                                                         let badgeStyle = "bg-blue-500/20 text-blue-400";
                                                                         let shadowStyle = "";
 
-                                                                        if (task.checkStatus === 'missing') {
+                                                                        if (task.isWaiting) {
+                                                                            cardStyle = "bg-blue-950/20 border-blue-500/40";
+                                                                            badgeStyle = "bg-blue-500/20 text-blue-400";
+                                                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(37,99,235,0.2)]";
+                                                                        } else if (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2) {
+                                                                            cardStyle = "bg-orange-950/20 border-orange-500/40";
+                                                                            badgeStyle = "bg-orange-500/20 text-orange-400";
+                                                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.2)]";
+                                                                        } else if (task.checkStatus === 'missing') {
                                                                             cardStyle = "bg-orange-950/30 border-orange-500/50";
                                                                             badgeStyle = "bg-orange-500/20 text-orange-400";
                                                                             shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";

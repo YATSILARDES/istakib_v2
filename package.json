@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "tsc && vite build && tsc -p electron/tsconfig.json && echo {\"type\":\"commonjs\"} > dist-electron/package.json",
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:3000 && tsc -p electron/tsconfig.json && echo {\\\"type\\\":\\\"commonjs\\\"} > dist-electron/package.json && cross-env NODE_ENV=development electron .\"",

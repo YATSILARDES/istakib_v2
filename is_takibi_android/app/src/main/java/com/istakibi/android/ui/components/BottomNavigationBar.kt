@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
@@ -26,6 +27,7 @@ fun BottomNavigationBar(
         val items = listOf(
             NavigationItem("home", "İşler", Icons.Filled.Home),
             NavigationItem("tasks", "Liste", Icons.Filled.List),
+            NavigationItem("stock", "Stok", Icons.Filled.ShoppingCart),
             NavigationItem("profile", "Profil", Icons.Filled.Person)
         )
 

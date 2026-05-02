@@ -52,6 +52,7 @@ export interface Task {
   scheduledDate?: any; // Atanan Tarih (Firestore Timestamp)
   isCheckVerified?: boolean;
   isProjectDrawn?: boolean; // Proje Çizildi Durumu
+  isWaiting?: boolean; // Beklemede Durumu (Mavi kart için)
 }
 
 export interface AudioConfig {
@@ -120,6 +121,11 @@ export interface BarcodeData {
   scannedAt?: any;
 }
 
+export interface OutboundBarcodeData extends BarcodeData {
+  customerName: string;
+  outputDate: any; // Çıkış Tarihi
+}
+
 export interface StockCombi {
   id: string;
   brand: string;
@@ -127,6 +133,7 @@ export interface StockCombi {
   capacity: string;
   quantity: number;
   barcodes?: BarcodeData[];
+  outboundBarcodes?: OutboundBarcodeData[]; // Çıkış Yapılan Barkodlar
   createdAt?: any;
   updatedAt?: any;
 }
@@ -148,6 +155,7 @@ export interface StockGenericItem {
   feature: string; // Generic field for Capacity, KW, BTU, Liters etc.
   quantity: number;
   barcodes?: BarcodeData[];
+  outboundBarcodes?: OutboundBarcodeData[];
   createdAt?: any;
   updatedAt?: any;
 }

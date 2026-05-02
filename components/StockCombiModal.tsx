@@ -105,14 +105,13 @@ const StockCombiModal: React.FC<StockCombiModalProps> = ({ isOpen, onClose, onSa
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-sm font-bold text-slate-700">Adet</label>
+                            <label className="text-sm font-bold text-slate-700">Adet (Barkoddan Hesaplanır)</label>
                             <input
                                 type="number"
-                                required
-                                min="0"
+                                disabled
                                 value={formData.quantity}
-                                onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-                                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                className="w-full bg-slate-100 border border-slate-300 rounded-xl px-4 py-3 text-slate-500 cursor-not-allowed outline-none"
+                                title="Kombi adetleri barkodlara göre otomatik hesaplanmaktadır"
                             />
                         </div>
                     </div>

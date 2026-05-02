@@ -1,4 +1,4 @@
-﻿/// <reference types="vite/client" />
+/// <reference types="vite/client" />
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, Loader2 } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
@@ -399,6 +399,19 @@ function App() {
     }
   };
 
+  const handleQuickUpdateTask = async (taskId: string, updates: Partial<Task>) => {
+    try {
+      const taskRef = doc(db, 'tasks', taskId);
+      await updateDoc(taskRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+        lastUpdatedBy: user?.email || 'System'
+      });
+    } catch (e) {
+      console.error("Quick update error:", e);
+    }
+  };
+
   const handleToggleTaskVerification = async (taskId: string) => {
     try {
       const task = tasks.find(t => t.id === taskId);
@@ -413,16 +426,18 @@ function App() {
 
 
   // Handlers - Routine Tasks
-  const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string, customDate?: string) => {
+  const handleAddRoutineTask = async (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string, customDate?: string | Date) => {
     try {
       let createdAtField = serverTimestamp();
       if (customDate) {
         const d = new Date(customDate);
-        d.setHours(12, 0, 0, 0);
+        if (typeof customDate === 'string') {
+          d.setHours(12, 0, 0, 0);
+        }
         createdAtField = Timestamp.fromDate(d);
       }
 
-      await addDoc(collection(db, 'routine_tasks'), {
+      const docRef = await addDoc(collection(db, 'routine_tasks'), {
         content,
         assignee,
         customerName: customerName || '',
@@ -433,10 +448,13 @@ function App() {
         city: city || '',
         isCompleted: false,
         createdAt: createdAtField,
+        scheduledDate: customDate ? createdAtField : null, // Add scheduledDate if customDate exists
         createdBy: user?.email
       });
+      console.log("Routine task added with ID:", docRef.id, "at", createdAtField);
     } catch (e) {
       console.error("Routine task error:", e);
+      alert("Görev eklenirken bir hata oluştu: " + e.message);
     }
   };
 
@@ -533,7 +551,7 @@ function App() {
 
       if (scheduledDate) {
         const d = new Date(scheduledDate);
-        d.setHours(12, 0, 0, 0);
+        // Do not reset hours to 12 so we can schedule at specific times
         updateData.scheduledDate = Timestamp.fromDate(d);
       }
 
@@ -555,7 +573,7 @@ function App() {
 
       if (scheduledDate) {
         const d = new Date(scheduledDate);
-        d.setHours(12, 0, 0, 0);
+        // Do not reset hours to 12 so we can schedule at specific times
         updateData.scheduledDate = Timestamp.fromDate(d);
       } else {
         if (assignee === '') {
@@ -804,6 +822,7 @@ function App() {
         onTaskClick={handleTaskClick}
         onAddTask={handleAddTaskClick}
         onToggleRoutineTask={handleToggleRoutineTask}
+        onTaskUpdate={handleQuickUpdateTask}
         onOpenAdmin={() => setIsAdminPanelOpen(true)}
         onOpenRoutineModal={() => setActiveTab('routine_pool')}
         onOpenAssignmentModal={() => setActiveTab('assignment')}
@@ -859,6 +878,7 @@ function App() {
               onRemoveStaff={handleRemoveStaff}
               onTogglePinStaff={handleTogglePinStaff}
               onReorderTasks={handleReorderDailyTasks}
+              onAddRoutineTask={handleAddRoutineTask}
             />
           </div>
         </div>
@@ -916,6 +936,7 @@ function App() {
                     onRemoveStaff={handleRemoveStaff}
                     onTogglePinStaff={handleTogglePinStaff}
                     onReorderTasks={handleReorderDailyTasks}
+                    onAddRoutineTask={handleAddRoutineTask}
                   />
                 </div>
               )}
@@ -1069,6 +1090,7 @@ function App() {
                     setAppSettings(prev => ({ ...prev, pinnedStaff: newPinned }));
                   }}
                   onReorderTasks={handleReorderDailyTasks}
+                  onAddRoutineTask={handleAddRoutineTask}
                 />
               ) : activeTab === 'routine_pool' ? (
                 <RoutineTasksView
@@ -1142,6 +1164,8 @@ function App() {
                           showRoutineColumn={false}
                           staffName={userPermissions?.name}
                           isCompact={true}
+                          staffList={registeredStaff}
+                          onTaskUpdate={handleQuickUpdateTask}
                         />
                       </div>
                       <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
@@ -1160,6 +1184,8 @@ function App() {
                           showRoutineColumn={false}
                           staffName={userPermissions?.name}
                           isCompact={true}
+                          staffList={registeredStaff}
+                          onTaskUpdate={handleQuickUpdateTask}
                         />
                       </div>
                     </div>
@@ -1173,6 +1199,9 @@ function App() {
                       visibleColumns={boardFilter ? [boardFilter] : (userPermissions?.allowedColumns)}
                       showRoutineColumn={false}
                       staffName={userPermissions?.name}
+                      staffList={registeredStaff}
+                      hideCreator={activeTab === 'archive'}
+                      onTaskUpdate={handleQuickUpdateTask}
                     />
                   )}
                 </div>

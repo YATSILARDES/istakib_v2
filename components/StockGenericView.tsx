@@ -93,6 +93,12 @@ const StockGenericView: React.FC<StockGenericViewProps> = ({ collectionName, tit
         stock.feature.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const getCalculatedQuantity = (stock: StockGenericItem) => {
+        const inboundCount = stock.barcodes?.length || 0;
+        const outboundCount = stock.outboundBarcodes?.length || 0;
+        return inboundCount - outboundCount;
+    };
+
     return (
         <div className="flex flex-col h-full bg-slate-900 md:bg-slate-50 relative min-w-0">
             {/* Header - Adaptive */}
@@ -103,7 +109,7 @@ const StockGenericView: React.FC<StockGenericViewProps> = ({ collectionName, tit
                     </div>
                     <div>
                         <h1 className="text-lg md:text-xl font-bold text-white md:text-slate-800">{title}</h1>
-                        <p className="text-xs text-slate-400 md:text-slate-500">Toplam {stocks.reduce((acc, curr) => acc + curr.quantity, 0)} adet</p>
+                        <p className="text-xs text-slate-400 md:text-slate-500">Toplam {stocks.reduce((acc, curr) => acc + getCalculatedQuantity(curr), 0)} adet</p>
                     </div>
                 </div>
 
@@ -153,8 +159,11 @@ const StockGenericView: React.FC<StockGenericViewProps> = ({ collectionName, tit
                                             className={`p-3 flex items-center gap-3 cursor-pointer transition-colors ${isExpanded ? 'bg-slate-700/50' : 'active:bg-slate-700/30'}`}
                                         >
                                             {/* Quantity Badge */}
-                                            <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg shrink-0 ${stock.quantity === 0 ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                                                <span className="text-lg font-bold leading-none">{stock.quantity}</span>
+                                            <div 
+                                                onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
+                                                title="Güncellemek için tıklayın"
+                                                className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg shrink-0 cursor-pointer hover:opacity-80 transition-opacity ${getCalculatedQuantity(stock) === 0 ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                                                <span className="text-lg font-bold leading-none">{getCalculatedQuantity(stock)}</span>
                                                 <span className="text-[9px] uppercase opacity-70">Adet</span>
                                             </div>
 
@@ -231,9 +240,15 @@ const StockGenericView: React.FC<StockGenericViewProps> = ({ collectionName, tit
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
-                                                        <span className={`font-bold ${stock.quantity === 0 ? 'text-red-500' : 'text-slate-700'}`}>
-                                                            {stock.quantity}
-                                                        </span>
+                                                        <div 
+                                                            onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
+                                                            className="cursor-pointer hover:bg-slate-100 inline-block px-4 py-2 rounded-lg transition-colors"
+                                                            title="Güncellemek için tıklayın"
+                                                        >
+                                                            <span className={`font-bold ${getCalculatedQuantity(stock) === 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                                                                {getCalculatedQuantity(stock)}
+                                                            </span>
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

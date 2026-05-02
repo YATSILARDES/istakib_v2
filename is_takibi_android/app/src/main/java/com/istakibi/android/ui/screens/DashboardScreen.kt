@@ -20,6 +20,7 @@ import com.istakibi.android.model.RoutineTask
 import com.istakibi.android.ui.components.BottomNavigationBar
 import com.istakibi.android.ui.components.TaskCard
 import com.istakibi.android.viewmodel.DashboardViewModel
+import com.istakibi.android.ui.screens.StockScreen
 
 @Composable
 fun DashboardScreen(
@@ -52,6 +53,7 @@ fun DashboardScreen(
                     // Şimdilik karmaşıklığı azaltmak için everyone gets mixed list logic similar to web
                     AllTasksView(onTaskClick, viewModel, userRole == "admin")
                 }
+                "stock" -> StockScreen()
                 "profile" -> ProfileView(onSignOut, viewModel)
             }
         }

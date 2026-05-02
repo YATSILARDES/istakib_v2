@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import Tesseract from 'tesseract.js';
-import { Camera, X, RefreshCw, AlertTriangle, ScanLine } from 'lucide-react';
+import { Camera, X, RefreshCw, AlertTriangle, Trash2, CheckCircle, Clock } from 'lucide-react';
+import { BarcodeData } from '@/types';
 
 interface ScannerProps {
     onScanSuccess: (decodedText: string) => void;
     onClose: () => void;
+    existingBarcodes?: BarcodeData[];
+    onDelete?: (barcode: BarcodeData) => void;
 }
 
-export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
+export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose, existingBarcodes = [], onDelete }) => {
     const [error, setError] = useState<string>('');
     const [ocrLoading, setOcrLoading] = useState(false);
     const [ocrProgress, setOcrProgress] = useState(0);
@@ -22,7 +25,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
 
     // Auto barcode scanner (Standard Mode)
     useEffect(() => {
-        if (customCameraOpen) return; // Don't run if custom camera is open
+        if (customCameraOpen) return;
 
         const initScanner = async () => {
             if (scannerRef.current) return;
@@ -37,20 +40,21 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
                 await html5QrCode.start(
                     { facingMode: "environment" },
                     { fps: 15, qrbox: { width: 320, height: 80 }, aspectRatio: 1.0 },
-                    (decodedText) => onScanSuccess(decodedText),
+                    (decodedText) => {
+                        // Standard scanner: No length validation as per user request
+                        onScanSuccess(decodedText);
+                    },
                     () => { }
                 );
                 isRunning.current = true;
             } catch (err) {
                 console.error(err);
-                // Only show error if we are still mounted and in this mode
                 if (!customCameraOpen) {
                     setError("Kamera başlatılamadı.");
                 }
             }
         };
 
-        // Small timeout to prevent immediate initialization issues during renders
         const timer = setTimeout(() => {
             initScanner();
         }, 100);
@@ -66,53 +70,89 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
         };
     }, [onScanSuccess, customCameraOpen]);
 
-    // Open custom camera for OCR
-    const openCustomCamera = async () => {
-        try {
-            // Stop barcode scanner first
-            if (scannerRef.current && isRunning.current) {
-                await scannerRef.current.stop();
-                scannerRef.current.clear();
-                isRunning.current = false;
-                scannerRef.current = null;
-            }
-
-            // Wait for camera to be released
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-            });
-            streamRef.current = stream;
-
-            // Set state first so video element renders
-            setCustomCameraOpen(true);
-
-            // Then attach stream after a short delay
-            setTimeout(() => {
-                if (videoRef.current && streamRef.current) {
-                    videoRef.current.srcObject = streamRef.current;
-                    videoRef.current.play().catch(e => console.error("Video play error:", e));
-                }
-            }, 100);
-
-        } catch (err) {
-            console.error("Camera error:", err);
-            let errorMessage = "Kamera açılamadı";
-            if (err instanceof Error) errorMessage += ": " + err.message;
-            alert(errorMessage);
+    // --- REF: 1. Mode Switching Logic ---
+    const openCustomCamera = useCallback(async () => {
+        // Stop QR scanner if running
+        if (scannerRef.current && isRunning.current) {
+            await scannerRef.current.stop();
+            scannerRef.current.clear();
+            isRunning.current = false;
         }
-    };
-
-    const closeCustomCamera = useCallback(() => {
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-            streamRef.current = null;
-        }
-        setCustomCameraOpen(false);
+        // Just switch the mode, the useEffect below will handle the stream
+        setCustomCameraOpen(true);
     }, []);
 
-    // Capture the framed area
+    const closeCustomCamera = useCallback(() => {
+        setCustomCameraOpen(false);
+        // Stream cleanup handles automatically by the useEffect
+    }, []);
+
+    // --- REF: 2. Camera Stream Effect ---
+    useEffect(() => {
+        if (!customCameraOpen) return;
+
+        let active = true;
+        let stream: MediaStream | null = null;
+
+        const startCamera = async () => {
+            try {
+                // Short expiration to allow UI to mount
+                await new Promise(r => setTimeout(r, 100));
+
+                if (!active) return;
+
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        // Removing 'ideal' constraints for broader compatibility if needed, 
+                        // but keeping them for now as they usually work.
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+
+                if (!active) {
+                    stream.getTracks().forEach(t => t.stop());
+                    return;
+                }
+
+                streamRef.current = stream;
+
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    // Ensure we call play()
+                    try {
+                        await videoRef.current.play();
+                    } catch (playErr) {
+                        console.error("Video play error:", playErr);
+                    }
+                }
+            } catch (err) {
+                console.error("Camera init error:", err);
+                if (active) {
+                    alert("Kamera başlatılamadı: " + (err instanceof Error ? err.message : String(err)));
+                    setCustomCameraOpen(false); // Fallback to close
+                }
+            }
+        };
+
+        startCamera();
+
+        return () => {
+            active = false;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
+            }
+        };
+    }, [customCameraOpen]);
+
+    // Add state for feedback
+    const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
     const captureFrame = async () => {
         if (!videoRef.current || !canvasRef.current) return;
 
@@ -121,15 +161,10 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Frame dimensions (the narrow strip for barcode numbers)
         const frameWidth = 300;
         const frameHeight = 60;
-
-        // Calculate the crop area from the video
         const videoWidth = video.videoWidth;
         const videoHeight = video.videoHeight;
-
-        // Center crop
         const cropX = (videoWidth - frameWidth * 2) / 2;
         const cropY = (videoHeight - frameHeight * 2) / 2;
         const cropW = frameWidth * 2;
@@ -138,20 +173,14 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
         canvas.width = cropW;
         canvas.height = cropH;
 
-        // Draw cropped area to canvas
         ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-        // Convert to blob
         canvas.toBlob(async (blob) => {
             if (!blob) return;
 
-            // We keep the camera open until we get a result or error? 
-            // Reference implementation closes it immediately:
-            closeCustomCamera();
-
-            // Process with OCR
             setOcrLoading(true);
             setOcrProgress(0);
+            setFeedbackMessage(null);
 
             try {
                 const result = await Tesseract.recognize(blob, 'eng', {
@@ -165,24 +194,36 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
                 const text = result.data.text;
                 console.log("OCR Result:", text);
 
-                // Extract alphanumeric barcode
                 const matches = text.match(/[A-Z0-9]{10,}/gi);
 
+                let barcode = "";
                 if (matches && matches.length > 0) {
-                    const barcode = matches.reduce((a, b) => a.length > b.length ? a : b);
-                    onScanSuccess(barcode);
+                    barcode = matches.reduce((a, b) => a.length > b.length ? a : b);
                 } else {
                     const numMatches = text.match(/\d{6,}/g);
                     if (numMatches && numMatches.length > 0) {
-                        const barcode = numMatches.reduce((a, b) => a.length > b.length ? a : b);
-                        onScanSuccess(barcode);
-                    } else {
-                        alert("Fotoğraftan rakam okunamadı. Lütfen tekrar deneyin.");
+                        barcode = numMatches.reduce((a, b) => a.length > b.length ? a : b);
                     }
+                }
+
+                if (barcode) {
+                    // VALIDATION CHECK
+                    if (barcode.length !== 28) {
+                        setFeedbackMessage(`Hatalı Uzunluk: ${barcode.length} (Gereken: 28)`);
+                        setTimeout(() => setFeedbackMessage(null), 3000);
+                    } else {
+                        onScanSuccess(barcode);
+                        // Optional: Show success feedback briefly? 
+                        // Usually onScanSuccess updates the list instantly, so that's feedback enough.
+                    }
+                } else {
+                    setFeedbackMessage("Okunamadı. Tekrar deneyin.");
+                    setTimeout(() => setFeedbackMessage(null), 2000);
                 }
             } catch (err) {
                 console.error("OCR Error:", err);
-                alert("OCR başarısız. Tekrar deneyin.");
+                setFeedbackMessage("Hata oluştu. Tekrar deneyin.");
+                setTimeout(() => setFeedbackMessage(null), 2000);
             } finally {
                 setOcrLoading(false);
                 setOcrProgress(0);
@@ -190,12 +231,26 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
         }, 'image/png');
     };
 
+    const formatDate = (date: any) => {
+        if (!date) return '-';
+        const d = date.toDate ? date.toDate() : new Date(date);
+        return d.toLocaleDateString('tr-TR');
+    };
+
     // --- RENDER: Custom Camera (OCR) ---
     if (customCameraOpen) {
         return (
-            <div className="fixed inset-0 z-[200] bg-black">
-                {/* Video Container */}
-                <div className="relative w-full h-[60vh] bg-black">
+            <div className="fixed inset-0 z-[200] bg-black flex flex-col">
+                {/* 1. TOP SECTION: Header & Close */}
+                <div className="relative z-50 bg-slate-900 border-b border-white/10 p-2 flex justify-between items-center shadow-md">
+                    <h3 className="text-white font-bold ml-2">OCR Kamera</h3>
+                    <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* 2. CAMERA SECTION (Top Half) */}
+                <div className="relative w-full h-[45vh] bg-black shrink-0">
                     <video
                         ref={videoRef}
                         className="w-full h-full object-cover"
@@ -210,86 +265,154 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Hidden canvas for capture */}
                     <canvas ref={canvasRef} className="hidden" />
+
+                    {/* Feedback Message */}
+                    {feedbackMessage && (
+                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-red-500/80 text-white px-4 py-2 rounded-full text-sm font-bold z-30 animate-in fade-in slide-in-from-bottom-2">
+                            {feedbackMessage}
+                        </div>
+                    )}
+
+                    {/* Capture Button - Overlaying Camera Bottom */}
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center z-20">
+                        <button
+                            onClick={captureFrame}
+                            disabled={ocrLoading}
+                            className={`px-8 py-3 rounded-full font-bold shadow-lg flex items-center gap-2 active:scale-95 transition-all outline outline-4 outline-black/30 ${ocrLoading ? 'bg-slate-700 text-slate-300' : 'bg-green-600 hover:bg-green-500 text-white'
+                                }`}
+                        >
+                            {ocrLoading ? (
+                                <><RefreshCw className="w-5 h-5 animate-spin" /> Okunuyor...</>
+                            ) : (
+                                <><Camera className="w-5 h-5" /> Çek ve Kaydet</>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
-                {/* Controls Area */}
-                <div className="absolute bottom-0 left-0 right-0 h-[40vh] bg-slate-900 flex flex-col items-center justify-center p-6 space-y-4">
-                    <button
-                        onClick={captureFrame}
-                        className="w-full bg-green-600 hover:bg-green-500 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-2 text-lg shadow-lg active:scale-95 transition-transform"
-                    >
-                        <Camera className="w-6 h-6" />
-                        Çek ve Oku
-                    </button>
+                {/* 3. LIST SECTION (Bottom Half - Scrollable) */}
+                <div className="flex-1 bg-slate-100 overflow-y-auto">
+                    <div className="p-4 space-y-3">
+                        <h4 className="font-bold text-slate-700 text-sm border-b pb-2 mb-2 flex justify-between items-center">
+                            <span>Son Eklenenler</span>
+                            <span className="text-xs font-normal bg-slate-200 px-2 py-1 rounded-full text-slate-600">{existingBarcodes.length} Adet</span>
+                        </h4>
 
-                    <button
-                        onClick={closeCustomCamera}
-                        className="w-full bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-2xl font-bold active:scale-95 transition-transform"
-                    >
-                        İptal
-                    </button>
+                        {existingBarcodes.length === 0 ? (
+                            <div className="text-center py-8 text-slate-400">
+                                <p className="text-sm">Henüz barkod taranmadı.</p>
+                            </div>
+                        ) : (
+                            // Show reversed so newest is top
+                            [...existingBarcodes].reverse().map((barcode, index) => (
+                                <div key={index} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3 animate-in slide-in-from-top-1">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${barcode.status === 'safe' ? 'bg-green-100 text-green-600' :
+                                        barcode.status === 'expired' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+                                        }`}>
+                                        {barcode.status === 'safe' ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-mono font-bold text-slate-800 text-sm break-all">
+                                            {barcode.originalCode}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 mt-1 flex gap-3">
+                                            <span>ÜRT: {formatDate(barcode.productionDate)}</span>
+                                            <span>SKT: {formatDate(barcode.expiryDate)}</span>
+                                        </div>
+                                    </div>
+                                    {onDelete && (
+                                        <button
+                                            onClick={() => onDelete(barcode)}
+                                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))
+                        )}
+
+                        {/* Spacer for bottom safe area */}
+                        <div className="h-4"></div>
+                    </div>
                 </div>
             </div>
         );
     }
 
-    // --- RENDER: Standard Barcode Scanner + Entry ---
+    // --- RENDER: Standard Barcode Scanner Fallback ---
     return (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col">
             {/* Header */}
-            <div className="flex justify-between items-center p-4 bg-slate-900/90 backdrop-blur-sm z-10 border-b border-white/10">
-                <h3 className="font-bold text-white text-lg">Barkod Tara</h3>
-                <button
-                    onClick={onClose}
-                    className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
-                >
-                    <X className="w-6 h-6" />
+            <div className="relative z-50 bg-slate-900 border-b border-white/10 p-2 flex justify-between items-center">
+                <h3 className="text-white font-bold ml-2">QR/Barkod Tara</h3>
+                <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white">
+                    <X className="w-5 h-5" />
                 </button>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center items-center p-4 relative overflow-y-auto">
+            {/* Standard Scanner Camera Area */}
+            <div className="bg-black p-4 flex flex-col items-center shrink-0">
                 {error ? (
-                    <div className="w-full max-w-sm p-4 bg-red-500/10 border border-red-500/50 text-red-400 rounded-lg text-center">
+                    <div className="p-4 bg-red-500/10 text-red-400 rounded-lg text-center my-4">
                         <p>{error}</p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="mt-2 text-white bg-red-500 px-4 py-2 rounded-lg text-sm"
-                        >
-                            Sayfayı Yenile
-                        </button>
+                        <button onClick={() => window.location.reload()} className="mt-2 text-white bg-red-500 px-4 py-2 rounded">Yenile</button>
                     </div>
                 ) : (
                     <>
-                        {/* Html5Qrcode DOM element */}
-                        <div id="reader" className="w-full max-w-sm overflow-hidden rounded-xl border border-white/20 bg-black shadow-2xl"></div>
-
-                        <div className="mt-8 w-full max-w-sm space-y-4">
-                            <p className="text-slate-400 text-center text-sm">
-                                Otomatik okumuyorsa fotoğraf çekin:
-                            </p>
-
-                            <button
-                                onClick={openCustomCamera}
-                                disabled={ocrLoading}
-                                className="w-full bg-slate-800 hover:bg-slate-700 border border-white/10 text-white py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
-                            >
-                                {ocrLoading ? (
-                                    <>
-                                        <RefreshCw className="w-5 h-5 animate-spin text-blue-400" />
-                                        <span>Okunuyor... {ocrProgress}%</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Camera className="w-5 h-5 text-green-400" />
-                                        <span>Fotoğraf Çek (OCR)</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        <div id="reader" className="w-full max-w-sm rounded-xl border border-white/20 bg-black shadow-2xl overflow-hidden mb-4"></div>
+                        <button onClick={openCustomCamera} className="w-full max-w-sm bg-slate-800 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                            <Camera className="w-5 h-5" /> OCR Kamerayı Aç
+                        </button>
                     </>
                 )}
+            </div>
+
+            {/* List Section (Shared Logic) */}
+            <div className="flex-1 bg-slate-100 overflow-y-auto border-t border-slate-900">
+                <div className="p-4 space-y-3">
+                    <h4 className="font-bold text-slate-700 text-sm border-b pb-2 mb-2 flex justify-between items-center">
+                        <span>Son Eklenenler</span>
+                        <span className="text-xs font-normal bg-slate-200 px-2 py-1 rounded-full text-slate-600">{existingBarcodes.length} Adet</span>
+                    </h4>
+
+                    {existingBarcodes.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400">
+                            <p className="text-sm">Henüz barkod taranmadı.</p>
+                        </div>
+                    ) : (
+                        // Show reversed so newest is top
+                        [...existingBarcodes].reverse().map((barcode, index) => (
+                            <div key={index} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3 animate-in slide-in-from-top-1">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${barcode.status === 'safe' ? 'bg-green-100 text-green-600' :
+                                    barcode.status === 'expired' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+                                    }`}>
+                                    {barcode.status === 'safe' ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="font-mono font-bold text-slate-800 text-sm break-all">
+                                        {barcode.originalCode}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 mt-1 flex gap-3">
+                                        <span>ÜRT: {formatDate(barcode.productionDate)}</span>
+                                        <span>SKT: {formatDate(barcode.expiryDate)}</span>
+                                    </div>
+                                </div>
+                                {onDelete && (
+                                    <button
+                                        onClick={() => onDelete(barcode)}
+                                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                        ))
+                    )}
+
+                    <div className="h-4"></div>
+                </div>
             </div>
         </div>
     );

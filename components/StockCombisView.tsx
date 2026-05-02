@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Pencil, Trash2, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, Search, ChevronRight, ArrowLeft } from 'lucide-react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query } from 'firebase/firestore';
 import { db } from '@/src/firebase';
 import { StockCombi } from '@/types';
@@ -13,8 +13,8 @@ const StockCombisView: React.FC = () => {
     const [editingStock, setEditingStock] = useState<StockCombi | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Expandable Row State
-    const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+    // Full Page Detail State
+    const [selectedStock, setSelectedStock] = useState<StockCombi | null>(null);
 
     useEffect(() => {
         const q = query(collection(db, 'stock_combis'), orderBy('createdAt', 'desc'));
@@ -24,6 +24,15 @@ const StockCombisView: React.FC = () => {
                 ...doc.data()
             } as StockCombi));
             setStocks(stockList);
+
+            // Should verify if selectedStock needs update?
+            // If the selected stock is updated in the background, we might want to update the view.
+            setSelectedStock(prev => {
+                if (!prev) return null;
+                const updated = stockList.find(s => s.id === prev.id);
+                return updated || null; // If deleted, return null
+            });
+
             setLoading(false);
         });
 
@@ -41,19 +50,18 @@ const StockCombisView: React.FC = () => {
     };
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent row expand
+        e.stopPropagation();
         if (window.confirm('Bu stok kaydını silmek istediğinize emin misiniz?')) {
             try {
                 await deleteDoc(doc(db, 'stock_combis', id));
+                if (selectedStock?.id === id) {
+                    setSelectedStock(null);
+                }
             } catch (error) {
                 console.error("Error deleting stock:", error);
                 alert("Silme işlemi başarısız oldu.");
             }
         }
-    };
-
-    const toggleRow = (id: string) => {
-        setExpandedRowId(prev => prev === id ? null : id);
     };
 
     const handleSave = async (data: Omit<StockCombi, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -86,6 +94,46 @@ const StockCombisView: React.FC = () => {
         stock.model.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const getCalculatedQuantity = (stock: StockCombi) => {
+        const inboundCount = stock.barcodes?.length || 0;
+        const outboundCount = stock.outboundBarcodes?.length || 0;
+        return inboundCount - outboundCount;
+    };
+
+    // RENDER: DETAIL VIEW
+    if (selectedStock) {
+        return (
+            <div className="flex flex-col h-full bg-slate-50 relative min-w-0 animate-in slide-in-from-right duration-200">
+                {/* Detail Header */}
+                <div className="bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between shadow-sm shrink-0">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setSelectedStock(null)}
+                            className="p-2 -ml-2 hover:bg-slate-100 rounded-full text-slate-600 transition-colors"
+                        >
+                            <ArrowLeft className="w-6 h-6" />
+                        </button>
+                        <div>
+                            <h2 className="font-bold text-lg text-slate-800 leading-tight">
+                                {selectedStock.brand}
+                            </h2>
+                            <p className="text-sm text-slate-500">
+                                {selectedStock.model} • {selectedStock.capacity}
+                            </p>
+                        </div>
+                    </div>
+                    {/* Action buttons could go here if needed, keeping it clean for now */}
+                </div>
+
+                {/* Detail Content */}
+                <div className="flex-1 overflow-auto">
+                    <StockCombiRowDetail stock={selectedStock} />
+                </div>
+            </div>
+        );
+    }
+
+    // RENDER: LIST VIEW
     return (
         <div className="flex flex-col h-full bg-slate-900 md:bg-slate-50 relative min-w-0">
             {/* Header - Adaptive (Dark on Mobile, Light on Desktop) */}
@@ -96,7 +144,7 @@ const StockCombisView: React.FC = () => {
                     </div>
                     <div>
                         <h1 className="text-lg md:text-xl font-bold text-white md:text-slate-800">Kombi Stok</h1>
-                        <p className="text-xs text-slate-400 md:text-slate-500">Toplam {stocks.reduce((acc, curr) => acc + curr.quantity, 0)} adet</p>
+                        <p className="text-xs text-slate-400 md:text-slate-500">Toplam {stocks.reduce((acc, curr) => acc + getCalculatedQuantity(curr), 0)} adet</p>
                     </div>
                 </div>
 
@@ -137,59 +185,54 @@ const StockCombisView: React.FC = () => {
                     <>
                         {/* MOBILE: Dark Card List View */}
                         <div className="md:hidden space-y-3">
-                            {filteredStocks.map(stock => {
-                                const isExpanded = expandedRowId === stock.id;
-                                return (
-                                    <div key={stock.id} className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
-                                        <div
-                                            onClick={() => toggleRow(stock.id)}
-                                            className={`p-3 flex items-center gap-3 cursor-pointer transition-colors ${isExpanded ? 'bg-slate-700/50' : 'active:bg-slate-700/30'}`}
-                                        >
-                                            {/* Quantity Badge */}
-                                            <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg shrink-0 ${stock.quantity === 0 ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                                                <span className="text-lg font-bold leading-none">{stock.quantity}</span>
-                                                <span className="text-[9px] uppercase opacity-70">Adet</span>
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-0.5">
-                                                    <h3 className="font-bold text-white text-sm truncate">{stock.brand}</h3>
-                                                    <span className="bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded text-[10px] border border-slate-600 shrink-0">
-                                                        {stock.capacity}
-                                                    </span>
-                                                </div>
-                                                <div className="text-xs text-slate-400 truncate">{stock.model}</div>
-                                            </div>
-
-                                            {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-500" /> : <ChevronDown className="w-5 h-5 text-slate-500" />}
+                            {filteredStocks.map(stock => (
+                                <div key={stock.id} className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden active:scale-[0.98] transition-transform">
+                                    <div
+                                        onClick={() => setSelectedStock(stock)}
+                                        className="p-3 flex items-center gap-3 cursor-pointer"
+                                    >
+                                        {/* Quantity Badge */}
+                                        <div 
+                                            onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
+                                            title="Güncellemek için tıklayın"
+                                            className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg shrink-0 cursor-pointer hover:opacity-80 transition-opacity ${getCalculatedQuantity(stock) === 0 ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                                            <span className="text-lg font-bold leading-none">{getCalculatedQuantity(stock)}</span>
+                                            <span className="text-[9px] uppercase opacity-70">Adet</span>
                                         </div>
 
-                                        {isExpanded && (
-                                            <div className="border-t border-slate-700 bg-slate-900/30 p-3">
-                                                {/* Mobile Actions */}
-                                                {(editingStock === undefined) && (
-                                                    <div className="flex gap-2 mb-3">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
-                                                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-medium text-slate-300 transition-colors"
-                                                        >
-                                                            <Pencil className="w-3.5 h-3.5" /> Düzenle
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => handleDelete(stock.id, e)}
-                                                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-xs font-medium text-red-400 transition-colors"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5" /> Sil
-                                                        </button>
-                                                    </div>
-                                                )}
-
-                                                <StockCombiRowDetail stock={stock} />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <h3 className="font-bold text-white text-sm truncate">{stock.brand}</h3>
+                                                <span className="bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded text-[10px] border border-slate-600 shrink-0">
+                                                    {stock.capacity}
+                                                </span>
                                             </div>
-                                        )}
+                                            <div className="text-xs text-slate-400 truncate">{stock.model}</div>
+                                        </div>
+
+                                        <ChevronRight className="w-5 h-5 text-slate-500" />
                                     </div>
-                                );
-                            })}
+
+                                    {/* Quick Actions (Still visible or maybe move them to detail view? User said simple slide) */}
+                                    {/* Let's keep actions available but only triggerable if not clicking main body? 
+                                        Actually, moving to Edit inside detail view or long press might be better, 
+                                        but for now let's add a small action bar at bottom of card if needed.
+                                        
+                                        For simplicity as requested "Direct page change", I'll put actions in swipe or just inside detail.
+                                        BUT, existing code had actions under the expanded row. 
+                                        I should probably add "Edit" and "Delete" buttons to the header of the Detail View 
+                                        or keep them accessible here. 
+                                        
+                                        Let's add Edit/Delete inside the Detail View Header is cleaner, 
+                                        OR add a small "More" menu on the card.
+                                        
+                                        Let's stick to the list view having swipe or just clicking opens detail. 
+                                        I'll add Edit/Delete to the list items similar to desktop but for mobile maybe just a "More" icon?
+                                        
+                                        Actually, for Mobile, let's put Edit/Delete in the DETAIL VIEW header to keep list clean.
+                                    */}
+                                </div>
+                            ))}
                         </div>
 
                         {/* DESKTOP: Light Table View */}
@@ -197,7 +240,6 @@ const StockCombisView: React.FC = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wider">
-                                        <th className="px-6 py-4 font-bold w-10"></th>
                                         <th className="px-6 py-4 font-bold">Marka</th>
                                         <th className="px-6 py-4 font-bold">Model</th>
                                         <th className="px-6 py-4 font-bold">Kapasite</th>
@@ -206,58 +248,50 @@ const StockCombisView: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {filteredStocks.map((stock) => {
-                                        const isExpanded = expandedRowId === stock.id;
-                                        return (
-                                            <React.Fragment key={stock.id}>
-                                                <tr
-                                                    onClick={() => toggleRow(stock.id)}
-                                                    className={`transition-colors cursor-pointer group ${isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/50'}`}
+                                    {filteredStocks.map((stock) => (
+                                        <tr
+                                            key={stock.id}
+                                            onClick={() => setSelectedStock(stock)}
+                                            className="transition-colors cursor-pointer group hover:bg-blue-50/50"
+                                        >
+                                            <td className="px-6 py-4 font-bold text-slate-700">{stock.brand}</td>
+                                            <td className="px-6 py-4 text-slate-600">{stock.model}</td>
+                                            <td className="px-6 py-4">
+                                                <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-bold border border-blue-100">
+                                                    {stock.capacity}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div 
+                                                    onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
+                                                    className="cursor-pointer hover:bg-slate-100 inline-block px-4 py-2 rounded-lg transition-colors"
+                                                    title="Güncellemek için tıklayın"
                                                 >
-                                                    <td className="px-6 py-4 text-slate-400">
-                                                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                    </td>
-                                                    <td className="px-6 py-4 font-bold text-slate-700">{stock.brand}</td>
-                                                    <td className="px-6 py-4 text-slate-600">{stock.model}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-bold border border-blue-100">
-                                                            {stock.capacity}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <span className={`font-bold ${stock.quantity === 0 ? 'text-red-500' : 'text-slate-700'}`}>
-                                                            {stock.quantity}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
-                                                                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"
-                                                                title="Düzenle"
-                                                            >
-                                                                <Pencil className="w-4 h-4" />
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => handleDelete(stock.id, e)}
-                                                                className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
-                                                                title="Sil"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                {isExpanded && (
-                                                    <tr>
-                                                        <td colSpan={6} className="p-0">
-                                                            <StockCombiRowDetail stock={stock} />
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })}
+                                                    <span className={`font-bold ${getCalculatedQuantity(stock) === 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                                                        {getCalculatedQuantity(stock)}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
+                                                        className="p-2 hover:bg-slate-100 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"
+                                                        title="Düzenle"
+                                                    >
+                                                        <Pencil className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => handleDelete(stock.id, e)}
+                                                        className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                                                        title="Sil"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>

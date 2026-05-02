@@ -106,29 +106,14 @@ const StockGenericModal: React.FC<StockGenericModalProps> = ({ isOpen, onClose, 
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Stok Adedi</label>
-                        <div className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setQuantity(q => Math.max(0, q - 1))}
-                                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-600 transition-colors"
-                            >
-                                -
-                            </button>
-                            <input
-                                type="number"
-                                value={quantity}
-                                onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                                className="flex-1 p-3 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none font-bold"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setQuantity(q => q + 1)}
-                                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-600 transition-colors"
-                            >
-                                +
-                            </button>
-                        </div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Stok Adedi (Barkoddan Hesaplanır)</label>
+                        <input
+                            type="number"
+                            disabled
+                            value={quantity}
+                            className="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed outline-none font-bold text-center"
+                            title="Adetler barkodlara göre otomatik hesaplanmaktadır"
+                        />
                     </div>
 
                     <div className="pt-4 flex gap-3">

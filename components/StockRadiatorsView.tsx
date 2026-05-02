@@ -164,7 +164,7 @@ const StockRadiatorsView: React.FC = () => {
                                                 {groupStocks
                                                     .sort((a, b) => parseInt(a.length) - parseInt(b.length))
                                                     .map((stock) => (
-                                                        <tr key={stock.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                        <tr key={stock.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => handleEdit(stock)}>
                                                             <td className="px-6 py-4 font-bold text-slate-700">{stock.brand}</td>
                                                             <td className="px-6 py-4 text-slate-600">
                                                                 <span className="font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded">
@@ -179,14 +179,14 @@ const StockRadiatorsView: React.FC = () => {
                                                             <td className="px-6 py-4 text-right">
                                                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                     <button
-                                                                        onClick={() => handleEdit(stock)}
+                                                                        onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
                                                                         className="p-2 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"
                                                                         title="Düzenle"
                                                                     >
                                                                         <Pencil className="w-4 h-4" />
                                                                     </button>
                                                                     <button
-                                                                        onClick={() => handleDelete(stock.id)}
+                                                                        onClick={(e) => { e.stopPropagation(); handleDelete(stock.id); }}
                                                                         className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
                                                                         title="Sil"
                                                                     >
@@ -205,7 +205,7 @@ const StockRadiatorsView: React.FC = () => {
                                         {groupStocks
                                             .sort((a, b) => parseInt(a.length) - parseInt(b.length))
                                             .map((stock) => (
-                                                <div key={stock.id} className="p-3">
+                                                <div key={stock.id} className="p-3 cursor-pointer active:bg-slate-800/50 transition-colors" onClick={() => handleEdit(stock)}>
                                                     <div className="flex items-center gap-3">
                                                         {/* Quantity Box */}
                                                         <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg shrink-0 ${stock.quantity === 0 ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-400'}`}>
@@ -226,13 +226,13 @@ const StockRadiatorsView: React.FC = () => {
                                                                 {/* Actions */}
                                                                 <div className="flex items-center gap-2">
                                                                     <button
-                                                                        onClick={() => handleEdit(stock)}
+                                                                        onClick={(e) => { e.stopPropagation(); handleEdit(stock); }}
                                                                         className="p-1.5 bg-slate-700 text-blue-400 rounded-lg hover:bg-slate-600"
                                                                     >
                                                                         <Pencil className="w-3.5 h-3.5" />
                                                                     </button>
                                                                     <button
-                                                                        onClick={() => handleDelete(stock.id)}
+                                                                        onClick={(e) => { e.stopPropagation(); handleDelete(stock.id); }}
                                                                         className="p-1.5 bg-slate-700 text-red-400 rounded-lg hover:bg-slate-600"
                                                                     >
                                                                         <Trash2 className="w-3.5 h-3.5" />

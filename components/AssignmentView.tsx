@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Task, RoutineTask, TaskStatus, StaffMember } from '../types';
-import { User, ArrowRight, ArrowLeft, ClipboardList, CheckSquare, Printer, Plus, Trash2, Save, Pin, PinOff, Phone, MapPin, UserCircle, ChevronDown, ChevronRight, Calendar, List, ChevronLeft, X } from 'lucide-react';
+import { User, ArrowRight, ArrowLeft, ClipboardList, CheckSquare, Printer, Plus, Trash2, Save, Pin, PinOff, Phone, MapPin, UserCircle, ChevronDown, ChevronRight, Calendar, List, ChevronLeft, X, Clock } from 'lucide-react';
 
 interface AssignmentViewProps {
     tasks: Task[];
@@ -13,6 +13,7 @@ interface AssignmentViewProps {
     onRemoveStaff: (name: string) => void;
     onTogglePinStaff: (name: string) => void;
     onReorderTasks: (updates: { id: string, type: 'main' | 'routine', dailyOrder: number }[]) => void;
+    onAddRoutineTask?: (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string, customDate?: string | Date) => void;
 }
 
 const AssignmentView: React.FC<AssignmentViewProps> = ({
@@ -25,7 +26,8 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
     onAddStaff,
     onRemoveStaff,
     onTogglePinStaff,
-    onReorderTasks
+    onReorderTasks,
+    onAddRoutineTask
 }) => {
     const [selectedStaffName, setSelectedStaffName] = useState<string>('');
     const [showAddStaffInput, setShowAddStaffInput] = useState(false);
@@ -53,6 +55,73 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
     const [isRoutineTasksExpanded, setIsRoutineTasksExpanded] = useState(true);
     const [isStaffListExpanded, setIsStaffListExpanded] = useState(true);
     const [isPoolSectionExpanded, setIsPoolSectionExpanded] = useState(true);
+
+    // MODAL & CONTEXT MENU STATES
+    const [contextMenuState, setContextMenuState] = useState<{ visible: boolean, x: number, y: number, date: Date | null }>({ visible: false, x: 0, y: 0, date: null });
+    const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+    const [targetTaskDate, setTargetTaskDate] = useState<Date | null>(null);
+
+    // Add Task Form States
+    const [customerName, setCustomerName] = useState('');
+    const [newTaskContent, setNewTaskContent] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [address, setAddress] = useState('');
+    const [district, setDistrict] = useState('');
+    const [city, setCity] = useState('');
+
+    // MOBILE UI STATES
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [mobileSelectedDate, setMobileSelectedDate] = useState<Date>(new Date());
+    const [selectedMobileSlot, setSelectedMobileSlot] = useState<{ date: Date, hour: number } | null>(null);
+    const [activePoolModal, setActivePoolModal] = useState<'main' | 'routine' | null>(null);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const handleClick = () => setContextMenuState(prev => ({ ...prev, visible: false }));
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, []);
+
+    const handleContextMenu = (e: React.MouseEvent, date: Date, hour: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedStaffName) {
+            alert("Lütfen önce personel seçiniz.");
+            return;
+        }
+        const cellDate = new Date(date);
+        cellDate.setHours(hour, 0, 0, 0);
+        setContextMenuState({
+            visible: true,
+            x: e.clientX,
+            y: e.clientY,
+            date: cellDate
+        });
+    };
+
+    const openAddTaskModal = (date: Date) => {
+        setTargetTaskDate(date);
+        setShowAddTaskModal(true);
+        setCustomerName('');
+        setNewTaskContent('');
+        setPhoneNumber('');
+        setAddress('');
+        setDistrict('');
+        setCity('');
+    };
+
+    const handleAddRoutineTaskSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newTaskContent.trim() && onAddRoutineTask && selectedStaffName && targetTaskDate) {
+            onAddRoutineTask(newTaskContent, selectedStaffName, customerName, phoneNumber, address, '', district, city, targetTaskDate);
+            setShowAddTaskModal(false);
+        }
+    };
 
     // Personel listesi değiştiğinde veya boşsa seçim yap
     useEffect(() => {
@@ -161,8 +230,299 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
         }
     };
 
+    if (isMobile) {
+        return (
+            <div className="flex flex-col h-[calc(100vh-60px)] bg-slate-50 overflow-hidden animate-in fade-in duration-300">
+                 {/* TOP BAR: Sadece personel adı ve personel değiştirme */}
+                 <div className="bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
+                      <div className="flex items-center gap-3">
+                           <div className="bg-blue-100 p-2 rounded-xl">
+                                <User className="w-5 h-5 text-blue-600" />
+                           </div>
+                           <div className="flex flex-col">
+                                <select
+                                    value={selectedStaffName}
+                                    onChange={(e) => setSelectedStaffName(e.target.value)}
+                                    className="bg-transparent text-slate-800 font-bold text-lg outline-none cursor-pointer border-none focus:ring-0 p-0"
+                                >
+                                    {staffList.map(member => (
+                                        <option key={member.name} value={member.name}>{member.name}</option>
+                                    ))}
+                                    {staffList.length === 0 && <option value="">Personel Ekleyin</option>}
+                                </select>
+                                <p className="text-[10px] text-slate-500 font-medium">Görev Dağıtımı (Mobil)</p>
+                           </div>
+                      </div>
+                 </div>
+
+                 {/* POOL BUTTONS */}
+                 <div className="px-4 py-3 flex gap-2 shrink-0">
+                      <button 
+                          onClick={() => setActivePoolModal('main')}
+                          className="flex-1 bg-white border border-blue-200 shadow-sm rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-1 hover:bg-blue-50 transition-colors"
+                      >
+                          <ClipboardList className="w-5 h-5 text-blue-500" />
+                          <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 text-center leading-tight">Kontrolü Yapılacaklar</span>
+                          <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">{unassignedTasks.length}</span>
+                      </button>
+                      <button 
+                          onClick={() => setActivePoolModal('routine')}
+                          className="flex-1 bg-white border border-purple-200 shadow-sm rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-1 hover:bg-purple-50 transition-colors"
+                      >
+                          <CheckSquare className="w-5 h-5 text-purple-500" />
+                          <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 text-center leading-tight">Eksikler / Notlar</span>
+                          <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">{unassignedRoutineTasks.length}</span>
+                      </button>
+                 </div>
+
+                 {/* CALENDAR */}
+                 <div className="flex-1 overflow-y-auto px-4 pb-4">
+                     <div className="flex items-center justify-between mb-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+                          <button onClick={() => {
+                              const d = new Date(mobileSelectedDate); d.setDate(d.getDate() - 1); setMobileSelectedDate(d);
+                          }} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"><ChevronLeft className="w-5 h-5" /></button>
+                          <div className="font-bold text-slate-700 text-sm">
+                              {mobileSelectedDate.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                          </div>
+                          <button onClick={() => {
+                              const d = new Date(mobileSelectedDate); d.setDate(d.getDate() + 1); setMobileSelectedDate(d);
+                          }} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"><ChevronRight className="w-5 h-5" /></button>
+                     </div>
+
+                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                         {[9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(hour => {
+                             const dayDate = mobileSelectedDate;
+                             const dayRoutineTasks = staffRoutineTasks.filter(t => {
+                                 const date = t.scheduledDate || t.createdAt;
+                                 const d = new Date(date?.seconds ? date.seconds * 1000 : date);
+                                 return d.toDateString() === dayDate.toDateString() && d.getHours() === hour;
+                             });
+                             const dayMainTasks = staffTasks.filter(t => {
+                                 if (!t.scheduledDate) return false;
+                                 const d = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+                                 return d.toDateString() === dayDate.toDateString() && d.getHours() === hour;
+                             });
+                             const allHourTasks = [...dayRoutineTasks.map(t=>({type:'routine', data:t})), ...dayMainTasks.map(t=>({type:'main', data:t}))];
+                             const isSelected = selectedMobileSlot?.date.toDateString() === dayDate.toDateString() && selectedMobileSlot?.hour === hour;
+
+                             return (
+                                 <div 
+                                     key={hour}
+                                     onClick={() => setSelectedMobileSlot({ date: dayDate, hour })}
+                                     className={`border-b border-slate-100 min-h-[70px] relative p-2 pl-14 flex flex-col gap-2 transition-colors cursor-pointer ${isSelected ? 'bg-blue-50/80 shadow-inner' : 'hover:bg-slate-50'}`}
+                                 >
+                                     <div className={`absolute top-0 bottom-0 left-0 w-12 flex items-center justify-center border-r border-slate-100 font-bold text-xs ${isSelected ? 'bg-blue-500 text-white' : 'bg-slate-50 text-slate-400'}`}>{hour}:00</div>
+                                     {allHourTasks.length === 0 && <div className="text-xs text-slate-300 italic flex items-center h-full pt-1">İş yok, boş saat</div>}
+                                     {allHourTasks.map((item, idx) => {
+                                         const t = item.data;
+                                         if (item.type === 'routine') {
+                                             return (
+                                                 <div key={idx} className="bg-white border-l-4 border-l-purple-500 border border-slate-200 p-2 rounded shadow-sm text-xs relative">
+                                                    <div className="font-bold text-slate-700">{t.customerName || 'İsimsiz'}</div>
+                                                    <div className="text-slate-500 leading-tight mt-0.5">{t.content}</div>
+                                                    <button onClick={(e) => { e.stopPropagation(); onAssignRoutineTask(t.id, '', undefined); }} className="absolute top-1 right-1 text-red-400 p-1"><X className="w-3 h-3" /></button>
+                                                 </div>
+                                             );
+                                         } else {
+                                             return (
+                                                 <div key={idx} className="bg-white border-l-4 border-l-blue-500 border border-slate-200 p-2 rounded shadow-sm text-xs relative">
+                                                    <div className="font-bold text-slate-700">{t.title}</div>
+                                                    <div className="text-slate-500 leading-tight mt-0.5 line-clamp-1">{t.address}</div>
+                                                    <button onClick={(e) => { e.stopPropagation(); onAssignTask(t.id, '', undefined); }} className="absolute top-1 right-1 text-red-400 p-1"><X className="w-3 h-3" /></button>
+                                                 </div>
+                                             );
+                                         }
+                                     })}
+                                 </div>
+                             )
+                         })}
+                     </div>
+                 </div>
+
+                 {/* POOL MODAL */}
+                 {activePoolModal && (
+                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex flex-col animate-in slide-in-from-bottom-full duration-300">
+                         <div className="bg-white flex-1 mt-12 rounded-t-3xl flex flex-col overflow-hidden shadow-2xl">
+                             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+                                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                      {activePoolModal === 'main' ? <ClipboardList className="w-5 h-5 text-blue-500"/> : <CheckSquare className="w-5 h-5 text-purple-500"/>}
+                                      {activePoolModal === 'main' ? 'Kontrolü Yapılacak İşler' : 'Eksikler / Notlar'}
+                                  </h3>
+                                  <button onClick={() => setActivePoolModal(null)} className="p-2 bg-slate-200 text-slate-600 rounded-full"><X className="w-5 h-5" /></button>
+                             </div>
+                             
+                             {!selectedMobileSlot && (
+                                 <div className="bg-amber-50 text-amber-700 p-3 text-xs font-bold text-center border-b border-amber-200 flex flex-col gap-1 items-center">
+                                     <span>⚠️ Takvimden saat seçilmemiş!</span>
+                                     <span className="font-normal text-[10px]">Atama yapmak için listeden çıkıp önce takvime tıklayarak bir saat seçin.</span>
+                                 </div>
+                             )}
+
+                             {selectedMobileSlot && (
+                                 <div className="bg-blue-50 text-blue-700 p-3 text-xs font-bold text-center border-b border-blue-200">
+                                     💡 İşlerden birine tıklayarak {selectedMobileSlot.hour}:00 saatine atayabilirsiniz.
+                                 </div>
+                             )}
+
+                             <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar pb-10">
+                                  {activePoolModal === 'main' ? (
+                                      <>
+                                          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-2 mb-2" onClick={(e) => e.stopPropagation()}>
+                                              {['Tümü', ...Array.from(new Set(unassignedTasks.map(t => t.district).filter(Boolean)))].sort().map(dist => (
+                                                  <button
+                                                      key={dist}
+                                                      onClick={() => setActiveMainDistrict(dist || 'Tümü')}
+                                                      className={`text-[10px] px-2 py-1 rounded-md whitespace-nowrap transition-colors border shadow-sm ${activeMainDistrict === (dist || 'Tümü')
+                                                          ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                                                  >
+                                                      {dist || 'Yok'}
+                                                  </button>
+                                              ))}
+                                          </div>
+                                          {filteredMainTasks.length === 0 ? <p className="text-center text-slate-400 text-sm mt-10">Atanmamış iş bulunmuyor.</p> :
+                                          filteredMainTasks.map(t => (
+                                          <div 
+                                              key={t.id} 
+                                              onClick={() => {
+                                                  if (!selectedMobileSlot) { alert('Lütfen önce takvimden bir saat seçin!'); return; }
+                                                  if (!selectedStaffName) { alert('Personel seçili değil!'); return; }
+                                                  const targetDate = new Date(selectedMobileSlot.date);
+                                                  targetDate.setHours(selectedMobileSlot.hour, 0, 0, 0);
+                                                  onAssignTask(t.id, selectedStaffName, selectedStaffEmail, targetDate);
+                                                  setActivePoolModal(null);
+                                              }}
+                                              className="bg-white border-l-4 border-l-blue-500 border border-slate-200 p-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform cursor-pointer"
+                                          >
+                                               <div className="font-bold text-slate-800 text-sm">{t.title}</div>
+                                               {t.district && <div className="text-xs text-slate-500 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3"/> {t.district} - {t.address}</div>}
+                                          </div>
+                                      ))}
+                                      </>
+                                  ) : (
+                                      <>
+                                          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-2 mb-2" onClick={(e) => e.stopPropagation()}>
+                                              {['Tümü', ...Array.from(new Set(unassignedRoutineTasks.map(t => t.district).filter(Boolean)))].sort().map(dist => (
+                                                  <button
+                                                      key={dist}
+                                                      onClick={() => setActiveRoutineDistrict(dist || 'Tümü')}
+                                                      className={`text-[10px] px-2 py-1 rounded-md whitespace-nowrap transition-colors border shadow-sm ${activeRoutineDistrict === (dist || 'Tümü')
+                                                          ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                                                  >
+                                                      {dist || 'Yok'}
+                                                  </button>
+                                              ))}
+                                          </div>
+                                          {filteredRoutineTasks.length === 0 ? <p className="text-center text-slate-400 text-sm mt-10">Atanmamış eksik/not bulunmuyor.</p> :
+                                          filteredRoutineTasks.map(t => (
+                                          <div 
+                                              key={t.id} 
+                                              onClick={() => {
+                                                  if (!selectedMobileSlot) { alert('Lütfen önce takvimden bir saat seçin!'); return; }
+                                                  if (!selectedStaffName) { alert('Personel seçili değil!'); return; }
+                                                  const targetDate = new Date(selectedMobileSlot.date);
+                                                  targetDate.setHours(selectedMobileSlot.hour, 0, 0, 0);
+                                                  onAssignRoutineTask(t.id, selectedStaffName, selectedStaffEmail, targetDate);
+                                                  setActivePoolModal(null);
+                                              }}
+                                              className="bg-white border-l-4 border-l-purple-500 border border-slate-200 p-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform cursor-pointer"
+                                          >
+                                               <div className="font-bold text-slate-800 text-sm">{t.customerName || 'İsimsiz'}</div>
+                                               <div className="text-xs text-slate-600 mt-1">{t.content}</div>
+                                               {t.address && <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3"/> {t.address}</div>}
+                                          </div>
+                                      ))}
+                                      </>
+                                  )}
+                             </div>
+                         </div>
+                     </div>
+                 )}
+            </div>
+        );
+    }
+
     return (
         <>
+            {/* Context Menu */}
+            {contextMenuState.visible && contextMenuState.date && (
+                <div 
+                    className="fixed bg-white border border-slate-200 shadow-xl rounded-lg py-1 z-50 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+                    style={{ top: contextMenuState.y, left: contextMenuState.x }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button 
+                        onClick={() => {
+                            setContextMenuState(prev => ({ ...prev, visible: false }));
+                            openAddTaskModal(contextMenuState.date!);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 font-medium"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Görev Ekle
+                    </button>
+                </div>
+            )}
+
+            {/* Add Task Modal */}
+            {showAddTaskModal && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                <Plus className="w-4 h-4 text-purple-600" />
+                                Yeni Görev Ekle
+                            </h3>
+                            <button onClick={() => setShowAddTaskModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <div className="mb-4 text-xs font-medium text-slate-500 flex items-center gap-2 bg-blue-50 text-blue-700 p-2 rounded-lg">
+                                <User className="w-4 h-4" /> {selectedStaffName} 
+                                <span className="mx-1">•</span> 
+                                <Clock className="w-4 h-4" /> {targetTaskDate?.toLocaleDateString('tr-TR')} {targetTaskDate?.getHours().toString().padStart(2, '0')}:00
+                            </div>
+                            <form onSubmit={handleAddRoutineTaskSubmit} className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Müşteri Bilgileri</label>
+                                    <div className="space-y-3">
+                                        <input type="text" placeholder="Ad Soyad" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500 transition-all placeholder:text-slate-400" />
+                                        <input type="tel" placeholder="Telefon" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500 transition-all placeholder:text-slate-400" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Konum</label>
+                                    <div className="space-y-3">
+                                        <div className="flex gap-2">
+                                            <input type="text" placeholder="İlçe" value={district} onChange={e => setDistrict(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500" />
+                                            <input type="text" placeholder="İl" value={city} onChange={e => setCity(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500" />
+                                        </div>
+                                        <div className="relative">
+                                            <input type="text" placeholder="Açık Adres" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pl-9 text-sm outline-none focus:border-purple-500" />
+                                            <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Görev Detayı *</label>
+                                    <textarea
+                                        placeholder="Yapılacak işlem veya not..."
+                                        value={newTaskContent}
+                                        onChange={e => setNewTaskContent(e.target.value)}
+                                        required
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm min-h-[80px] outline-none focus:border-purple-500 resize-none"
+                                    />
+                                </div>
+                                <button type="submit" disabled={!newTaskContent.trim()} className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                                    <Save className="w-4 h-4" />
+                                    Listeye Ekle
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* PRINT LAYOUT (Visible only when printing) */}
             <div className="hidden print:block p-8 bg-white text-black">
                 {/* Header */}
@@ -338,7 +698,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                 </div>
 
                 {/* MAIN CONTENT GRID */}
-                <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/20 bg-slate-200">
+                <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-white/20 bg-slate-200">
 
                     {/* LEFT COLUMN: POOL (Unassigned) */}
                     <div className="flex flex-col min-h-0 bg-white/30 backdrop-blur-xl">
@@ -523,7 +883,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                     </div>
 
                     {/* RIGHT COLUMN: STAFF CALENDAR (Assigned) */}
-                    <div className="flex flex-col min-h-0 bg-slate-100 shadow-xl shadow-slate-200/50 z-10 border-l border-slate-300">
+                    <div className="flex flex-col min-h-0 bg-slate-100 shadow-xl shadow-slate-200/50 z-10 border-l border-slate-300 lg:col-span-2">
                         <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-white sticky top-0 z-20">
                             <div className="flex items-center gap-2 cursor-pointer lg:cursor-default" onClick={() => setIsStaffListExpanded(!isStaffListExpanded)}>
                                 <div className="bg-blue-100 p-1.5 rounded-lg">
@@ -537,11 +897,11 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                             <div className="flex items-center gap-2">
                                 {viewMode === 'week' && (
                                     <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200 shadow-inner">
-                                        <button onClick={() => setWeekStartDate(d => new Date(d.setDate(d.getDate() - 7)))} className="p-1 hover:bg-white hover:shadow-sm rounded text-slate-400 hover:text-slate-800 transition-all"><ChevronLeft className="w-4 h-4" /></button>
+                                        <button onClick={() => setWeekStartDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7))} className="p-1 hover:bg-white hover:shadow-sm rounded text-slate-400 hover:text-slate-800 transition-all"><ChevronLeft className="w-4 h-4" /></button>
                                         <span className="text-[10px] px-2 text-slate-500 font-bold tabular-nums">
                                             {weekStartDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} - {new Date(new Date(weekStartDate).setDate(weekStartDate.getDate() + 6)).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
                                         </span>
-                                        <button onClick={() => setWeekStartDate(d => new Date(d.setDate(d.getDate() + 7)))} className="p-1 hover:bg-white hover:shadow-sm rounded text-slate-400 hover:text-slate-800 transition-all"><ChevronRight className="w-4 h-4" /></button>
+                                        <button onClick={() => setWeekStartDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7))} className="p-1 hover:bg-white hover:shadow-sm rounded text-slate-400 hover:text-slate-800 transition-all"><ChevronRight className="w-4 h-4" /></button>
                                     </div>
                                 )}
 
@@ -604,65 +964,11 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                                 const data = JSON.parse(e.dataTransfer.getData('application/json'));
                                                 if (!data.type || !data.id || !selectedStaffName) return;
 
-                                                // Determine Drop Index based on Y position
-                                                const dropTarget = e.currentTarget;
-                                                const tasksContainer = dropTarget.querySelector('.tasks-container');
-                                                let newIndex = allDayTasks.length; // Default to append
-
-                                                if (tasksContainer) {
-                                                    const taskElements = Array.from(tasksContainer.children);
-                                                    const dropY = e.clientY;
-
-                                                    for (let idx = 0; idx < taskElements.length; idx++) {
-                                                        const rect = taskElements[idx].getBoundingClientRect();
-                                                        const centerY = rect.top + rect.height / 2;
-                                                        if (dropY < centerY) {
-                                                            newIndex = idx;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-
-                                                // Construct New List
-                                                const isInternalMove = allDayTasks.some(t => t.id === data.id);
-                                                let newList = [...allDayTasks];
-
-                                                if (isInternalMove) {
-                                                    // Moving within same day: Remove old, insert at new
-                                                    const oldIndex = newList.findIndex(t => t.id === data.id);
-                                                    const [movedItem] = newList.splice(oldIndex, 1);
-                                                    // Adjust index if we removed from above
-                                                    if (newIndex > oldIndex) newIndex -= 1;
-                                                    newList.splice(newIndex, 0, movedItem);
+                                                if (data.type === 'main') {
+                                                    onAssignTask(data.id, selectedStaffName, selectedStaffEmail, dayDate);
                                                 } else {
-                                                    // New item from outside
-                                                    newList.splice(newIndex, 0, { id: data.id, type: data.type, dailyOrder: 0, data: {} });
+                                                    onAssignRoutineTask(data.id, selectedStaffName, selectedStaffEmail, dayDate);
                                                 }
-
-                                                // Recalculate Orders
-                                                const updates = newList.map((t, index) => ({
-                                                    id: t.id,
-                                                    type: t.type,
-                                                    dailyOrder: index + 1 // Start from 1
-                                                }));
-
-                                                // Call Handlers
-                                                if (!isInternalMove) {
-                                                    // First assign date
-                                                    if (data.type === 'main') {
-                                                        onAssignTask(data.id, selectedStaffName, selectedStaffEmail, dayDate);
-                                                    } else {
-                                                        onAssignRoutineTask(data.id, selectedStaffName, selectedStaffEmail, dayDate);
-                                                    }
-                                                    // Then update order after a short delay to allow assignment? 
-                                                    // Better: Pass order to assignment? Setup doesn't support it easily.
-                                                    // Implementation: Assign works, then we immediately fire Reorder.
-                                                    // Since Reorder is by ID, it should work fine concurrently.
-                                                }
-
-                                                // Always fire reorder to save the new sequence
-                                                onReorderTasks(updates);
-
                                             } catch (err) {
                                                 console.error("Drop error:", err);
                                             }
@@ -686,42 +992,85 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                                     <div className="text-sm font-bold">{dayValues.date}</div>
                                                 </div>
 
-                                                <div className="flex-1 p-1 space-y-1.5 overflow-y-auto custom-scrollbar tasks-container">
-                                                    {allDayTasks.map(item => {
-                                                        const t = item.data;
-                                                        if (item.type === 'routine') {
-                                                            return (
-                                                                <div
-                                                                    key={t.id}
-                                                                    draggable
-                                                                    onDragStart={(e) => handleDragStart(e, 'routine', t.id)}
-                                                                    className="bg-white border-l-2 border-l-purple-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-purple-50"
-                                                                >
-                                                                    <div className="font-bold text-slate-700 truncate">{t.customerName || 'İsimsiz'}</div>
-                                                                    <div className="line-clamp-2 text-slate-500 leading-tight">{t.content}</div>
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); onAssignRoutineTask(t.id, '', undefined); }}
-                                                                        className="absolute top-1 right-1 opacity-0 group-hover/task:opacity-100 text-red-400 hover:bg-red-50 rounded p-0.5 transition-all"
-                                                                    ><X className="w-3 h-3" /></button>
+                                                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                                    {[9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(hour => {
+                                                        const hourTasks = allDayTasks.filter(item => {
+                                                            const t = item.data;
+                                                            const date = item.type === 'routine' ? (t.scheduledDate || t.createdAt) : t.scheduledDate;
+                                                            if (!date) return false;
+                                                            const d = new Date(date?.seconds ? date.seconds * 1000 : date);
+                                                            return d.getHours() === hour;
+                                                        });
+                                                        
+                                                        const handleHourDrop = (e: React.DragEvent) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            try {
+                                                                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                                                                if (!data.type || !data.id || !selectedStaffName) return;
+
+                                                                const targetDate = new Date(dayDate);
+                                                                targetDate.setHours(hour, 0, 0, 0);
+
+                                                                if (data.type === 'main') {
+                                                                    onAssignTask(data.id, selectedStaffName, selectedStaffEmail, targetDate);
+                                                                } else {
+                                                                    onAssignRoutineTask(data.id, selectedStaffName, selectedStaffEmail, targetDate);
+                                                                }
+                                                            } catch (err) {
+                                                                console.error("Drop error:", err);
+                                                            }
+                                                        };
+
+                                                        return (
+                                                            <div 
+                                                                key={hour} 
+                                                                className="border-b border-slate-100 min-h-[60px] relative hover:bg-slate-50 transition-colors flex flex-col"
+                                                                onContextMenu={(e) => handleContextMenu(e, dayDate, hour)}
+                                                                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                                                onDrop={handleHourDrop}
+                                                            >
+                                                                <div className="text-[9px] text-slate-400 absolute top-1 left-1 font-bold select-none">{hour}:00</div>
+                                                                <div className="pt-5 pb-1 px-1 flex-1 space-y-1">
+                                                                    {hourTasks.map(item => {
+                                                                        const t = item.data;
+                                                                        if (item.type === 'routine') {
+                                                                            return (
+                                                                                <div
+                                                                                    key={t.id}
+                                                                                    draggable
+                                                                                    onDragStart={(e) => handleDragStart(e, 'routine', t.id)}
+                                                                                    className="bg-white border-l-2 border-l-purple-500 border border-slate-200 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-purple-50"
+                                                                                >
+                                                                                    <div className="font-bold text-slate-700 truncate">{t.customerName || 'İsimsiz'}</div>
+                                                                                    <div className="line-clamp-2 text-slate-500 leading-tight">{t.content}</div>
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); onAssignRoutineTask(t.id, '', undefined); }}
+                                                                                        className="absolute top-1 right-1 opacity-0 group-hover/task:opacity-100 text-red-400 hover:bg-red-50 rounded p-0.5 transition-all"
+                                                                                    ><X className="w-3 h-3" /></button>
+                                                                                </div>
+                                                                            );
+                                                                        } else {
+                                                                            return (
+                                                                                <div
+                                                                                    key={t.id}
+                                                                                    draggable
+                                                                                    onDragStart={(e) => handleDragStart(e, 'main', t.id)}
+                                                                                    className="bg-white border-l-2 border-l-blue-500 border border-slate-200 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-blue-50"
+                                                                                >
+                                                                                    <div className="font-bold text-slate-700 truncate">{t.title}</div>
+                                                                                    <div className="line-clamp-2 text-slate-500 leading-tight">{t.address}</div>
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); onAssignTask(t.id, '', undefined); }}
+                                                                                        className="absolute top-1 right-1 opacity-0 group-hover/task:opacity-100 text-red-400 hover:bg-red-50 rounded p-0.5 transition-all"
+                                                                                    ><X className="w-3 h-3" /></button>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                    })}
                                                                 </div>
-                                                            );
-                                                        } else {
-                                                            return (
-                                                                <div
-                                                                    key={t.id}
-                                                                    draggable
-                                                                    onDragStart={(e) => handleDragStart(e, 'main', t.id)}
-                                                                    className="bg-white border-l-2 border-l-blue-500 border border-slate-100 p-1.5 rounded shadow-sm text-[10px] group/task relative cursor-move hover:bg-blue-50"
-                                                                >
-                                                                    <div className="font-bold text-slate-700 truncate">{t.title}</div>
-                                                                    <div className="line-clamp-2 text-slate-500 leading-tight">{t.address}</div>
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); onAssignTask(t.id, '', undefined); }}
-                                                                        className="absolute top-1 right-1 opacity-0 group-hover/task:opacity-100 text-red-400 hover:bg-red-50 rounded p-0.5 transition-all"
-                                                                    ><X className="w-3 h-3" /></button>
-                                                                </div>
-                                                            );
-                                                        }
+                                                            </div>
+                                                        );
                                                     })}
                                                 </div>
                                             </div>
