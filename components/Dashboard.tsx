@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask, UserPermission } from '@/types';
-import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal } from 'lucide-react';
+import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal, FileText, FolderOpen } from 'lucide-react';
 import PersonalNotes from './PersonalNotes';
 import CalendarWidget from './CalendarWidget';
 // import InteractiveMap from './InteractiveMap'; // Later integration
@@ -17,6 +16,8 @@ interface DashboardProps {
     onOpenAssignmentModal: () => void;
     onOpenNewCustomerModal: () => void;
     onOpenFieldStaffModal: () => void;
+    onOpenQuotationPrep?: () => void;
+    onOpenQuotationList?: () => void;
     currentUser?: { name: string; email: string };
     userRole?: 'admin' | 'staff' | 'manager';
     userPermissions?: UserPermission;
@@ -33,6 +34,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     onOpenAssignmentModal,
     onOpenNewCustomerModal,
     onOpenFieldStaffModal,
+    onOpenQuotationPrep,
+    onOpenQuotationList,
     currentUser,
     userRole,
     userPermissions
@@ -60,6 +63,14 @@ const Dashboard: React.FC<DashboardProps> = ({
     };
 
     const cards = [
+        {
+            title: 'PROJESİ ÇİZİLECEK İŞLER',
+            displayName: StatusLabels[TaskStatus.PROJECT_TO_BE_DRAWN],
+            score: tasks.filter(t => t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length,
+            status: TaskStatus.PROJECT_TO_BE_DRAWN,
+            color: 'text-amber-600',
+            borderColor: 'hover:border-amber-600'
+        },
         {
             title: 'KONTROLÜ YAPILACAK İŞLER',
             displayName: StatusLabels[TaskStatus.TO_CHECK],
@@ -271,6 +282,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
                     </div>
 
+
+
                     {/* Stats Grid (Scrollable) */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar pb-2">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -293,9 +306,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl ${isGasAlert ? 'bg-gradient-to-r from-red-500 to-orange-500' :
                                             card.status === TaskStatus.TO_CHECK ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
                                                 card.status === TaskStatus.CHECK_COMPLETED ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
-                                                    card.status === TaskStatus.DEPOSIT_PAID ? 'bg-gradient-to-r from-indigo-400 to-purple-500' :
-                                                        card.status === TaskStatus.SERVICE_DIRECTED ? 'bg-gradient-to-r from-purple-400 to-pink-500' :
-                                                            'bg-gradient-to-r from-emerald-400 to-teal-500'
+                                                    card.status === TaskStatus.PROJECT_TO_BE_DRAWN ? 'bg-gradient-to-r from-amber-400 to-yellow-500' :
+                                                        card.status === TaskStatus.DEPOSIT_PAID ? 'bg-gradient-to-r from-indigo-400 to-purple-500' :
+                                                            card.status === TaskStatus.SERVICE_DIRECTED ? 'bg-gradient-to-r from-purple-400 to-pink-500' :
+                                                                'bg-gradient-to-r from-emerald-400 to-teal-500'
                                             }`} />
 
                                         {/* Hover Glow Effect */}

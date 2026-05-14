@@ -1,6 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 
 export enum TaskStatus {
+  PROJECT_TO_BE_DRAWN = 'PROJECT_TO_BE_DRAWN',
   TO_CHECK = 'TO_CHECK',
   CHECK_COMPLETED = 'CHECK_COMPLETED',
   DEPOSIT_PAID = 'DEPOSIT_PAID',
@@ -67,8 +68,9 @@ export interface ConnectionState {
 
 // Helper for type-safe keys
 export const StatusLabels: Record<TaskStatus, string> = {
+  [TaskStatus.PROJECT_TO_BE_DRAWN]: 'Projesi Çizilecek İşler',
   [TaskStatus.TO_CHECK]: 'Kontrolü Yapılacak İşler',
-  [TaskStatus.CHECK_COMPLETED]: 'Kontrolü Yapılan İşler',
+  [TaskStatus.CHECK_COMPLETED]: 'Kontrol Edildi',
   [TaskStatus.DEPOSIT_PAID]: 'Depozito Yatırıldı',
   [TaskStatus.GAS_OPENED]: 'Gaz Açıldı',
   [TaskStatus.SERVICE_DIRECTED]: 'Servis Yönlendirildi'
@@ -81,13 +83,16 @@ export interface AppSettings {
 }
 
 export interface UserPermission {
-  email: string;      // Login Email ve Benzersiz ID
-  name: string;       // Personel Adı (Görev filtreleme için)
+  email: string;
+  name: string; // Kullanıcının adı soyadı
   allowedColumns: TaskStatus[];
-  role: 'admin' | 'staff' | 'manager';
-  canAccessRoutineTasks?: boolean; // Eksikler Havuzu
-  canAccessAssignment?: boolean;   // Görev Dağıtımı
-  canAddCustomers?: boolean;       // Müşteri Ekle
+  role: 'admin' | 'staff' | 'manager'; // manager tüm yetkilere sahip olacak
+  canAccessRoutineTasks?: boolean; // Eksikler havuzuna erişim
+  canAccessAssignment?: boolean;   // Görev dağıtımı yapabilme
+  canAddCustomers?: boolean;       // Yeni müşteri ekleyebilme
+  isEngineer?: boolean;            // Mühendis (Teklif Klasörü) yetkisi
+  canAccessQuotations?: boolean;   // Teklif Yönetimi erişimi
+  canAccessStock?: boolean;        // Stok Listesi erişimi
 }
 
 export interface RoutineTask {
@@ -108,6 +113,28 @@ export interface RoutineTask {
   scheduledDate?: any; // Yeni: Planlanan Tarih
   completedAt?: any; // Tamamlanma Zamanı
   dailyOrder?: number; // Günlük Sıralama
+}
+
+export interface StaffLocation {
+  userId: string;
+  userName: string;
+  latitude: number;
+  longitude: number;
+  timestamp: any; // Firestore Timestamp
+  status: 'active' | 'inactive';
+}
+
+export interface Quotation {
+  id: string;
+  customerName: string;
+  totalAmount: number;
+  authorEmail: string;
+  authorName: string;
+  createdAt: any;
+  updatedAt?: any;
+  status: 'draft' | 'sent' | 'approved' | 'rejected';
+  data?: any;
+  fileName?: string; // İndirilen JSON dosya adı
 }
 
 export interface BarcodeData {

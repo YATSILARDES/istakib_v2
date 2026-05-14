@@ -141,7 +141,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
     // Verileri Filtrele
     const unassignedTasks = useMemo(() =>
         tasks.filter(t =>
-            (t.status === TaskStatus.TO_CHECK || t.status === TaskStatus.DEPOSIT_PAID) &&
+            (t.status === TaskStatus.TO_CHECK || t.status === TaskStatus.DEPOSIT_PAID || t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)) &&
             (!t.checkStatus) &&
             (!t.assignee || t.assignee.trim() === '' || t.assignee === 'Atanmadı')
         ),
@@ -281,8 +281,19 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                           <button onClick={() => {
                               const d = new Date(mobileSelectedDate); d.setDate(d.getDate() - 1); setMobileSelectedDate(d);
                           }} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"><ChevronLeft className="w-5 h-5" /></button>
-                          <div className="font-bold text-slate-700 text-sm">
-                              {mobileSelectedDate.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                          <div className="relative font-bold text-slate-700 text-sm flex items-center justify-center flex-1 h-full cursor-pointer hover:bg-slate-50 rounded-lg mx-2 py-1">
+                              <span>{mobileSelectedDate.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                              <input 
+                                  type="date" 
+                                  value={`${mobileSelectedDate.getFullYear()}-${String(mobileSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(mobileSelectedDate.getDate()).padStart(2, '0')}`}
+                                  onChange={(e) => {
+                                      if (e.target.value) {
+                                          const [y, m, d] = e.target.value.split('-');
+                                          setMobileSelectedDate(new Date(Number(y), Number(m) - 1, Number(d)));
+                                      }
+                                  }}
+                                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                              />
                           </div>
                           <button onClick={() => {
                               const d = new Date(mobileSelectedDate); d.setDate(d.getDate() + 1); setMobileSelectedDate(d);
@@ -318,15 +329,15 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                          if (item.type === 'routine') {
                                              return (
                                                  <div key={idx} className="bg-white border-l-4 border-l-purple-500 border border-slate-200 p-2 rounded shadow-sm text-xs relative">
-                                                    <div className="font-bold text-slate-700">{t.customerName || 'İsimsiz'}</div>
-                                                    <div className="text-slate-500 leading-tight mt-0.5">{t.content}</div>
+                                                    <div className="font-bold text-slate-700">{(t as any).customerName || 'İsimsiz'}</div>
+                                                    <div className="text-slate-500 leading-tight mt-0.5">{(t as any).content}</div>
                                                     <button onClick={(e) => { e.stopPropagation(); onAssignRoutineTask(t.id, '', undefined); }} className="absolute top-1 right-1 text-red-400 p-1"><X className="w-3 h-3" /></button>
                                                  </div>
                                              );
                                          } else {
                                              return (
                                                  <div key={idx} className="bg-white border-l-4 border-l-blue-500 border border-slate-200 p-2 rounded shadow-sm text-xs relative">
-                                                    <div className="font-bold text-slate-700">{t.title}</div>
+                                                    <div className="font-bold text-slate-700">{(t as any).title}</div>
                                                     <div className="text-slate-500 leading-tight mt-0.5 line-clamp-1">{t.address}</div>
                                                     <button onClick={(e) => { e.stopPropagation(); onAssignTask(t.id, '', undefined); }} className="absolute top-1 right-1 text-red-400 p-1"><X className="w-3 h-3" /></button>
                                                  </div>

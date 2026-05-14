@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Home, Settings, BarChart2, FolderOpen, LogOut, Package, ChevronDown, ChevronRight, Circle } from 'lucide-react';
+import { Home, Settings, BarChart2, FolderOpen, LogOut, Package, ChevronDown, ChevronRight, Circle, FileText } from 'lucide-react';
+import { UserPermission } from '../types';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -7,6 +8,7 @@ interface SidebarProps {
     onTabChange: (tab: string) => void;
     isAdmin: boolean;
     onLogout?: () => void;
+    userPermissions?: UserPermission | null;
 }
 
 type MenuItem = {
@@ -16,7 +18,7 @@ type MenuItem = {
     children?: { id: string; label: string; }[];
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdmin, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdmin, onLogout, userPermissions }) => {
     const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
     const toggleExpand = (id: string) => {
@@ -25,11 +27,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
         );
     };
 
+    // İzin kontrolleri
+    const canSeeStock = isAdmin || userPermissions?.role === 'manager' || userPermissions?.canAccessStock === true;
+    const canSeeQuotations = isAdmin || userPermissions?.role === 'manager' || userPermissions?.canAccessQuotations === true || userPermissions?.isEngineer === true;
+
     const menuItems: MenuItem[] = [
         { id: 'dashboard', label: 'Panel', icon: Home },
         // { id: 'reports', label: 'Raporlar', icon: BarChart2 },
         { id: 'archive', label: 'Arşiv', icon: FolderOpen },
-        {
+        ...(canSeeStock ? [{
             id: 'stock',
             label: 'Stok Listesi',
             icon: Package,
@@ -43,7 +49,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
                 { id: 'stock_instant_heaters', label: 'DDEİ (Ani Isıtıcılar)' },
                 { id: 'stock_others', label: 'Diğerleri' }
             ]
-        },
+        }] : []),
+        ...(canSeeQuotations ? [{
+            id: 'quotations',
+            label: 'Teklif Yönetimi',
+            icon: FileText,
+        }] : []),
     ];
 
     const isChildActive = (item: MenuItem) => {

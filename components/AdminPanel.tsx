@@ -66,7 +66,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                     allowedColumns: data.allowedColumns || [],
                     canAccessRoutineTasks: data.canAccessRoutineTasks || false,
                     canAccessAssignment: data.canAccessAssignment || false,
-                    canAddCustomers: data.canAddCustomers || false
+                    canAddCustomers: data.canAddCustomers || false,
+                    isEngineer: data.isEngineer || false,
+                    canAccessQuotations: data.canAccessQuotations || false,
+                    canAccessStock: data.canAccessStock || false
                 });
             });
             setAllPermissions(perms);
@@ -94,7 +97,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                 allowedColumns: [], // Başlangıçta hiçbiri
                 canAccessRoutineTasks: false,
                 canAccessAssignment: false,
-                canAddCustomers: false
+                canAddCustomers: false,
+                isEngineer: false,
+                canAccessQuotations: false,
+                canAccessStock: false
             };
 
             await setDoc(doc(db, 'permissions', emailLower), newPerm);
@@ -670,6 +676,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                                         canAccessRoutineTasks: true,
                                                                         canAccessAssignment: true,
                                                                         canAddCustomers: true,
+                                                                        isEngineer: true,
+                                                                        canAccessQuotations: true,
+                                                                        canAccessStock: true,
                                                                         allowedColumns: Object.values(TaskStatus)
                                                                     })
                                                                 }}
@@ -689,63 +698,103 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                                                     <Lock className="w-4 h-4" /> Erişim Yetkileri
                                                 </h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    {/* Eksikler Havuzu */}
-                                                    <label className={`relative group p-5 rounded-2xl border cursor-pointer transition-all overflow-hidden ${selectedPerm.canAccessRoutineTasks ? 'bg-slate-800 border-purple-500 shadow-lg shadow-purple-900/10' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}>
-                                                        <div className="flex justify-between items-start mb-4">
-                                                            <div className={`p-2.5 rounded-xl ${selectedPerm.canAccessRoutineTasks ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700/50 text-slate-500'}`}>
-                                                                <Bell className="w-6 h-6" />
-                                                            </div>
-                                                            <input
-                                                                type="checkbox" className="hidden"
-                                                                checked={selectedPerm.canAccessRoutineTasks || false}
-                                                                onChange={() => handleUpdatePermission({ ...selectedPerm, canAccessRoutineTasks: !selectedPerm.canAccessRoutineTasks })}
-                                                            />
-                                                            <div className={`w-12 h-7 rounded-full relative transition-colors ${selectedPerm.canAccessRoutineTasks ? 'bg-purple-600' : 'bg-slate-700'}`}>
-                                                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow-sm ${selectedPerm.canAccessRoutineTasks ? 'left-6' : 'left-1'}`} />
-                                                            </div>
-                                                        </div>
-                                                        <div className="font-bold text-white mb-1 text-lg">Eksikler Havuzu</div>
-                                                        <div className="text-xs text-slate-400 leading-relaxed">Havuzdaki sahipsiz işleri görebilir ve üzerine alabilir.</div>
-                                                    </label>
-
-                                                    {/* Görev Dağıtımı */}
-                                                    <label className={`relative group p-5 rounded-2xl border cursor-pointer transition-all overflow-hidden ${selectedPerm.canAccessAssignment ? 'bg-slate-800 border-blue-500 shadow-lg shadow-blue-900/10' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}>
-                                                        <div className="flex justify-between items-start mb-4">
-                                                            <div className={`p-2.5 rounded-xl ${selectedPerm.canAccessAssignment ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700/50 text-slate-500'}`}>
-                                                                <Database className="w-6 h-6" />
-                                                            </div>
-                                                            <input
-                                                                type="checkbox" className="hidden"
-                                                                checked={selectedPerm.canAccessAssignment || false}
-                                                                onChange={() => handleUpdatePermission({ ...selectedPerm, canAccessAssignment: !selectedPerm.canAccessAssignment })}
-                                                            />
-                                                            <div className={`w-12 h-7 rounded-full relative transition-colors ${selectedPerm.canAccessAssignment ? 'bg-blue-600' : 'bg-slate-700'}`}>
-                                                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow-sm ${selectedPerm.canAccessAssignment ? 'left-6' : 'left-1'}`} />
-                                                            </div>
-                                                        </div>
-                                                        <div className="font-bold text-white mb-1 text-lg">Görev Dağıtımı</div>
-                                                        <div className="text-xs text-slate-400 leading-relaxed">Diğer personellere iş ataması yapabilir.</div>
-                                                    </label>
-
-                                                    {/* Müşteri Ekle */}
-                                                    <label className={`relative group p-5 rounded-2xl border cursor-pointer transition-all overflow-hidden ${selectedPerm.canAddCustomers ? 'bg-slate-800 border-green-500 shadow-lg shadow-green-900/10' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}>
-                                                        <div className="flex justify-between items-start mb-4">
-                                                            <div className={`p-2.5 rounded-xl ${selectedPerm.canAddCustomers ? 'bg-green-500/20 text-green-400' : 'bg-slate-700/50 text-slate-500'}`}>
-                                                                <Plus className="w-6 h-6" />
-                                                            </div>
-                                                            <input
-                                                                type="checkbox" className="hidden"
-                                                                checked={selectedPerm.canAddCustomers || false}
-                                                                onChange={() => handleUpdatePermission({ ...selectedPerm, canAddCustomers: !selectedPerm.canAddCustomers })}
-                                                            />
-                                                            <div className={`w-12 h-7 rounded-full relative transition-colors ${selectedPerm.canAddCustomers ? 'bg-green-600' : 'bg-slate-700'}`}>
-                                                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow-sm ${selectedPerm.canAddCustomers ? 'left-6' : 'left-1'}`} />
-                                                            </div>
-                                                        </div>
-                                                        <div className="font-bold text-white mb-1 text-lg">Müşteri Ekle</div>
-                                                        <div className="text-xs text-slate-400 leading-relaxed">Sisteme yeni müşteri kaydı oluşturabilir.</div>
-                                                    </label>
+                                                <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden divide-y divide-slate-700/50">
+                                                    {([
+                                                        {
+                                                            key: 'canAccessRoutineTasks' as const,
+                                                            icon: <Bell className="w-5 h-5" />,
+                                                            color: 'purple',
+                                                            label: 'Eksikler Havuzu',
+                                                            desc: 'Havuzdaki sahipsiz işleri görebilir ve üzerine alabilir.',
+                                                            value: selectedPerm.canAccessRoutineTasks || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canAccessRoutineTasks: !selectedPerm.canAccessRoutineTasks })
+                                                        },
+                                                        {
+                                                            key: 'canAccessAssignment' as const,
+                                                            icon: <Users className="w-5 h-5" />,
+                                                            color: 'blue',
+                                                            label: 'Görev Dağıtımı',
+                                                            desc: 'Diğer personellere iş ataması yapabilir.',
+                                                            value: selectedPerm.canAccessAssignment || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canAccessAssignment: !selectedPerm.canAccessAssignment })
+                                                        },
+                                                        {
+                                                            key: 'canAddCustomers' as const,
+                                                            icon: <Plus className="w-5 h-5" />,
+                                                            color: 'green',
+                                                            label: 'Müşteri Ekle',
+                                                            desc: 'Sisteme yeni müşteri kaydı oluşturabilir.',
+                                                            value: selectedPerm.canAddCustomers || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canAddCustomers: !selectedPerm.canAddCustomers })
+                                                        },
+                                                        {
+                                                            key: 'isEngineer' as const,
+                                                            icon: <Database className="w-5 h-5" />,
+                                                            color: 'orange',
+                                                            label: 'Mühendis (Teklif Hazırlama)',
+                                                            desc: 'Teklif hazırlayabilir ve klasörüne erişebilir.',
+                                                            value: selectedPerm.isEngineer || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, isEngineer: !selectedPerm.isEngineer })
+                                                        },
+                                                        {
+                                                            key: 'canAccessQuotations' as const,
+                                                            icon: <Eye className="w-5 h-5" />,
+                                                            color: 'amber',
+                                                            label: 'Teklif Yönetimi',
+                                                            desc: 'Teklifler sekmesine ve arşiv listesine erişebilir.',
+                                                            value: selectedPerm.canAccessQuotations || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canAccessQuotations: !selectedPerm.canAccessQuotations })
+                                                        },
+                                                        {
+                                                            key: 'canAccessStock' as const,
+                                                            icon: <Lock className="w-5 h-5" />,
+                                                            color: 'cyan',
+                                                            label: 'Stok Listesi',
+                                                            desc: 'Stok takip ekranını görüntüleyebilir.',
+                                                            value: selectedPerm.canAccessStock || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canAccessStock: !selectedPerm.canAccessStock })
+                                                        },
+                                                    ] as { key: string; icon: React.ReactNode; color: string; label: string; desc: string; value: boolean; onChange: () => void }[]).map(item => {
+                                                        const colorMap: Record<string, { active: string; toggle: string; icon: string }> = {
+                                                            purple: { active: 'border-purple-500/40 bg-purple-500/5', toggle: 'bg-purple-600', icon: 'text-purple-400' },
+                                                            blue:   { active: 'border-blue-500/40 bg-blue-500/5',     toggle: 'bg-blue-600',   icon: 'text-blue-400' },
+                                                            green:  { active: 'border-green-500/40 bg-green-500/5',   toggle: 'bg-green-600',  icon: 'text-green-400' },
+                                                            orange: { active: 'border-orange-500/40 bg-orange-500/5', toggle: 'bg-orange-600', icon: 'text-orange-400' },
+                                                            amber:  { active: 'border-amber-500/40 bg-amber-500/5',   toggle: 'bg-amber-600',  icon: 'text-amber-400' },
+                                                            cyan:   { active: 'border-cyan-500/40 bg-cyan-500/5',     toggle: 'bg-cyan-600',   icon: 'text-cyan-400' },
+                                                        };
+                                                        const c = colorMap[item.color];
+                                                        return (
+                                                            <label
+                                                                key={item.key}
+                                                                onClick={item.onChange}
+                                                                className={`flex items-center justify-between px-5 py-4 cursor-pointer transition-all group ${
+                                                                    item.value ? c.active : 'hover:bg-slate-700/20'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={`p-2 rounded-xl transition-colors ${
+                                                                        item.value ? `${c.icon} bg-current/10` : 'text-slate-500 bg-slate-700/50'
+                                                                    }`} style={item.value ? { color: 'inherit' } : {}}>
+                                                                        <span className={item.value ? c.icon : 'text-slate-500'}>{item.icon}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className={`text-sm font-semibold transition-colors ${
+                                                                            item.value ? 'text-white' : 'text-slate-300 group-hover:text-white'
+                                                                        }`}>{item.label}</div>
+                                                                        <div className="text-xs text-slate-500 leading-relaxed mt-0.5">{item.desc}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={`w-12 h-6 rounded-full relative transition-all duration-300 shrink-0 ${
+                                                                    item.value ? c.toggle : 'bg-slate-700'
+                                                                }`}>
+                                                                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-md ${
+                                                                        item.value ? 'left-6' : 'left-0.5'
+                                                                    }`} />
+                                                                </div>
+                                                            </label>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
 

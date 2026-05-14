@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, Loader2, FileText, ChevronRight, FolderOpen } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -22,8 +22,10 @@ import RoutineTasksView from './components/RoutineTasksView';
 import StockRadiatorsView from './components/StockRadiatorsView';
 import StockCombisView from './components/StockCombisView';
 import StockGenericView from './components/StockGenericView';
+import QuotationsListView from './components/QuotationsListView';
+import { QuotationApp } from './teklif_app/QuotationApp';
 
-import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember } from './types';
+import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember, Quotation } from './types';
 
 import { playNotificationSound } from './utils/notification_sound';
 import { auth, db } from './src/firebase';
@@ -69,6 +71,11 @@ function App() {
   const [boardFilter, setBoardFilter] = useState<TaskStatus | undefined>(undefined);
   const [isMissingFilterActive, setIsMissingFilterActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState(''); // NEW: Global Search
+
+  // Quotation View State
+  const [quotationView, setQuotationView] = useState<'none' | 'prepare' | 'list'>('none');
+  const [editingQuotation, setEditingQuotation] = useState<{ data: any; id: string } | null>(null);
+  const [quotationSubView, setQuotationSubView] = useState<'hub' | 'prepare' | 'list'>('hub');
 
   // Handle Resize & Force Mobile
   useEffect(() => {
@@ -303,7 +310,10 @@ function App() {
           allowedColumns: Object.values(TaskStatus),
           canAccessRoutineTasks: true,
           canAccessAssignment: true,
-          canAddCustomers: true
+          canAddCustomers: true,
+          isEngineer: true,
+          canAccessQuotations: true,
+          canAccessStock: true
         });
         setPermissionsLoading(false);
       } else {
@@ -658,6 +668,9 @@ function App() {
     setActiveTab(tab as any);
     if (tab === 'dashboard') {
       setViewMode('dashboard');
+    } else if (tab === 'quotations') {
+      setQuotationSubView('hub');
+      setEditingQuotation(null);
     } else {
       setViewMode('board'); // Reset view mode for other tabs (like kanban)
     }
@@ -912,6 +925,7 @@ function App() {
         onTabChange={handleTabChange}
         isAdmin={!!hasAdminAccess}
         onLogout={handleSignOut}
+        userPermissions={userPermissions}
       />
 
       {/* Main Content Area */}
@@ -920,7 +934,7 @@ function App() {
 
 
         <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-100 relative">
-          {((activeTab as string) === 'assignment' || (activeTab as string) === 'routine_pool' || (activeTab as string).startsWith('stock_')) ? (
+          {((activeTab as string) === 'assignment' || (activeTab as string) === 'routine_pool' || (activeTab as string).startsWith('stock_') || activeTab === 'quotations') ? (
             <>
               {activeTab === 'assignment' && (
                 <div className="relative h-full bg-white">
@@ -992,6 +1006,76 @@ function App() {
               {(activeTab as string) === 'stock_others' && (
                 <div className="relative h-full bg-white">
                   <StockGenericView collectionName="stock_others" title="Diğer Stoklar" itemLabel="Ürün" />
+                </div>
+              )}
+              {activeTab === 'quotations' && (
+                <div className="relative flex-1 bg-slate-100 overflow-y-auto flex flex-col">
+                  {editingQuotation || quotationSubView === 'prepare' ? (
+                    <QuotationApp
+                      currentUserEmail={user?.email || ''}
+                      currentUserName={userPermissions?.name || user?.email || ''}
+                      onClose={() => { setEditingQuotation(null); setQuotationSubView('hub'); }}
+                      initialData={editingQuotation?.data}
+                      quotationId={editingQuotation?.id}
+                    />
+                  ) : quotationSubView === 'list' ? (
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                      <QuotationsListView
+                        currentUserEmail={user?.email || ''}
+                        isAdmin={!!isAdmin}
+                        onClose={() => setQuotationSubView('hub')}
+                        onEdit={(quotation) => {
+                          setEditingQuotation({ data: quotation.data, id: quotation.id });
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    /* HUB VIEW - Compact & Top-Left Aligned */
+                    <div className="flex-1 flex flex-col p-8 bg-slate-50 overflow-y-auto">
+                      <div className="max-w-5xl w-full">
+                        <div className="flex items-center gap-3 mb-8 border-b pb-4">
+                          <FileText className="w-6 h-6 text-slate-400" />
+                          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Teklif Yönetimi</h1>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-6">
+                          {/* Hazırla Kartı - Orta Boy */}
+                          <button 
+                            onClick={() => setQuotationSubView('prepare')}
+                            className="group bg-white p-6 w-80 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300 text-left flex flex-col gap-4"
+                          >
+                            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                              <FileText className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-bold text-slate-800">Yeni Teklif Hazırla</h3>
+                              <p className="text-slate-500 text-xs leading-relaxed mt-1">Hızlıca profesyonel bir teklif oluşturun.</p>
+                            </div>
+                            <div className="mt-2 flex items-center text-orange-600 text-xs font-bold gap-2">
+                              Başlat <ChevronRight className="w-4 h-4" />
+                            </div>
+                          </button>
+
+                          {/* Liste Kartı - Orta Boy */}
+                          <button 
+                            onClick={() => setQuotationSubView('list')}
+                            className="group bg-white p-6 w-80 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300 text-left flex flex-col gap-4"
+                          >
+                            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                              <FolderOpen className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-bold text-slate-800">Hazırlanan Teklifler</h3>
+                              <p className="text-slate-500 text-xs leading-relaxed mt-1">Geçmiş teklifleri görün ve düzenleyin.</p>
+                            </div>
+                            <div className="mt-2 flex items-center text-blue-600 text-xs font-bold gap-2">
+                              Arşivi Aç <ChevronRight className="w-4 h-4" />
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -1140,6 +1224,8 @@ function App() {
                   onOpenAssignmentModal={() => setActiveTab('assignment' as any)}
                   onOpenNewCustomerModal={handleAddTaskClick}
                   onOpenFieldStaffModal={() => setIsFieldStaffModalOpen(true)}
+                  onOpenQuotationPrep={() => { setEditingQuotation(null); setActiveTab('quotations' as any); }}
+                  onOpenQuotationList={() => setActiveTab('quotations' as any)}
                   currentUser={userPermissions ? { name: userPermissions.name, email: userPermissions.email } : undefined}
                   userRole={hasAdminAccess ? 'admin' : userPermissions?.role}
                   userPermissions={userPermissions}
@@ -1223,6 +1309,8 @@ function App() {
           existingTasks={tasks}
         />
       )}
+
+
 
 
       <ProfileSettingsModal

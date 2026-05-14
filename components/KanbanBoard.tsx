@@ -23,6 +23,7 @@ const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
     case 'ROUTINE': return <CheckSquare className="w-4 h-4 text-purple-400" />;
     case TaskStatus.TO_CHECK: return <ClipboardList className="w-4 h-4 text-slate-400" />;
     case TaskStatus.CHECK_COMPLETED: return <ClipboardCheck className="w-4 h-4 text-emerald-400" />;
+    case TaskStatus.PROJECT_TO_BE_DRAWN: return <Wrench className="w-4 h-4 text-amber-400" />;
     case TaskStatus.DEPOSIT_PAID: return <Banknote className="w-4 h-4 text-green-400" />;
     case TaskStatus.GAS_OPENED: return <Flame className="w-4 h-4 text-orange-400" />;
     case TaskStatus.SERVICE_DIRECTED: return <Wrench className="w-4 h-4 text-blue-400" />;
@@ -49,6 +50,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   // Define the order explicitly including the new column
   const allColumns = [
+    TaskStatus.PROJECT_TO_BE_DRAWN,
     TaskStatus.TO_CHECK,
     TaskStatus.CHECK_COMPLETED,
     TaskStatus.DEPOSIT_PAID,
@@ -69,7 +71,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const getFilteredTasks = (status: TaskStatus) => {
     const term = (searchTerms[status] || '').toLocaleLowerCase('tr').trim();
-    const columnTasks = tasks.filter(t => t.status === status);
+    
+    let columnTasks = [];
+    if (status === TaskStatus.PROJECT_TO_BE_DRAWN) {
+      columnTasks = tasks.filter(t => 
+        t.status === TaskStatus.PROJECT_TO_BE_DRAWN || 
+        (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)
+      );
+    } else if (status === TaskStatus.CHECK_COMPLETED) {
+      columnTasks = tasks.filter(t => t.status === TaskStatus.CHECK_COMPLETED);
+    } else {
+      columnTasks = tasks.filter(t => t.status === status);
+    }
 
     if (!term) return columnTasks;
 
@@ -295,7 +308,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   <StatusIcon status={status} />
                   <span className="truncate">{StatusLabels[status]}</span>
                   <span className="ml-2 px-2 py-0.5 text-xs bg-white border border-slate-200 rounded-full text-slate-500">
-                    {tasks.filter(t => t.status === status).length}
+                    {status === TaskStatus.PROJECT_TO_BE_DRAWN 
+                      ? tasks.filter(t => t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length 
+                      : tasks.filter(t => t.status === status).length}
                   </span>
                 </div>
                 <button className="text-slate-400 hover:text-slate-600">
@@ -350,15 +365,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       <h4 className={`font-bold text-sm leading-snug transition-colors line-clamp-1 ${task.checkStatus === 'missing' ? 'text-red-900 group-hover:text-red-700' : task.checkStatus === 'clean' ? 'text-green-900 group-hover:text-green-700' : 'text-slate-800 group-hover:text-blue-700'}`}>
                         {task.title}
                       </h4>
-
-                      {/* COMPACT PROJECT MISSING BADGE */}
-                      {(!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED) && (
-                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-500 text-white animate-pulse">
-                          PROJE EKSİK
-                        </span>
-                      )}
                     </div>
-
                     {/* Job Description - Fainter Tone */}
                     {task.jobDescription && (
                       <div className="mb-2 text-xs font-medium text-slate-500/80 truncate">

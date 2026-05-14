@@ -68,7 +68,10 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                     allowedColumns: data.allowedColumns || [],
                     canAccessRoutineTasks: data.canAccessRoutineTasks || false,
                     canAccessAssignment: data.canAccessAssignment || false,
-                    canAddCustomers: data.canAddCustomers || false
+                    canAddCustomers: data.canAddCustomers || false,
+                    isEngineer: data.isEngineer || false,
+                    canAccessQuotations: data.canAccessQuotations || false,
+                    canAccessStock: data.canAccessStock || false
                 });
             });
             setAllPermissions(perms);
@@ -94,7 +97,10 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                 allowedColumns: [],
                 canAccessRoutineTasks: false,
                 canAccessAssignment: false,
-                canAddCustomers: false
+                canAddCustomers: false,
+                isEngineer: false,
+                canAccessQuotations: false,
+                canAccessStock: false
             };
             await setDoc(doc(db, 'permissions', emailLower), newPerm);
             await loadPermissions();
@@ -443,6 +449,9 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                                         canAccessRoutineTasks: true,
                                         canAccessAssignment: true,
                                         canAddCustomers: true,
+                                        isEngineer: true,
+                                        canAccessQuotations: true,
+                                        canAccessStock: true,
                                         allowedColumns: Object.values(TaskStatus)
                                     })
                                 }}
@@ -455,17 +464,26 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
 
                         {/* Module Toggles */}
                         <h3 className="text-sm font-bold text-slate-500 uppercase mb-3">Erişim İzinleri</h3>
-                        <div className="space-y-3 mb-6">
-                            {[
-                                { key: 'canAccessRoutineTasks', label: 'Eksikler Havuzu', icon: Check },
-                                { key: 'canAccessAssignment', label: 'Görev Dağıtımı', icon: Database },
-                                { key: 'canAddCustomers', label: 'Müşteri Ekleme', icon: Plus }
-                            ].map(item => (
-                                <label key={item.key} className="flex items-center justify-between bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                    <span className="text-white font-medium">{item.label}</span>
-                                    <div className={`w-12 h-7 rounded-full relative transition-colors ${selectedPerm[item.key as keyof UserPermission] ? 'bg-purple-600' : 'bg-slate-700'}`}>
-                                        <input type="checkbox" className="hidden" checked={selectedPerm[item.key as keyof UserPermission] as boolean} onChange={() => handleUpdatePermission({ ...selectedPerm, [item.key]: !selectedPerm[item.key as keyof UserPermission] })} />
-                                        <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${selectedPerm[item.key as keyof UserPermission] ? 'left-6' : 'left-1'}`} />
+                        <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden divide-y divide-slate-700/50 mb-6">
+                            {([
+                                { key: 'canAccessRoutineTasks', label: 'Eksikler Havuzu', desc: 'Havuzdaki sahipsiz işleri görebilir.', color: 'bg-purple-600' },
+                                { key: 'canAccessAssignment',   label: 'Görev Dağıtımı',  desc: 'Diğer personellere iş atayabilir.',    color: 'bg-blue-600' },
+                                { key: 'canAddCustomers',       label: 'Müşteri Ekle',     desc: 'Yeni müşteri kaydı oluşturabilir.',    color: 'bg-green-600' },
+                                { key: 'isEngineer',            label: 'Mühendis (Teklif Hazırlama)', desc: 'Teklif hazırlayıp klasörüne erişebilir.', color: 'bg-orange-600' },
+                                { key: 'canAccessQuotations',   label: 'Teklif Yönetimi', desc: 'Teklifler sekmesine erişebilir.',        color: 'bg-amber-600' },
+                                { key: 'canAccessStock',        label: 'Stok Listesi',    desc: 'Stok takip ekranını görüntüleyebilir.', color: 'bg-cyan-600' },
+                            ] as { key: string; label: string; desc: string; color: string }[]).map(item => (
+                                <label key={item.key} className="flex items-center justify-between px-4 py-3.5 cursor-pointer active:bg-slate-700/30 transition-colors">
+                                    <div className="flex-1 pr-4">
+                                        <div className="text-white font-semibold text-sm">{item.label}</div>
+                                        <div className="text-slate-500 text-xs mt-0.5">{item.desc}</div>
+                                    </div>
+                                    <div className={`w-12 h-6 rounded-full relative transition-all duration-300 shrink-0 ${selectedPerm[item.key as keyof UserPermission] ? item.color : 'bg-slate-700'}`}>
+                                        <input type="checkbox" className="hidden"
+                                            checked={selectedPerm[item.key as keyof UserPermission] as boolean}
+                                            onChange={() => handleUpdatePermission({ ...selectedPerm, [item.key]: !selectedPerm[item.key as keyof UserPermission] })}
+                                        />
+                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-md ${selectedPerm[item.key as keyof UserPermission] ? 'left-6' : 'left-0.5'}`} />
                                     </div>
                                 </label>
                             ))}
@@ -473,21 +491,24 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
 
                         {/* Column Toggles */}
                         <h3 className="text-sm font-bold text-slate-500 uppercase mb-3">Görünür Sütunlar</h3>
-                        <div className="space-y-2">
+                        <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden divide-y divide-slate-700/50">
                             {Object.values(TaskStatus).map(status => (
-                                <label key={status} className="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700">
-                                    <span className="text-slate-300 text-sm">{StatusLabels[status]}</span>
-                                    <input
-                                        type="checkbox"
-                                        className="accent-purple-600 w-5 h-5"
-                                        checked={selectedPerm.allowedColumns.includes(status)}
-                                        onChange={() => {
-                                            const newCols = selectedPerm.allowedColumns.includes(status)
-                                                ? selectedPerm.allowedColumns.filter(c => c !== status)
-                                                : [...selectedPerm.allowedColumns, status];
-                                            handleUpdatePermission({ ...selectedPerm, allowedColumns: newCols });
-                                        }}
-                                    />
+                                <label key={status} className="flex items-center justify-between px-4 py-3.5 cursor-pointer active:bg-slate-700/30 transition-colors">
+                                    <span className="text-slate-300 text-sm font-medium">{StatusLabels[status]}</span>
+                                    <div className={`w-12 h-6 rounded-full relative transition-all duration-300 shrink-0 ${selectedPerm.allowedColumns.includes(status) ? 'bg-purple-600' : 'bg-slate-700'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={selectedPerm.allowedColumns.includes(status)}
+                                            onChange={() => {
+                                                const newCols = selectedPerm.allowedColumns.includes(status)
+                                                    ? selectedPerm.allowedColumns.filter(c => c !== status)
+                                                    : [...selectedPerm.allowedColumns, status];
+                                                handleUpdatePermission({ ...selectedPerm, allowedColumns: newCols });
+                                            }}
+                                        />
+                                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-md ${selectedPerm.allowedColumns.includes(status) ? 'left-6' : 'left-0.5'}`} />
+                                    </div>
                                 </label>
                             ))}
                         </div>

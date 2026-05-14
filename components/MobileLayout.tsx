@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, ChevronDown, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2, Package } from 'lucide-react';
+import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, ChevronDown, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2, Package, FileText, FolderOpen } from 'lucide-react';
 import StockCombisView from './StockCombisView';
 import StockRadiatorsView from './StockRadiatorsView';
 import StockGenericView from './StockGenericView';
-import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission, StaffMember } from '../types';
+import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission, StaffMember, Quotation } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../src/firebase';
+import { auth, db } from '../src/firebase';
+import { QuotationApp } from '../teklif_app/QuotationApp';
+import QuotationsListView from './QuotationsListView';
 
 interface MobileLayoutProps {
     user: FirebaseUser | null;
@@ -39,7 +41,9 @@ export default function MobileLayout({
     onOpenAssignmentModal,
     onTaskUpdate
 }: MobileLayoutProps) {
-    const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile' | 'stock'>('home');
+    const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile' | 'stock' | 'quotations'>('home');
+    const [editingQuotation, setEditingQuotation] = useState<{ data: any; id: string } | null>(null);
+    const [quotationSubView, setQuotationSubView] = useState<'hub' | 'prepare' | 'list'>('hub');
     const [stockCategory, setStockCategory] = useState<'combis' | 'radiators' | 'heatpumps' | 'thermosiphons' | 'acs' | 'electric_combis' | 'instant_heaters' | 'others'>('combis');
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
@@ -68,8 +72,8 @@ export default function MobileLayout({
 
     // Rename to avoid conflict
     const filteredMainTasks = myTasks.filter(t => {
-        // Filter by Status: Hide CHECK_COMPLETED (Kontrolü Yapılan İşler)
-        if (t.status === TaskStatus.CHECK_COMPLETED) return false;
+        // Filter by Status: Hide CHECK_COMPLETED (Kontrolü Yapılan İşler) unless project is missing
+        if (t.status === TaskStatus.CHECK_COMPLETED && t.isProjectDrawn !== false) return false;
 
         // Filter by Check Status: Hide logic if check is done (missing or clean)
         if (t.checkStatus) return false;
@@ -215,7 +219,10 @@ export default function MobileLayout({
         // Filter by Status Pill
         const statusFiltered = filterStatus === 'ALL'
             ? tasks
-            : tasks.filter(t => t.status === filterStatus);
+            : tasks.filter(t => filterStatus === TaskStatus.PROJECT_TO_BE_DRAWN
+                ? (t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn))
+                : t.status === filterStatus
+            );
 
         // Apply Search
         displayedTasks = applySearch(statusFiltered);
@@ -251,7 +258,7 @@ export default function MobileLayout({
             // Filter tasks: TO_CHECK, no checkStatus, scheduled for today or past
             const staffTasks = tasks.filter(t => {
                 // Basic filters (status, checkStatus, assignee)
-                const basicMatch = t.status !== TaskStatus.CHECK_COMPLETED &&
+                const basicMatch = (t.status !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn === false) &&
                     !t.checkStatus &&
                     (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() || t.assignee === staff.name);
 
@@ -526,6 +533,10 @@ export default function MobileLayout({
                                             cardStyle = "bg-orange-950/30 border-orange-500/50";
                                             badgeStyle = "bg-orange-500/20 text-orange-400";
                                             shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
+                                        } else if (task.status === TaskStatus.PROJECT_TO_BE_DRAWN || (task.status === TaskStatus.CHECK_COMPLETED && task.isProjectDrawn === false)) {
+                                            cardStyle = "bg-amber-950/20 border-amber-500/40";
+                                            badgeStyle = "bg-amber-500/20 text-amber-400";
+                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]";
                                         } else if (task.checkStatus === 'clean') {
                                             cardStyle = "bg-emerald-950/40 border-emerald-500/40";
                                             badgeStyle = "bg-gradient-to-r from-emerald-500/30 to-emerald-600/20 text-emerald-300 border border-emerald-500/30";
@@ -714,6 +725,10 @@ export default function MobileLayout({
                                                     cardStyle = "bg-orange-950/30 border-orange-500/50";
                                                     badgeStyle = "bg-orange-500/20 text-orange-400";
                                                     shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
+                                                } else if (task.status === TaskStatus.PROJECT_TO_BE_DRAWN || (task.status === TaskStatus.CHECK_COMPLETED && task.isProjectDrawn === false)) {
+                                                    cardStyle = "bg-amber-950/20 border-amber-500/40";
+                                                    badgeStyle = "bg-amber-500/20 text-amber-400";
+                                                    shadowStyle = "shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]";
                                                 } else if (task.checkStatus === 'clean') {
                                                     cardStyle = "bg-emerald-950/30 border-emerald-500/50";
                                                     badgeStyle = "bg-emerald-500/20 text-emerald-400";
@@ -1205,6 +1220,62 @@ export default function MobileLayout({
                     </div>
                 )}
 
+                {activeTab === 'quotations' && (
+                    <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50 min-h-0">
+                        {editingQuotation || quotationSubView === 'prepare' ? (
+                            <QuotationApp
+                                currentUserEmail={user?.email || ''}
+                                currentUserName={userPermissions?.name || user?.email || ''}
+                                onClose={() => { setEditingQuotation(null); setQuotationSubView('hub'); }}
+                                initialData={editingQuotation?.data}
+                                quotationId={editingQuotation?.id}
+                            />
+                        ) : quotationSubView === 'list' ? (
+                            <QuotationsListView
+                                currentUserEmail={user?.email || ''}
+                                isAdmin={userPermissions?.role === 'admin'}
+                                onClose={() => setQuotationSubView('hub')}
+                                onEdit={(q: Quotation) => setEditingQuotation({ data: q.data, id: q.id })}
+                            />
+                        ) : (
+                            /* MOBILE HUB VIEW - Compact & Top Aligned */
+                            <div className="flex-1 flex flex-col p-6 gap-4">
+                                <div className="mb-2 border-b pb-3">
+                                    <h2 className="text-xl font-bold text-slate-800 tracking-tight">Teklif Yönetimi</h2>
+                                </div>
+
+                                <button 
+                                    onClick={() => setQuotationSubView('prepare')}
+                                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 text-left active:scale-[0.98] transition-all"
+                                >
+                                    <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 shrink-0">
+                                        <FileText className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-sm font-bold text-slate-800">Yeni Teklif Hazırla</h3>
+                                        <p className="text-slate-500 text-[10px]">Hızlıca yeni teklif oluştur</p>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                                </button>
+
+                                <button 
+                                    onClick={() => setQuotationSubView('list')}
+                                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 text-left active:scale-[0.98] transition-all"
+                                >
+                                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
+                                        <FolderOpen className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-sm font-bold text-slate-800">Hazırlanan Teklifler</h3>
+                                        <p className="text-slate-500 text-[10px]">Arşivdeki tekliflere göz at</p>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
             </div>
 
             {/* BOTTOM NAVIGATION BAR - Premium Design */}
@@ -1233,6 +1304,7 @@ export default function MobileLayout({
                     <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'tasks' ? 'text-purple-400' : 'text-slate-500'}`}>İşlerim</span>
                 </button>
 
+                {(userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessStock) && (
                 <button
                     onClick={() => setActiveTab('stock')}
                     className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'stock'
@@ -1244,10 +1316,25 @@ export default function MobileLayout({
                     </div>
                     <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'stock' ? 'text-orange-400' : 'text-slate-500'}`}>Stok</span>
                 </button>
+                )}
+
+                {(userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessQuotations || userPermissions?.isEngineer) && (
+                <button
+                    onClick={() => setActiveTab('quotations')}
+                    className={`flex flex-col items-center gap-1.5 w-16 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'quotations'
+                        ? 'bg-gradient-to-br from-amber-500/20 to-amber-600/10 shadow-lg shadow-amber-500/10'
+                        : 'hover:bg-white/5'}`}
+                >
+                    <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'quotations' ? 'bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/30' : ''}`}>
+                        <FileText className={`w-5 h-5 transition-colors ${activeTab === 'quotations' ? 'text-white' : 'text-slate-500'}`} />
+                    </div>
+                    <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'quotations' ? 'text-amber-400' : 'text-slate-500'}`}>Teklifler</span>
+                </button>
+                )}
 
                 <button
                     onClick={() => setActiveTab('profile')}
-                    className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'profile'
+                    className={`flex flex-col items-center gap-1.5 w-16 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'profile'
                         ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 shadow-lg shadow-emerald-500/10'
                         : 'hover:bg-white/5'}`}
                 >
