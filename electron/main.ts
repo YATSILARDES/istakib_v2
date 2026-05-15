@@ -1,6 +1,6 @@
 // @ts-ignore
 const electron = require('electron');
-const { app, BrowserWindow, ipcMain, dialog } = electron;
+const { app, BrowserWindow, ipcMain, dialog, shell } = electron;
 import path = require('path');
 import log = require('electron-log');
 
@@ -71,6 +71,12 @@ function createWindow() {
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js'),
         },
+    });
+
+    // Harici linkleri (target="_blank") varsayılan tarayıcıda (Chrome vs.) aç
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        shell.openExternal(url);
+        return { action: 'deny' };
     });
 
     if (isDev) {
