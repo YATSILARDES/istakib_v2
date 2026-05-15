@@ -21,6 +21,7 @@ interface DashboardProps {
     currentUser?: { name: string; email: string };
     userRole?: 'admin' | 'staff' | 'manager';
     userPermissions?: UserPermission;
+    isDarkMode?: boolean;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -38,7 +39,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     onOpenQuotationList,
     currentUser,
     userRole,
-    userPermissions
+    userPermissions,
+    isDarkMode = true
 }) => {
     const [filter, setFilter] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
@@ -131,7 +133,12 @@ const Dashboard: React.FC<DashboardProps> = ({
         },
     ];
 
-    // Filtreleme Mantığı (Son Güncellemeler için)
+    const visibleCards = cards.filter(card => {
+        if (userRole === 'admin' || userRole === 'manager') return true;
+        if (card.status === 'MY_TASKS' || card.status === 'FIELD_STAFF') return true;
+        return userPermissions?.allowedColumns?.includes(card.status as TaskStatus);
+    });
+
     // Filtreleme Mantığı (Son Güncellemeler için)
     const filteredUpdates = React.useMemo(() => {
         const now = new Date();
@@ -200,16 +207,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     const recentUpdates = filteredUpdates.slice(0, 10);
 
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-slate-100">
-
-            {/* Breadcrumb Bar - Compact */}
-            <div className="bg-[#2c3e50] border-b border-[#34495e] px-4 py-2 flex items-center gap-2 text-xs text-slate-400 shrink-0 shadow-sm">
-                <span className="font-bold text-white text-base mr-4">Genel Bakış</span>
-                <div className="w-px h-4 bg-[#34495e] mx-2" />
-                <Home className="w-3 h-3" />
-                <ChevronRight className="w-3 h-3" />
-                <span className="font-semibold text-white">Dashboard</span>
-            </div>
+        <div className="flex flex-col h-full overflow-hidden bg-transparent">
 
             {/* Main Content - No Scroll on outer container */}
             <div className="flex-1 flex flex-row p-4 gap-4 overflow-hidden">
@@ -218,10 +216,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="flex-1 flex flex-col gap-4 overflow-hidden">
 
                     {/* Quick Actions (Compact Row) */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 shrink-0">
+                    <div className={`${isDarkMode ? 'bg-white/5 backdrop-blur-md border-white/10 shadow-xl' : 'bg-slate-200/80 backdrop-blur-md border-slate-300 shadow-md'} rounded-xl p-4 border shrink-0 transition-colors duration-500`}>
                         <div className="mb-3">
-                            <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-blue-500" />
+                            <h3 className={`font-bold text-sm flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                                <Activity className={`w-4 h-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
                                 Hızlı İşlemler
                             </h3>
                         </div>
@@ -229,31 +227,31 @@ const Dashboard: React.FC<DashboardProps> = ({
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                             {/* Conditionally render New Customer Button */}
                             {userPermissions?.canAddCustomers && (
-                                <button onClick={onOpenNewCustomerModal} className="flex items-center gap-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-3 rounded-lg transition-all border border-emerald-100 group shadow-sm hover:shadow-md justify-start">
-                                    <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
-                                        <Plus className="w-5 h-5" />
+                                <button onClick={onOpenNewCustomerModal} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all border group justify-start ${isDarkMode ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20 shadow-lg hover:shadow-xl backdrop-blur-sm' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                                    <div className={`${isDarkMode ? 'bg-emerald-500/20' : 'bg-white shadow-sm'} p-2 rounded-full group-hover:scale-110 transition-transform shrink-0`}>
+                                        <Plus className={`w-5 h-5 ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`} />
                                     </div>
-                                    <span className="font-bold text-xs text-left">Yeni Müşteri</span>
+                                    <span className={`font-bold text-xs text-left ${isDarkMode ? 'text-emerald-100' : 'text-emerald-800'}`}>Yeni Müşteri</span>
                                 </button>
                             )}
 
                             {/* Conditionally render Assignment Button */}
                             {userPermissions?.canAccessAssignment && (
-                                <button onClick={onOpenAssignmentModal} className="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-3 rounded-lg transition-all border border-blue-100 group shadow-sm hover:shadow-md justify-start">
-                                    <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
-                                        <Users className="w-5 h-5" />
+                                <button onClick={onOpenAssignmentModal} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all border group justify-start ${isDarkMode ? 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20 shadow-lg hover:shadow-xl backdrop-blur-sm' : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'}`}>
+                                    <div className={`${isDarkMode ? 'bg-blue-500/20' : 'bg-white shadow-sm'} p-2 rounded-full group-hover:scale-110 transition-transform shrink-0`}>
+                                        <Users className={`w-5 h-5 ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`} />
                                     </div>
-                                    <span className="font-bold text-xs text-left">Görev Dağıtımı</span>
+                                    <span className={`font-bold text-xs text-left ${isDarkMode ? 'text-blue-100' : 'text-blue-800'}`}>Görev Dağıtımı</span>
                                 </button>
                             )}
 
                             {/* Conditionally render Routine Pool Button */}
                             {userPermissions?.canAccessRoutineTasks && (
-                                <button onClick={onOpenRoutineModal} className="flex items-center gap-3 bg-purple-50 hover:bg-purple-100 text-purple-600 px-4 py-3 rounded-lg transition-all border border-purple-100 group relative shadow-sm hover:shadow-md justify-start">
-                                    <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
-                                        <Bell className="w-5 h-5" />
+                                <button onClick={onOpenRoutineModal} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all border group relative justify-start ${isDarkMode ? 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/20 shadow-lg hover:shadow-xl backdrop-blur-sm' : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200'}`}>
+                                    <div className={`${isDarkMode ? 'bg-purple-500/20' : 'bg-white shadow-sm'} p-2 rounded-full group-hover:scale-110 transition-transform shrink-0`}>
+                                        <Bell className={`w-5 h-5 ${isDarkMode ? 'text-purple-300' : 'text-purple-600'}`} />
                                     </div>
-                                    <span className="font-bold text-xs text-left">Eksikler Havuzu</span>
+                                    <span className={`font-bold text-xs text-left ${isDarkMode ? 'text-purple-100' : 'text-purple-800'}`}>Eksikler Havuzu</span>
                                     {(() => {
                                         // Calculate number of routine tasks created TODAY
                                         const today = new Date();
@@ -273,11 +271,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 </button>
                             )}
 
-                            <button className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-3 rounded-lg transition-all border border-slate-100 group shadow-sm hover:shadow-md justify-start">
-                                <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-110 transition-transform shrink-0">
-                                    <MoreHorizontal className="w-5 h-5" />
+                            <button className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all border group justify-start ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 shadow-lg hover:shadow-xl backdrop-blur-sm' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                <div className={`${isDarkMode ? 'bg-white/10' : 'bg-white shadow-sm'} p-2 rounded-full group-hover:scale-110 transition-transform shrink-0`}>
+                                    <MoreHorizontal className={`w-5 h-5 ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`} />
                                 </div>
-                                <span className="font-bold text-xs text-left">Diğer İşlemler</span>
+                                <span className={`font-bold text-xs text-left ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>Diğer İşlemler</span>
                             </button>
                         </div>
                     </div>
@@ -287,17 +285,17 @@ const Dashboard: React.FC<DashboardProps> = ({
                     {/* Stats Grid (Scrollable) */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar pb-2">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {cards.map((card, idx) => {
+                            {visibleCards.map((card, idx) => {
                                 const isGasAlert = card.status === TaskStatus.GAS_OPENED && card.score > 0;
                                 return (
                                     <button
                                         key={idx}
                                         onClick={() => card.action ? card.action() : onNavigate(card.status)}
                                         className={`
-                                            relative p-5 rounded-2xl border transition-all duration-300 text-left flex flex-col justify-between group h-36 overflow-hidden
+                                            relative p-5 rounded-2xl border transition-all duration-300 text-left flex flex-col justify-between group h-36 overflow-hidden backdrop-blur-md
                                             ${isGasAlert
-                                                ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400 shadow-[0_0_25px_rgba(239,68,68,0.4)]'
-                                                : 'bg-gradient-to-br from-white via-white to-slate-50 border-slate-200/80 shadow-lg hover:shadow-2xl'
+                                                ? isDarkMode ? 'bg-red-900/40 border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.4)]' : 'bg-red-50 border-red-200 shadow-sm'
+                                                : isDarkMode ? 'bg-white/5 border-white/10 shadow-lg hover:shadow-2xl hover:bg-white/10' : 'bg-slate-200/80 border-slate-300 shadow-md hover:shadow-lg hover:bg-slate-300/80'
                                             }
                                             hover:-translate-y-1.5 active:translate-y-0 active:scale-[0.98]
                                         `}
@@ -313,40 +311,40 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             }`} />
 
                                         {/* Hover Glow Effect */}
-                                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl ${isGasAlert ? '' : 'bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5'
+                                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl ${isGasAlert ? '' : 'bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10'
                                             }`} />
 
                                         <div className="flex justify-between items-start w-full mb-1 z-10 relative">
-                                            <h3 className={`font-extrabold text-[11px] uppercase tracking-wider leading-tight max-w-[80%] ${isGasAlert ? 'text-red-700' : 'text-slate-600'}`}>
+                                            <h3 className={`font-extrabold text-[11px] uppercase tracking-wider leading-tight max-w-[80%] ${isGasAlert ? (isDarkMode ? 'text-red-300' : 'text-red-700') : (isDarkMode ? 'text-slate-300' : 'text-slate-500')}`}>
                                                 {card.title}
                                             </h3>
                                             {isGasAlert && (
                                                 <div className="absolute -top-1 -right-1 flex items-center gap-1">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                                                 </div>
                                             )}
                                         </div>
 
                                         <div className="flex flex-col z-10 relative mt-auto">
-                                            <span className={`text-4xl font-black tracking-tight ${isGasAlert ? 'text-red-600' : card.color} drop-shadow-sm`}>
+                                            <span className={`text-4xl font-black tracking-tight ${isGasAlert ? 'text-red-400' : card.color} drop-shadow-sm`}>
                                                 {card.score}
                                             </span>
-                                            <span className={`text-[10px] font-semibold mt-1 ${isGasAlert ? 'text-red-500' : 'text-slate-400'}`}>
+                                            <span className={`text-[10px] font-semibold mt-1 ${isGasAlert ? 'text-red-400' : 'text-slate-400'}`}>
                                                 {isGasAlert ? '⚠️ MÜDAHALE!' : 'kayıt'}
                                             </span>
                                         </div>
 
                                         <div className={`absolute right-5 bottom-5 z-10 p-2.5 rounded-xl transition-all duration-300 ${isGasAlert
-                                            ? 'bg-red-200 animate-bounce'
-                                            : 'bg-gradient-to-br from-slate-100 to-slate-200 shadow-inner group-hover:scale-110 group-hover:shadow-md'
+                                            ? (isDarkMode ? 'bg-red-500/20 animate-bounce' : 'bg-red-100 animate-bounce')
+                                            : (isDarkMode ? 'bg-white/10 shadow-inner group-hover:scale-110 group-hover:shadow-lg backdrop-blur-sm border border-white/5' : 'bg-slate-50 group-hover:scale-110 group-hover:shadow-md border border-slate-100')
                                             }`}>
-                                            <Activity className={`w-5 h-5 ${isGasAlert ? 'text-red-600' : card.color}`} />
+                                            <Activity className={`w-5 h-5 ${isGasAlert ? 'text-red-400' : card.color}`} />
                                         </div>
 
                                         {/* Decorative Background Pattern */}
                                         <div className={`absolute -right-8 -bottom-8 w-36 h-36 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 z-0`}>
-                                            <Activity className={`w-full h-full ${isGasAlert ? 'text-red-900' : 'text-slate-900'}`} />
+                                            <Activity className={`w-full h-full ${isGasAlert ? 'text-red-900' : 'text-slate-100'}`} />
                                         </div>
                                     </button>
                                 );
@@ -358,10 +356,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                 {/* Right Column: Personal Notes & Calendar (Fixed Width, Full Height) */}
                 <div className="w-80 shrink-0 h-full flex flex-col gap-4">
                     <div className="h-[45%]">
-                        <PersonalNotes userEmail={currentUser?.email} />
+                        <PersonalNotes userEmail={currentUser?.email} isDarkMode={isDarkMode} />
                     </div>
                     <div className="flex-1 min-h-0">
-                        <CalendarWidget userEmail={currentUser?.email} />
+                        <CalendarWidget userEmail={currentUser?.email} isDarkMode={isDarkMode} />
                     </div>
                 </div>
 

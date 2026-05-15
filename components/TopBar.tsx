@@ -54,7 +54,7 @@ const TopBar: React.FC<TopBarProps> = ({
     const isDark = variant === 'dark';
 
     return (
-        <div className={`${isDark ? '' : 'bg-white border-b border-slate-200 px-6 py-3 shadow-sm'} flex items-center justify-end relative z-40`}>
+        <div className={`flex items-center justify-end relative z-40 bg-transparent border-transparent`}>
             {/* Account Dropdown */}
             <div className="relative" ref={dropdownRef}>
                 <button

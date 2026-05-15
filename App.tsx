@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, Loader2, FileText, ChevronRight, FolderOpen } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, Loader2, FileText, ChevronRight, FolderOpen, Sun, Moon } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -22,6 +22,7 @@ import RoutineTasksView from './components/RoutineTasksView';
 import StockRadiatorsView from './components/StockRadiatorsView';
 import StockCombisView from './components/StockCombisView';
 import StockGenericView from './components/StockGenericView';
+import ServiceRedirectDropdown from './components/ServiceRedirectDropdown';
 import QuotationsListView from './components/QuotationsListView';
 import { QuotationApp } from './teklif_app/QuotationApp';
 
@@ -50,6 +51,20 @@ function App() {
   const [forceMobile, setForceMobile] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768 || forceMobile);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme_preference');
+    return saved ? saved === 'dark' : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('theme_preference', isDarkMode ? 'dark' : 'light');
+    // @ts-ignore
+    if (window.initParticles) {
+      // @ts-ignore
+      window.initParticles(isDarkMode);
+    }
+  }, [isDarkMode]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -917,7 +932,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-500/30 overflow-hidden">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-transparent text-slate-100' : 'bg-transparent text-slate-800'} font-sans selection:bg-blue-500/30 overflow-hidden transition-colors duration-500`}>
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -926,6 +941,7 @@ function App() {
         isAdmin={!!hasAdminAccess}
         onLogout={handleSignOut}
         userPermissions={userPermissions}
+        isDarkMode={isDarkMode}
       />
 
       {/* Main Content Area */}
@@ -933,7 +949,7 @@ function App() {
 
 
 
-        <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-100 relative">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-transparent relative">
           {((activeTab as string) === 'assignment' || (activeTab as string) === 'routine_pool' || (activeTab as string).startsWith('stock_') || activeTab === 'quotations') ? (
             <>
               {activeTab === 'assignment' && (
@@ -1082,17 +1098,10 @@ function App() {
           ) : (
             <>
               {/* Global Toolbar */}
-              <div className="px-6 py-2 flex items-center justify-between border-b border-[#34495e] bg-[#2c3e50] shadow-sm shrink-0 z-10 w-full text-white">
+              <div className={`px-6 py-2 flex items-center justify-between shrink-0 z-10 w-full transition-colors duration-500 bg-transparent border-transparent shadow-none ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
                 <div className="flex items-center gap-4">
-                  {/* Removed 'Panel'e Dön' from here */}
                   <div>
                     {/* <h1 className="font-bold text-lg tracking-tight text-white">ONAY MÜHENDİSLİK</h1> */}
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-slate-400">İş Takip V2</p>
-                      {import.meta.env.DEV && (
-                        <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">TEST ORTAMI</span>
-                      )}
-                    </div>
                   </div>
                 </div>
 
@@ -1120,6 +1129,17 @@ function App() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  <ServiceRedirectDropdown isDarkMode={isDarkMode} />
+
+                  {/* Theme Toggle */}
+                  <button
+                    onClick={() => setIsDarkMode(!isDarkMode)}
+                    className={`p-2 rounded-full border transition-colors shadow-sm ${isDarkMode ? 'border-white/20 hover:bg-white/10 text-white' : 'border-slate-300 hover:bg-slate-200 text-slate-700'}`}
+                    title={isDarkMode ? "Aydınlık Moda Geç" : "Karanlık Moda Geç"}
+                  >
+                    {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  </button>
+
                   {/* Animated Close Button for Sub-views */}
                   {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
                     <button
@@ -1138,7 +1158,7 @@ function App() {
                     onLogout={handleLogout}
                     onOpenProfile={() => setIsProfileModalOpen(true)}
                     onOpenPassword={() => setIsPasswordModalOpen(true)}
-                    variant="dark"
+                    variant={isDarkMode ? 'dark' : 'light'}
                   />
                 </div>
               </div>
@@ -1229,6 +1249,7 @@ function App() {
                   currentUser={userPermissions ? { name: userPermissions.name, email: userPermissions.email } : undefined}
                   userRole={hasAdminAccess ? 'admin' : userPermissions?.role}
                   userPermissions={userPermissions}
+                  isDarkMode={isDarkMode}
                 />
               ) : (
                 <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
@@ -1252,6 +1273,7 @@ function App() {
                           isCompact={true}
                           staffList={registeredStaff}
                           onTaskUpdate={handleQuickUpdateTask}
+                          isDarkMode={isDarkMode}
                         />
                       </div>
                       <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
@@ -1272,6 +1294,7 @@ function App() {
                           isCompact={true}
                           staffList={registeredStaff}
                           onTaskUpdate={handleQuickUpdateTask}
+                          isDarkMode={isDarkMode}
                         />
                       </div>
                     </div>
@@ -1288,6 +1311,7 @@ function App() {
                       staffList={registeredStaff}
                       hideCreator={activeTab === 'archive'}
                       onTaskUpdate={handleQuickUpdateTask}
+                      isDarkMode={isDarkMode}
                     />
                   )}
                 </div>

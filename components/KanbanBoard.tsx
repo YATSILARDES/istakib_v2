@@ -16,6 +16,7 @@ interface KanbanBoardProps {
   staffList?: { name: string; email: string }[];
   hideCreator?: boolean;
   onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
+  isDarkMode?: boolean;
 }
 
 const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
@@ -43,7 +44,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   isCompact = false,
   staffList = [],
   hideCreator = false,
-  onTaskUpdate
+  onTaskUpdate,
+  isDarkMode = false
 }) => {
   // State to track search queries for each column
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
@@ -167,20 +169,20 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     <div className={`flex-1 overflow-x-auto overflow-y-hidden ${isCompact ? 'p-2' : 'p-6'}`}>
       <div className={`flex ${isCompact ? 'gap-3 min-w-full' : 'gap-6 min-w-[1500px]'} h-full transition-all`}>
         {showRoutineColumn && (
-          <div className={`flex-1 flex flex-col ${isCompact ? 'min-w-[200px]' : 'min-w-[280px]'} bg-slate-100/80 rounded-2xl border border-slate-200 backdrop-blur-sm self-start max-h-full`}>
+          <div className={`flex-1 flex flex-col ${isCompact ? 'min-w-[200px]' : 'min-w-[280px]'} ${!isDarkMode ? 'bg-[#1e293b]/40 border-white/10' : 'bg-slate-100/80 border-slate-200'} rounded-2xl border backdrop-blur-sm self-start max-h-full`}>
             {/* Header */}
-            <div className="p-4 border-b border-slate-200 bg-purple-500/5 flex items-center justify-between rounded-t-2xl">
-              <div className="flex items-center gap-2 font-semibold text-purple-700">
+            <div className={`p-4 border-b flex items-center justify-between rounded-t-2xl ${!isDarkMode ? 'border-white/10 bg-purple-500/10' : 'border-slate-200 bg-purple-500/5'}`}>
+              <div className={`flex items-center gap-2 font-semibold ${!isDarkMode ? 'text-purple-300' : 'text-purple-700'}`}>
                 <StatusIcon status="ROUTINE" />
                 <span className="truncate">{staffName ? `${staffName} Eksik Listesi` : 'Personel Eksik Listesi'}</span>
-                <span className="ml-2 px-2 py-0.5 text-xs bg-purple-100 border border-purple-200 rounded-full text-purple-700">
+                <span className={`ml-2 px-2 py-0.5 text-xs border rounded-full ${!isDarkMode ? 'bg-purple-900/50 border-purple-500/30 text-purple-300' : 'bg-purple-100 border-purple-200 text-purple-700'}`}>
                   {filteredRoutine.filter(t => !t.isCompleted).length + filteredStandard.length}
                 </span>
               </div>
             </div>
 
             {/* Search Bar */}
-            <div className="px-3 py-2 border-b border-slate-200">
+            <div className={`px-3 py-2 border-b ${!isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
               <div className="relative group">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                 <input
@@ -188,7 +190,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   placeholder="Ara (İçerik, Müşteri...)"
                   value={searchTerms['ROUTINE'] || ''}
                   onChange={(e) => handleSearchChange('ROUTINE', e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-1.5 pl-8 pr-3 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-purple-500/30 focus:ring-1 focus:ring-purple-500/20 transition-all"
+                  className={`w-full border rounded-xl py-1.5 pl-8 pr-3 text-xs focus:outline-none focus:ring-1 transition-all ${!isDarkMode ? 'bg-[#1e293b]/60 border-white/10 text-white placeholder-slate-500 focus:border-purple-400/30 focus:ring-purple-500/20' : 'bg-white border-slate-200 text-slate-700 placeholder-slate-400 focus:border-purple-500/30 focus:ring-purple-500/20'}`}
                 />
               </div>
             </div>
@@ -285,7 +287,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               )}
 
               {filteredRoutine.length === 0 && filteredStandard.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-slate-300/50 rounded-lg text-slate-400">
+                <div className={`flex flex-col items-center justify-center h-20 border-2 border-dashed rounded-lg ${!isDarkMode ? 'border-white/10 text-slate-500' : 'border-slate-300/50 text-slate-400'}`}>
                   <span className="text-xs opacity-70">
                     {searchTerms['ROUTINE'] ? 'Sonuç bulunamadı' : 'Eksik iş yok'}
                   </span>
@@ -301,13 +303,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           const searchTerm = searchTerms[status] || '';
 
           return (
-            <div key={status} className={`flex-1 flex flex-col ${isCompact ? 'min-w-[200px]' : 'min-w-[280px]'} bg-slate-100/80 rounded-2xl border border-slate-200 backdrop-blur-sm`}>
+            <div key={status} className={`flex-1 flex flex-col ${isCompact ? 'min-w-[200px]' : 'min-w-[280px]'} ${!isDarkMode ? 'bg-[#1e293b]/40 border-white/10' : 'bg-slate-100/80 border-slate-200'} rounded-2xl border backdrop-blur-sm`}>
               {/* Column Header */}
-              <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-                <div className="flex items-center gap-2 font-semibold text-slate-700">
+              <div className={`p-4 border-b flex items-center justify-between ${!isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                <div className={`flex items-center gap-2 font-semibold ${!isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                   <StatusIcon status={status} />
                   <span className="truncate">{StatusLabels[status]}</span>
-                  <span className="ml-2 px-2 py-0.5 text-xs bg-white border border-slate-200 rounded-full text-slate-500">
+                  <span className={`ml-2 px-2 py-0.5 text-xs border rounded-full ${!isDarkMode ? 'bg-white/10 border-white/20 text-slate-300' : 'bg-white border-slate-200 text-slate-500'}`}>
                     {status === TaskStatus.PROJECT_TO_BE_DRAWN 
                       ? tasks.filter(t => t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length 
                       : tasks.filter(t => t.status === status).length}
@@ -319,7 +321,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               </div>
 
               {/* Search Bar */}
-              <div className="px-3 py-2 border-b border-slate-200">
+              <div className={`px-3 py-2 border-b ${!isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
                 <div className="relative group">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                   <input
@@ -327,7 +329,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     placeholder="Ara (İsim, No, Adres...)"
                     value={searchTerm}
                     onChange={(e) => handleSearchChange(status, e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-1.5 pl-8 pr-3 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500/30 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                    className={`w-full border rounded-xl py-1.5 pl-8 pr-3 text-xs focus:outline-none focus:ring-1 transition-all ${!isDarkMode ? 'bg-[#1e293b]/60 border-white/10 text-white placeholder-slate-500 focus:border-blue-400/30 focus:ring-blue-500/20' : 'bg-white border-slate-200 text-slate-700 placeholder-slate-400 focus:border-blue-500/30 focus:ring-blue-500/20'}`}
                   />
                 </div>
               </div>
@@ -432,7 +434,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 ))}
 
                 {filteredTasks.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-slate-300/50 rounded-lg text-slate-400">
+                  <div className={`flex flex-col items-center justify-center h-20 border-2 border-dashed rounded-lg ${!isDarkMode ? 'border-white/10 text-slate-500' : 'border-slate-300/50 text-slate-400'}`}>
                     <span className="text-xs opacity-70">
                       {searchTerm ? 'Sonuç bulunamadı' : 'İş kaydı yok'}
                     </span>

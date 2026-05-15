@@ -148,8 +148,59 @@
   <link rel="stylesheet" href="/index.css">
 </head>
 
-<body class="bg-slate-900 text-slate-100 antialiased overflow-hidden">
-  <div id="root" class="h-screen w-screen flex flex-col"></div>
+<body class="bg-[#1e293b] text-slate-100 antialiased overflow-hidden">
+  <div id="particles-js" style="position: fixed; width: 100vw; height: 100vh; top: 0; left: 0; z-index: -2;"></div>
+  <div id="root" class="h-screen w-screen flex flex-col relative z-0"></div>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script>
+    window.initParticles = function(isDark) {
+      const pColor = isDark ? "#ffffff" : "#000000";
+      const bgColor = isDark ? "bg-[#1e293b]" : "bg-slate-50";
+      
+      // Update body classes
+      document.body.className = `${bgColor} text-slate-100 antialiased overflow-hidden transition-colors duration-500`;
+
+      // Destroy existing particles if any
+      if (window.pJSDom && window.pJSDom.length > 0) {
+        window.pJSDom[0].pJS.fn.vendors.destroypJS();
+        window.pJSDom = [];
+      }
+
+      if(window.particlesJS) {
+        particlesJS("particles-js", {
+          "particles": {
+            "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+            "color": { "value": pColor },
+            "shape": { "type": "circle" },
+            "opacity": { "value": isDark ? 0.6 : 0.3, "random": false },
+            "size": { "value": 3, "random": true },
+            "line_linked": { "enable": true, "distance": 150, "color": pColor, "opacity": isDark ? 0.4 : 0.2, "width": 1 },
+            "move": { "enable": true, "speed": 1.2, "direction": "none", "random": true, "straight": false, "out_mode": "out", "bounce": false }
+          },
+          "interactivity": {
+            "detect_on": "window",
+            "events": {
+              "onhover": { "enable": true, "mode": "grab" },
+              "onclick": { "enable": true, "mode": "push" },
+              "resize": true
+            },
+            "modes": {
+              "grab": { "distance": 250, "line_linked": { "opacity": isDark ? 0.8 : 0.5 } },
+              "push": { "particles_nb": 4 }
+            }
+          },
+          "retina_detect": true
+        });
+      }
+    };
+
+    // Initialize particles initially with dark theme as default
+    document.addEventListener("DOMContentLoaded", function() {
+      // The React app will call initParticles once it reads localStorage, 
+      // but we can set a safe default just in case.
+      window.initParticles(true);
+    });
+  </script>
   <script type="module" src="/index.tsx"></script>
 </body>
 

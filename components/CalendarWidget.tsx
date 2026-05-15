@@ -6,6 +6,7 @@ import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc } from 'fi
 
 interface CalendarWidgetProps {
     userEmail?: string | null;
+    isDarkMode?: boolean;
 }
 
 interface CalendarNote {
@@ -14,7 +15,7 @@ interface CalendarNote {
     note: string;
 }
 
-const CalendarWidget: React.FC<CalendarWidgetProps> = ({ userEmail }) => {
+const CalendarWidget: React.FC<CalendarWidgetProps> = ({ userEmail, isDarkMode = true }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [notes, setNotes] = useState<Record<string, string>>({});
@@ -120,43 +121,46 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ userEmail }) => {
                 key={d}
                 onClick={() => handleDateClick(d)}
                 className={`
-                    h-8 md:h-9 w-full flex flex-col items-center justify-center rounded-lg text-xs md:text-sm relative transition-colors
-                    ${isToday ? 'bg-blue-600 text-white font-bold' : 'hover:bg-slate-100 text-slate-700'}
-                    ${hasNote && !isToday ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''}
+                    h-8 md:h-9 w-full flex flex-col items-center justify-center rounded-lg text-xs md:text-sm relative transition-colors border
+                    ${isToday 
+                        ? (isDarkMode ? 'bg-blue-500/20 text-blue-300 font-bold border-blue-500/30' : 'bg-blue-600 text-white font-bold border-transparent')
+                        : (isDarkMode ? 'hover:bg-white/10 text-slate-300 hover:text-white border-transparent' : 'hover:bg-slate-100 text-slate-700 border-transparent')
+                    }
+                    ${hasNote && !isToday 
+                        ? (isDarkMode ? 'bg-indigo-500/20 text-indigo-200 font-semibold border-indigo-500/20' : 'bg-indigo-50 text-indigo-700 font-semibold border-transparent') 
+                        : ''}
                 `}
             >
                 {d}
                 {hasNote && (
-                    <span className={`absolute bottom-0.5 w-1 h-1 rounded-full ${isToday ? 'bg-white' : 'bg-indigo-500'}`} />
+                    <span className={`absolute bottom-0.5 w-1 h-1 rounded-full ${isToday ? (isDarkMode ? 'bg-blue-300' : 'bg-white') : (isDarkMode ? 'bg-indigo-400' : 'bg-indigo-500')}`} />
                 )}
             </button>
         );
     }
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden relative">
+        <div className={`rounded-2xl flex flex-col h-full overflow-hidden relative transition-colors duration-500 ${isDarkMode ? 'bg-white/5 backdrop-blur-md shadow-xl border border-white/10' : 'bg-slate-200/80 backdrop-blur-md shadow-md border border-slate-300'}`}>
             {/* Header */}
-            {/* Header */}
-            {/* Header */}
-            <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className={`p-3 border-b flex items-center justify-between ${isDarkMode ? 'border-white/10 bg-white/5' : 'border-slate-100 bg-slate-50/50'}`}>
                 <div className="flex flex-col">
-                    <span className="font-bold text-slate-700 capitalize text-sm">{monthName}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">Kişisel Takvim</span>
+                    <span className={`font-bold capitalize text-sm ${isDarkMode ? 'text-white' : 'text-slate-700'}`}>{monthName}</span>
+                    <span className={`text-[10px] font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}>Kişisel Takvim</span>
                 </div>
                 <div className="flex gap-1">
-                    <button onClick={handlePrevMonth} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
-                        <ChevronLeft className="w-4 h-4 text-slate-500" />
+                    <button onClick={handlePrevMonth} className={`p-1 rounded-full transition-colors ${isDarkMode ? 'hover:bg-white/10 text-slate-300 hover:text-white' : 'hover:bg-slate-200 text-slate-500'}`}>
+                        <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button onClick={handleNextMonth} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
-                        <ChevronRight className="w-4 h-4 text-slate-500" />
+                    <button onClick={handleNextMonth} className={`p-1 rounded-full transition-colors ${isDarkMode ? 'hover:bg-white/10 text-slate-300 hover:text-white' : 'hover:bg-slate-200 text-slate-500'}`}>
+                        <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
             {/* Grid Header */}
-            <div className="grid grid-cols-7 gap-1 p-2 border-b border-slate-100 bg-slate-50/30">
+            <div className={`grid grid-cols-7 gap-1 p-2 border-b ${isDarkMode ? 'border-white/10 bg-white/5 text-slate-400' : 'border-slate-100 bg-slate-50/30 text-slate-500'}`}>
                 {['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pa'].map(day => (
-                    <div key={day} className="text-center text-[10px] font-bold text-slate-400">
+                    <div key={day} className="text-center text-[10px] font-bold">
                         {day}
                     </div>
                 ))}
@@ -192,22 +196,22 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ userEmail }) => {
 
             {/* Note Modal/Overlay */}
             {isInternalModalOpen && (
-                <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-10 flex flex-col p-4 animate-in fade-in zoom-in duration-200">
+                <div className={`absolute inset-0 z-10 flex flex-col p-4 animate-in fade-in zoom-in duration-200 rounded-2xl ${isDarkMode ? 'bg-[#1e293b]/90 backdrop-blur-md' : 'bg-white/95 backdrop-blur-sm'}`}>
                     <div className="flex items-center justify-between mb-3 shrink-0">
-                        <h4 className="font-bold text-slate-800 text-sm">Not Ekle: {selectedDate?.split('-').reverse().join('.')}</h4>
-                        <button onClick={() => setIsInternalModalOpen(false)} className="p-1 hover:bg-slate-100 rounded-full">
-                            <X className="w-4 h-4 text-slate-400" />
+                        <h4 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Not Ekle: {selectedDate?.split('-').reverse().join('.')}</h4>
+                        <button onClick={() => setIsInternalModalOpen(false)} className={`p-1 rounded-full transition-colors ${isDarkMode ? 'hover:bg-white/10 text-slate-300 hover:text-white' : 'hover:bg-slate-100 text-slate-500'}`}>
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
                     <textarea
                         value={noteInput}
                         onChange={(e) => setNoteInput(e.target.value)}
                         placeholder="Bugün için notunuz..."
-                        className="flex-1 w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none mb-3"
+                        className={`flex-1 w-full rounded-xl p-3 text-sm focus:outline-none resize-none mb-3 transition-colors border ${isDarkMode ? 'bg-black/20 border-white/10 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 text-slate-100 placeholder:text-slate-500' : 'bg-slate-50 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-800 placeholder:text-slate-400'}`}
                     />
                     <button
                         onClick={handleSaveNote}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                        className={`w-full py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 ${isDarkMode ? 'bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 shadow-lg' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'}`}
                     >
                         <Save className="w-4 h-4" />
                         Kaydet

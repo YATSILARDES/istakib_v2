@@ -9,6 +9,7 @@ interface SidebarProps {
     isAdmin: boolean;
     onLogout?: () => void;
     userPermissions?: UserPermission | null;
+    isDarkMode?: boolean;
 }
 
 type MenuItem = {
@@ -18,7 +19,7 @@ type MenuItem = {
     children?: { id: string; label: string; }[];
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdmin, onLogout, userPermissions }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdmin, onLogout, userPermissions, isDarkMode = true }) => {
     const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
     const toggleExpand = (id: string) => {
@@ -64,22 +65,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
     return (
         <div
             className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-[#2c3e50] to-[#1a252f] border-r border-[#34495e] shadow-2xl shadow-black/30
-        transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-64 border-r shadow-none
+        transform transition-all duration-500 ease-in-out
+        bg-transparent border-transparent
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         md:relative md:translate-x-0
         flex flex-col
       `}
         >
-            {/* Logo Area with Gradient */}
-            <div className="h-20 flex items-center px-5 border-b border-[#34495e]/50 bg-gradient-to-r from-blue-600/10 to-transparent">
+            {/* Logo Area */}
+            <div className={`h-20 flex items-center px-5 border-b border-transparent`}>
                 <div className="flex items-center gap-3 group">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center border border-blue-400/20 transform group-hover:scale-105 transition-transform duration-300">
                         <span className="text-white font-bold text-lg">O</span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-bold text-sm text-white tracking-tight">ONAY</span>
-                        <span className="text-[10px] text-slate-400 tracking-widest">MÜHENDİSLİK</span>
+                        <span className={`font-bold text-sm tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>ONAY</span>
+                        <span className={`text-[10px] tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>MÜHENDİSLİK</span>
                     </div>
                 </div>
             </div>
@@ -105,8 +107,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
                                 className={`
                                     w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative group
                                     ${isParentEffectiveActive
-                                        ? 'bg-gradient-to-r from-blue-600/20 to-blue-600/5 text-white shadow-sm'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                        ? `bg-gradient-to-r from-blue-600/20 to-blue-600/5 shadow-sm ${isDarkMode ? 'text-white' : 'text-blue-700'}`
+                                        : `${isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`
                                     }
                                 `}
                             >
@@ -142,8 +144,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
                                                 className={`
                                                     w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 relative
                                                     ${isChildActive
-                                                        ? 'text-blue-400'
-                                                        : 'text-slate-500 hover:text-slate-300'
+                                                        ? 'text-blue-500 font-bold'
+                                                        : isDarkMode ? 'text-slate-300 hover:text-white font-medium' : 'text-slate-600 hover:text-slate-900 font-medium'
                                                     }
                                                 `}
                                             >
@@ -162,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
             {/* Footer */}
             <div className="px-4 py-4 border-t border-[#34495e]/50">
                 <div className="text-[10px] text-slate-600 text-center">
-                    v0.0.39
+                    v0.0.47
                 </div>
             </div>
         </div>
