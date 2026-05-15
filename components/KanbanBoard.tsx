@@ -345,7 +345,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       ${task.isWaiting
                         ? 'bg-blue-100 border-l-[8px] border-l-blue-600 border-blue-200 shadow-[0_0_15px_-5px_rgba(37,99,235,0.4)]'
                         : (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2)
-                        ? 'bg-orange-100 border-l-[8px] border-l-orange-500 border-orange-300 shadow-[0_0_15px_-5px_rgba(249,115,22,0.4)]'
+                        ? 'bg-rose-100 border-l-[8px] border-l-rose-600 border-rose-300 shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)]'
                         : task.checkStatus === 'missing'
                         ? 'bg-red-100 border-l-[8px] border-l-red-600 border-red-200 shadow-[0_0_15px_-5px_rgba(220,38,38,0.4)]'
                         : task.checkStatus === 'clean'

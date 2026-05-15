@@ -118,7 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         {
             title: 'GAZI AÇILAN İŞLER',
             displayName: StatusLabels[TaskStatus.GAS_OPENED],
-            score: getCount(TaskStatus.GAS_OPENED),
+            score: tasks.filter(t => t.status === TaskStatus.GAS_OPENED && !t.isWaiting).length,
             status: TaskStatus.GAS_OPENED,
             color: 'text-emerald-500',
             borderColor: 'hover:border-emerald-500'
@@ -294,7 +294,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         className={`
                                             relative p-5 rounded-2xl border transition-all duration-300 text-left flex flex-col justify-between group h-36 overflow-hidden backdrop-blur-md
                                             ${isGasAlert
-                                                ? isDarkMode ? 'bg-red-900/40 border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.4)]' : 'bg-red-50 border-red-200 shadow-sm'
+                                                ? isDarkMode ? 'bg-red-900/40 border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.4)]' : 'bg-red-100 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
                                                 : isDarkMode ? 'bg-white/5 border-white/10 shadow-lg hover:shadow-2xl hover:bg-white/10' : 'bg-slate-200/80 border-slate-300 shadow-md hover:shadow-lg hover:bg-slate-300/80'
                                             }
                                             hover:-translate-y-1.5 active:translate-y-0 active:scale-[0.98]

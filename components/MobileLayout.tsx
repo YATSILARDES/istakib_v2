@@ -526,9 +526,9 @@ export default function MobileLayout({
                                             badgeStyle = "bg-blue-500/20 text-blue-400";
                                             shadowStyle = "shadow-[0_0_15px_-5px_rgba(37,99,235,0.2)]";
                                         } else if (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2) {
-                                            cardStyle = "bg-orange-950/20 border-orange-500/40";
-                                            badgeStyle = "bg-orange-500/20 text-orange-400";
-                                            shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.2)]";
+                                            cardStyle = "bg-rose-950/30 border-rose-500/60";
+                                            badgeStyle = "bg-rose-500/20 text-rose-400";
+                                            shadowStyle = "shadow-[0_0_20px_-5px_rgba(225,29,72,0.4)]";
                                         } else if (task.checkStatus === 'missing') {
                                             cardStyle = "bg-orange-950/30 border-orange-500/50";
                                             badgeStyle = "bg-orange-500/20 text-orange-400";
@@ -718,9 +718,9 @@ export default function MobileLayout({
                                                     badgeStyle = "bg-blue-500/20 text-blue-400";
                                                     shadowStyle = "shadow-[0_0_15px_-5px_rgba(37,99,235,0.2)]";
                                                 } else if (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2) {
-                                                    cardStyle = "bg-orange-950/20 border-orange-500/40";
-                                                    badgeStyle = "bg-orange-500/20 text-orange-400";
-                                                    shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.2)]";
+                                                    cardStyle = "bg-rose-950/30 border-rose-500/60";
+                                                    badgeStyle = "bg-rose-500/20 text-rose-400";
+                                                    shadowStyle = "shadow-[0_0_20px_-5px_rgba(225,29,72,0.4)]";
                                                 } else if (task.checkStatus === 'missing') {
                                                     cardStyle = "bg-orange-950/30 border-orange-500/50";
                                                     badgeStyle = "bg-orange-500/20 text-orange-400";

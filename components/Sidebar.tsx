@@ -76,8 +76,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
             {/* Logo Area */}
             <div className={`h-20 flex items-center px-5 border-b border-transparent`}>
                 <div className="flex items-center gap-3 group">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center border border-blue-400/20 transform group-hover:scale-105 transition-transform duration-300">
-                        <span className="text-white font-bold text-lg">O</span>
+                    <div className="w-10 h-10 flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300">
+                        <img src="/logo-transparent.png" alt="Onay Logo" className="w-full h-full object-contain drop-shadow-md" />
                     </div>
                     <div className="flex flex-col">
                         <span className={`font-bold text-sm tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>ONAY</span>
