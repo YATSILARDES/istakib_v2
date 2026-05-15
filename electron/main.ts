@@ -74,7 +74,7 @@ function createWindow() {
     });
 
     // Harici linkleri (target="_blank") varsayılan tarayıcıda (Chrome vs.) aç
-    win.webContents.setWindowOpenHandler(({ url }) => {
+    win.webContents.setWindowOpenHandler(({ url }: { url: string }) => {
         shell.openExternal(url);
         return { action: 'deny' };
     });
