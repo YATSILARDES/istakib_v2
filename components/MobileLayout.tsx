@@ -313,13 +313,11 @@ export default function MobileLayout({
             }));
 
             const combined = [...mainItems, ...routineItems].sort((a, b) => {
-                // 1. Date Sort (Day Precision)
+                // 1. Full Date Sort (Includes Hour precision from AssignmentView)
                 const timeA = a.getTime();
                 const timeB = b.getTime();
-                const dayA = new Date(timeA).setHours(0, 0, 0, 0);
-                const dayB = new Date(timeB).setHours(0, 0, 0, 0);
 
-                if (dayA !== dayB) return dayA - dayB;
+                if (timeA !== timeB) return timeA - timeB;
 
                 // 2. Daily Order Sort
                 // Matched with AssignmentView Week Sorting
@@ -364,13 +362,11 @@ export default function MobileLayout({
         }));
 
         return [...mainItems, ...routineItems].sort((a, b) => {
-            // 1. Date Sort (Day Precision)
+            // 1. Full Date Sort (Includes Hour precision from AssignmentView)
             const timeA = a.getTime();
             const timeB = b.getTime();
-            const dayA = new Date(timeA).setHours(0, 0, 0, 0);
-            const dayB = new Date(timeB).setHours(0, 0, 0, 0);
 
-            if (dayA !== dayB) return dayA - dayB;
+            if (timeA !== timeB) return timeA - timeB;
 
             // 2. Daily Order Sort
             // Matched with AssignmentView Week Sorting

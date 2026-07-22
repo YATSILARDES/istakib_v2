@@ -283,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
 
                     {/* Stats Grid (Scrollable) */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar pb-2">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pb-2 pt-2 px-1 -mx-1">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {visibleCards.map((card, idx) => {
                                 const isGasAlert = card.status === TaskStatus.GAS_OPENED && card.score > 0;
@@ -301,7 +301,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         `}
                                     >
                                         {/* Top Gradient Border */}
-                                        <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl ${isGasAlert ? 'bg-gradient-to-r from-red-500 to-orange-500' :
+                                        <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl transition-all duration-300 group-hover:opacity-0 ${isGasAlert ? 'bg-gradient-to-r from-red-500 to-orange-500' :
                                             card.status === TaskStatus.TO_CHECK ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
                                                 card.status === TaskStatus.CHECK_COMPLETED ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
                                                     card.status === TaskStatus.PROJECT_TO_BE_DRAWN ? 'bg-gradient-to-r from-amber-400 to-yellow-500' :

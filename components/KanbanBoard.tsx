@@ -49,6 +49,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 }) => {
   // State to track search queries for each column
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
+  const [districtFilters, setDistrictFilters] = useState<Record<string, string>>({});
 
   // Define the order explicitly including the new column
   const allColumns = [
@@ -73,6 +74,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const getFilteredTasks = (status: TaskStatus) => {
     const term = (searchTerms[status] || '').toLocaleLowerCase('tr').trim();
+    const districtFilter = districtFilters[status];
     
     let columnTasks = [];
     if (status === TaskStatus.PROJECT_TO_BE_DRAWN) {
@@ -84,6 +86,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       columnTasks = tasks.filter(t => t.status === TaskStatus.CHECK_COMPLETED);
     } else {
       columnTasks = tasks.filter(t => t.status === status);
+    }
+
+    if (districtFilter) {
+      columnTasks = columnTasks.filter(t => t.district === districtFilter);
     }
 
     if (!term) return columnTasks;
@@ -320,8 +326,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 </button>
               </div>
 
-              {/* Search Bar */}
-              <div className={`px-3 py-2 border-b ${!isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
+              {/* Search & Filter Bar */}
+              <div className={`px-3 py-2 border-b flex flex-col gap-2 ${!isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
                 <div className="relative group">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                   <input
@@ -332,6 +338,26 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     className={`w-full border rounded-xl py-1.5 pl-8 pr-3 text-xs focus:outline-none focus:ring-1 transition-all ${!isDarkMode ? 'bg-[#1e293b]/60 border-white/10 text-white placeholder-slate-500 focus:border-blue-400/30 focus:ring-blue-500/20' : 'bg-white border-slate-200 text-slate-700 placeholder-slate-400 focus:border-blue-500/30 focus:ring-blue-500/20'}`}
                   />
                 </div>
+                  <select
+                    value={districtFilters[status] || ''}
+                    onChange={(e) => setDistrictFilters(prev => ({ ...prev, [status]: e.target.value }))}
+                    className={`w-full border rounded-xl py-1.5 px-2.5 text-xs focus:outline-none focus:ring-1 transition-all ${!isDarkMode ? 'bg-[#1e293b]/60 border-white/10 text-white focus:border-blue-400/30 focus:ring-blue-500/20' : 'bg-slate-50 border-slate-200 text-slate-700 focus:border-blue-500/30 focus:ring-blue-500/20'}`}
+                  >
+                    <option value="">Tüm İlçeler</option>
+                    {Array.from(new Set(
+                      tasks
+                        .filter(t => {
+                          if (status === TaskStatus.PROJECT_TO_BE_DRAWN) {
+                            return t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn);
+                          }
+                          return t.status === status;
+                        })
+                        .map(t => t.district)
+                        .filter(Boolean)
+                    )).sort().map(d => (
+                      <option key={d as string} value={d as string}>{d as string}</option>
+                    ))}
+                  </select>
               </div>
 
               {/* Tasks Container */}

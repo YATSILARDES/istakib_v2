@@ -262,6 +262,19 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 
             days.forEach(day => {
                 day.items.sort((a, b) => {
+                    // 1. Sort by full time (includes AssignmentView hours)
+                    const getTime = (item: any) => {
+                        if (!item.date) return 0;
+                        return new Date(item.date.seconds ? item.date.seconds * 1000 : item.date).getTime();
+                    };
+                    const timeA = getTime(a);
+                    const timeB = getTime(b);
+
+                    if (timeA !== timeB) {
+                        return timeA - timeB;
+                    }
+
+                    // 2. Fallback to dailyOrder
                     const orderA = a.dailyOrder || 0;
                     const orderB = b.dailyOrder || 0;
                     if (orderA === 0 && orderB === 0) {
@@ -432,6 +445,16 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                         ...staff.activeRoutine.map(t => ({ type: 'routine' as const, data: t, dailyOrder: t.dailyOrder || 0 })),
                                                         ...staff.activeTasks.map(t => ({ type: 'main' as const, data: t, dailyOrder: t.dailyOrder || 0 }))
                                                     ].sort((a, b) => {
+                                                        const getTime = (item: any) => {
+                                                            let date = item.type === 'routine' ? (item.data.scheduledDate || item.data.createdAt) : item.data.scheduledDate;
+                                                            if (!date) return 0;
+                                                            return new Date(date.seconds ? date.seconds * 1000 : date).getTime();
+                                                        };
+                                                        const timeA = getTime(a);
+                                                        const timeB = getTime(b);
+
+                                                        if (timeA !== timeB) return timeA - timeB;
+
                                                         const orderA = a.dailyOrder || 0;
                                                         const orderB = b.dailyOrder || 0;
                                                         if (orderA === 0 && orderB === 0) {

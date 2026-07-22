@@ -497,19 +497,19 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                 <div>
                                     <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Müşteri Bilgileri</label>
                                     <div className="space-y-3">
-                                        <input type="text" placeholder="Ad Soyad" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500 transition-all placeholder:text-slate-400" />
-                                        <input type="tel" placeholder="Telefon" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500 transition-all placeholder:text-slate-400" />
+                                        <input type="text" placeholder="Ad Soyad" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-purple-500 transition-all placeholder:text-slate-400" />
+                                        <input type="tel" placeholder="Telefon" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-purple-500 transition-all placeholder:text-slate-400" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Konum</label>
                                     <div className="space-y-3">
                                         <div className="flex gap-2">
-                                            <input type="text" placeholder="İlçe" value={district} onChange={e => setDistrict(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500" />
-                                            <input type="text" placeholder="İl" value={city} onChange={e => setCity(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500" />
+                                            <input type="text" placeholder="İlçe" value={district} onChange={e => setDistrict(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-purple-500" />
+                                            <input type="text" placeholder="İl" value={city} onChange={e => setCity(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-purple-500" />
                                         </div>
                                         <div className="relative">
-                                            <input type="text" placeholder="Açık Adres" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pl-9 text-sm outline-none focus:border-purple-500" />
+                                            <input type="text" placeholder="Açık Adres" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pl-9 text-sm text-slate-900 outline-none focus:border-purple-500" />
                                             <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                         </div>
                                     </div>
@@ -521,7 +521,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                         value={newTaskContent}
                                         onChange={e => setNewTaskContent(e.target.value)}
                                         required
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm min-h-[80px] outline-none focus:border-purple-500 resize-none"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 min-h-[80px] outline-none focus:border-purple-500 resize-none"
                                     />
                                 </div>
                                 <button type="submit" disabled={!newTaskContent.trim()} className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
