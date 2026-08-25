@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, Menu, Loader2, FileText, ChevronRight, FolderOpen, Sun, Moon } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, User as UserIcon, Menu, Loader2, FileText, ChevronRight, FolderOpen, Sun, Moon, CheckSquare, Square, Star, UserCircle, Phone, MapPin } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -85,12 +85,43 @@ function App() {
   const [viewMode, setViewMode] = useState<'dashboard' | 'board' | 'split'>('dashboard');
   const [boardFilter, setBoardFilter] = useState<TaskStatus | undefined>(undefined);
   const [isMissingFilterActive, setIsMissingFilterActive] = useState(false);
+  const [isPriorityFilter, setIsPriorityFilter] = useState(false);
   const [searchTerm, setSearchTerm] = useState(''); // NEW: Global Search
+
+  // Routine Assign Modal State
+  const [assignRoutineModal, setAssignRoutineModal] = useState<{ isOpen: boolean; task: RoutineTask | null }>({ isOpen: false, task: null });
+  const [routineAssignStaff, setRoutineAssignStaff] = useState('');
+  const [routineAssignDate, setRoutineAssignDate] = useState('');
 
   // Quotation View State
   const [quotationView, setQuotationView] = useState<'none' | 'prepare' | 'list'>('none');
   const [editingQuotation, setEditingQuotation] = useState<{ data: any; id: string } | null>(null);
   const [quotationSubView, setQuotationSubView] = useState<'hub' | 'prepare' | 'list'>('hub');
+
+  // Split Dashboard Context Menu State
+  const [splitContextMenuState, setSplitContextMenuState] = useState<{ visible: boolean, x: number, y: number, task: RoutineTask | null }>({ visible: false, x: 0, y: 0, task: null });
+
+  useEffect(() => {
+    const handleClick = () => setSplitContextMenuState(prev => ({ ...prev, visible: false }));
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
+
+  const handleSplitContextMenu = (e: React.MouseEvent, task: RoutineTask) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const x = e.clientX;
+    let y = e.clientY;
+    if (y + 130 > window.innerHeight) {
+        y = window.innerHeight - 130;
+    }
+    setSplitContextMenuState({
+        visible: true,
+        x,
+        y,
+        task
+    });
+  };
 
   // Handle Resize & Force Mobile
   useEffect(() => {
@@ -612,6 +643,18 @@ function App() {
     }
   };
 
+  const handleRoutineAssignSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (assignRoutineModal.task && routineAssignStaff && routineAssignDate) {
+      const selectedStaff = registeredStaff?.find(s => s.name === routineAssignStaff);
+      const targetDate = new Date(routineAssignDate);
+      targetDate.setHours(9, 0, 0, 0); // Default to 09:00 for daily assignments
+
+      handleAssignRoutineTask(assignRoutineModal.task.id, routineAssignStaff, selectedStaff?.email, targetDate);
+      setAssignRoutineModal({ isOpen: false, task: null });
+    }
+  };
+
   const handleAddStaff = async (name: string, email: string) => {
     const currentStaffList = appSettings.staffList || [];
     let newStaffList = currentStaffList;
@@ -676,9 +719,15 @@ function App() {
   });
 
   const handleTabChange = (tab: string) => {
+    if (tab === 'field_staff') {
+      setIsFieldStaffModalOpen(true);
+      return;
+    }
+
     // RESET ALL FILTERS
     setBoardFilter(undefined);
     setIsMissingFilterActive(false);
+    setIsPriorityFilter(false);
 
     setActiveTab(tab as any);
     if (tab === 'dashboard') {
@@ -694,11 +743,19 @@ function App() {
   const handleDashboardNavigate = (status?: TaskStatus) => {
     setBoardFilter(status);
     setIsMissingFilterActive(false);
+    setIsPriorityFilter(false);
     if (status === TaskStatus.CHECK_COMPLETED || status === TaskStatus.DEPOSIT_PAID) {
       setViewMode('split');
     } else {
       setViewMode('board');
     }
+  };
+
+  const handleDashboardNavigatePriority = () => {
+    setBoardFilter(undefined);
+    setIsMissingFilterActive(false);
+    setIsPriorityFilter(true);
+    setViewMode('split');
   };
 
   const handleFilterMissing = () => {
@@ -726,6 +783,11 @@ function App() {
   // 1.5 Missing Filter (Specific)
   if (isMissingFilterActive) {
     visibleTasks = visibleTasks.filter(t => t.checkStatus === 'missing');
+  }
+
+  // 1.6 Priority Filter
+  if (isPriorityFilter) {
+    visibleTasks = visibleTasks.filter(t => t.isPriority);
   }
 
   // 2. Permission Filter
@@ -798,11 +860,14 @@ function App() {
     return true;
   });
 
-  const mobileLikeRoutineTasks = routineTasks.filter(t => {
-    // 1. Assignment Match
+  let mobileLikeRoutineTasks = routineTasks.filter(t => {
     const emailMatch = t.assigneeEmail && user?.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
     const nameMatch = userPermissions?.name && t.assignee === userPermissions.name;
-    if (!emailMatch && !nameMatch) return false;
+    const isUnassigned = (!t.assignee || t.assignee.trim() === '') && !t.assigneeEmail;
+    
+    if (!hasAdminAccess && !isManager && !emailMatch && !nameMatch && !isUnassigned) {
+      return false;
+    }
 
     // 2. Date Filter
     let filterDate: Date | null = null;
@@ -828,6 +893,10 @@ function App() {
 
     return true;
   });
+
+  if (isPriorityFilter) {
+    mobileLikeRoutineTasks = mobileLikeRoutineTasks.filter(t => t.isPriority);
+  }
 
   // RETURN RENDER
   const uniqueUsers = (() => {
@@ -878,6 +947,7 @@ function App() {
           <div className="flex-1 overflow-y-auto">
             <RoutineTasksView
               tasks={routineTasks}
+              staffList={registeredStaff}
               onAddTask={handleAddRoutineTask}
               onToggleTask={handleToggleRoutineTask}
               onDeleteTask={handleDeleteRoutineTask}
@@ -975,6 +1045,7 @@ function App() {
                   <button onClick={() => setActiveTab('dashboard' as any)} className="absolute top-4 right-4 z-50 p-2 bg-white/50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"><X className="w-6 h-6" /></button>
                   <RoutineTasksView
                     tasks={routineTasks}
+                    staffList={registeredStaff}
                     onAddTask={handleAddRoutineTask}
                     onToggleTask={handleToggleRoutineTask}
                     onDeleteTask={handleDeleteRoutineTask}
@@ -1143,7 +1214,12 @@ function App() {
                   {/* Animated Close Button for Sub-views */}
                   {activeTab === 'dashboard' && viewMode !== 'dashboard' && (
                     <button
-                      onClick={() => setViewMode('dashboard')}
+                      onClick={() => {
+                        setViewMode('dashboard');
+                        setBoardFilter(undefined);
+                        setIsMissingFilterActive(false);
+                        setIsPriorityFilter(false);
+                      }}
                       className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-2 rounded-full transition-all hover:rotate-90 border border-slate-600 shadow-sm"
                       title="Panele Dön"
                     >
@@ -1199,10 +1275,16 @@ function App() {
               ) : activeTab === 'routine_pool' ? (
                 <RoutineTasksView
                   tasks={routineTasks}
+                  staffList={registeredStaff}
                   onToggleTask={handleToggleRoutineTask}
                   onDeleteTask={handleDeleteRoutineTask}
                   onAddTask={handleAddRoutineTask}
                   onUpdateTask={handleUpdateRoutineTask}
+                  onOpenAssignModal={(task) => {
+                     setAssignRoutineModal({ isOpen: true, task });
+                     setRoutineAssignStaff(task.assignee || '');
+                     setRoutineAssignDate(new Date().toISOString().split('T')[0]);
+                  }}
                   onConvertTask={async (taskId, targetStatus) => {
                     // Simple conversion implementation
                     const task = routineTasks.find(t => t.id === taskId);
@@ -1238,6 +1320,7 @@ function App() {
                   tasks={visibleTasks}
                   routineTasks={routineTasks}
                   onNavigate={handleDashboardNavigate}
+                  onNavigatePriority={handleDashboardNavigatePriority}
                   onTaskClick={handleTaskClick}
                   onFilterMissing={handleFilterMissing}
                   onOpenRoutineModal={() => setActiveTab('routine_pool' as any)}
@@ -1255,48 +1338,153 @@ function App() {
                 <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full">
                   {viewMode === 'split' ? (
                     <div className="flex-1 flex overflow-hidden">
-                      <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
-                        <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
-                          <span>✅ Hazır / Sorunsuz İşler</span>
-                          {/* IF CHECK_COMPLETED: Clean = Clean check AND Project Drawn. ELSE: Clean Check */}
-                          <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn)).length}</span>
-                        </div>
-                        <KanbanBoard
-                          tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn))}
-                          routineTasks={[]}
-                          myTasks={[]}
-                          onTaskClick={handleTaskClick}
-                          onToggleRoutineTask={handleToggleRoutineTask}
-                          visibleColumns={boardFilter ? [boardFilter] : undefined}
-                          showRoutineColumn={false}
-                          staffName={userPermissions?.name}
-                          isCompact={true}
-                          staffList={registeredStaff}
-                          onTaskUpdate={handleQuickUpdateTask}
-                          isDarkMode={isDarkMode}
-                        />
-                      </div>
-                      <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
-                        <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-                          <span>⚠️ Eksiği Olan İşler {boardFilter === TaskStatus.CHECK_COMPLETED ? '(Proje/Kontrol)' : ''}</span>
-                          {/* IF CHECK_COMPLETED: Missing = Missing Check OR Project NOT Drawn. ELSE: Missing Check */}
-                          <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing' || (boardFilter === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length}</span>
-                        </div>
-                        <KanbanBoard
-                          tasks={visibleTasks.filter(t => t.checkStatus === 'missing' || (boardFilter === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn))}
-                          routineTasks={[]}
-                          myTasks={[]}
-                          onTaskClick={handleTaskClick}
-                          onToggleRoutineTask={handleToggleRoutineTask}
-                          visibleColumns={boardFilter ? [boardFilter] : undefined}
-                          showRoutineColumn={false}
-                          staffName={userPermissions?.name}
-                          isCompact={true}
-                          staffList={registeredStaff}
-                          onTaskUpdate={handleQuickUpdateTask}
-                          isDarkMode={isDarkMode}
-                        />
-                      </div>
+                      {isPriorityFilter ? (
+                        <>
+                          <div className="w-1/2 flex flex-col border-r border-slate-200 bg-yellow-50/30 min-w-0">
+                            <div className="px-4 py-2 bg-yellow-100/50 border-b border-yellow-200 font-bold text-yellow-800 flex justify-between">
+                              <span>⭐ Öncelikli Kişi Kartları</span>
+                              <span className="bg-yellow-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.length}</span>
+                            </div>
+                            <KanbanBoard
+                              tasks={visibleTasks}
+                              routineTasks={[]}
+                              myTasks={[]}
+                              onTaskClick={handleTaskClick}
+                              onToggleRoutineTask={handleToggleRoutineTask}
+                              visibleColumns={['MIXED' as any]}
+                              showRoutineColumn={false}
+                              staffName={userPermissions?.name}
+                              isCompact={true}
+                              staffList={registeredStaff}
+                              onTaskUpdate={handleQuickUpdateTask}
+                              onRoutineTaskUpdate={handleUpdateRoutineTask}
+                              isDarkMode={isDarkMode}
+                            />
+                          </div>
+                          <div className="w-1/2 flex flex-col bg-purple-50/30 min-w-0">
+                            <div className="px-4 py-2 bg-purple-100/50 border-b border-purple-200 font-bold text-purple-800 flex justify-between">
+                              <span>📋 Öncelikli Eksikler / Notlar</span>
+                              <span className="bg-purple-200 px-2 rounded-full text-xs flex items-center">{mobileLikeRoutineTasks.length}</span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                              {/* Context Menu for Split Routine Tasks */}
+                              {splitContextMenuState.visible && splitContextMenuState.task && (
+                                <div 
+                                    className="fixed bg-white border border-slate-200 shadow-xl rounded-lg py-1 z-[150] min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+                                    style={{ top: splitContextMenuState.y, left: splitContextMenuState.x }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSplitContextMenuState(prev => ({ ...prev, visible: false }));
+                                            setAssignRoutineModal({ isOpen: true, task: splitContextMenuState.task! });
+                                            setRoutineAssignStaff(splitContextMenuState.task!.assignee || '');
+                                            setRoutineAssignDate(new Date().toISOString().split('T')[0]);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 font-medium border-b border-slate-100"
+                                    >
+                                        <UserIcon className="w-4 h-4" />
+                                        Görev Ata
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            handleUpdateRoutineTask(splitContextMenuState.task!.id, { isPriority: !splitContextMenuState.task!.isPriority });
+                                            setSplitContextMenuState(prev => ({ ...prev, visible: false }));
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-yellow-50 hover:text-yellow-600 flex items-center gap-2 font-medium"
+                                    >
+                                        <Star className={`w-4 h-4 ${splitContextMenuState.task!.isPriority ? 'fill-current text-yellow-500' : ''}`} />
+                                        {splitContextMenuState.task!.isPriority ? 'Öncelikli İşlerden Çıkar' : 'Öncelikli İşlere Ekle'}
+                                    </button>
+                                </div>
+                              )}
+                              
+                              {mobileLikeRoutineTasks.length === 0 ? (
+                                <div className="text-center text-slate-500 py-10 opacity-70 border-2 border-dashed border-purple-200 rounded-lg">Öncelikli eksik/not bulunamadı.</div>
+                              ) : (
+                                mobileLikeRoutineTasks.map(t => (
+                                  <div key={t.id} onContextMenu={(e) => handleSplitContextMenu(e, t)} className={`flex items-start gap-3 p-3 rounded-xl shadow-sm border transition-all ${t.isCompleted ? 'bg-slate-100 border-slate-200 text-slate-500 opacity-60' : 'bg-white border-slate-200 hover:border-purple-300'}`}>
+                                    <button onClick={() => handleToggleRoutineTask(t.id)} className={`mt-0.5 flex-shrink-0 transition-colors ${t.isCompleted ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-500'}`}>
+                                      {t.isCompleted ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                                    </button>
+                                    <div className="flex-1 min-w-0">
+                                      {(t.customerName || t.phoneNumber || t.address) && (
+                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
+                                          {t.customerName && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100"><UserCircle className="w-3 h-3" /> {t.customerName}</span>}
+                                          {t.phoneNumber && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100"><Phone className="w-3 h-3" /> {t.phoneNumber}</span>}
+                                          {t.address && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100"><MapPin className="w-3 h-3" /> {t.address}</span>}
+                                        </div>
+                                      )}
+                                      <div className={`text-sm break-words leading-relaxed whitespace-pre-wrap ${t.isCompleted ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                        {t.content}
+                                      </div>
+                                      
+                                      {/* Assignment Display */}
+                                      {!t.isCompleted && t.assignee && (
+                                        <div className="mt-2 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-[11px] bg-purple-50 text-purple-700 px-2 py-1 rounded-md border border-purple-100 flex items-center gap-1 font-medium">
+                                                <UserIcon className="w-3 h-3" /> {t.assignee}
+                                              </span>
+                                            </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
+                            <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
+                              <span>✅ Hazır / Sorunsuz İşler</span>
+                              {/* IF CHECK_COMPLETED: Clean = Clean check AND Project Drawn. ELSE: Clean Check */}
+                              <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn)).length}</span>
+                            </div>
+                            <KanbanBoard
+                              tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn))}
+                              routineTasks={[]}
+                              myTasks={[]}
+                              onTaskClick={handleTaskClick}
+                              onToggleRoutineTask={handleToggleRoutineTask}
+                              visibleColumns={boardFilter ? [boardFilter] : undefined}
+                              showRoutineColumn={false}
+                              staffName={userPermissions?.name}
+                              isCompact={true}
+                              staffList={registeredStaff}
+                              onTaskUpdate={handleQuickUpdateTask}
+                              onRoutineTaskUpdate={handleUpdateRoutineTask}
+                              isDarkMode={isDarkMode}
+                            />
+                          </div>
+                          <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
+                            <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
+                              <span>⚠️ Eksiği Olan İşler {boardFilter === TaskStatus.CHECK_COMPLETED ? '(Proje/Kontrol)' : ''}</span>
+                              {/* IF CHECK_COMPLETED: Missing = Missing Check OR Project NOT Drawn. ELSE: Missing Check */}
+                              <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing' || (boardFilter === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length}</span>
+                            </div>
+                            <KanbanBoard
+                              tasks={visibleTasks.filter(t => t.checkStatus === 'missing' || (boardFilter === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn))}
+                              routineTasks={[]}
+                              myTasks={[]}
+                              onTaskClick={handleTaskClick}
+                              onToggleRoutineTask={handleToggleRoutineTask}
+                              visibleColumns={boardFilter ? [boardFilter] : undefined}
+                              showRoutineColumn={false}
+                              staffName={userPermissions?.name}
+                              isCompact={true}
+                              staffList={registeredStaff}
+                              onTaskUpdate={handleQuickUpdateTask}
+                              onRoutineTaskUpdate={handleUpdateRoutineTask}
+                              isDarkMode={isDarkMode}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <KanbanBoard
@@ -1311,6 +1499,7 @@ function App() {
                       staffList={registeredStaff}
                       hideCreator={activeTab === 'archive'}
                       onTaskUpdate={handleQuickUpdateTask}
+                      onRoutineTaskUpdate={handleUpdateRoutineTask}
                       isDarkMode={isDarkMode}
                     />
                   )}
@@ -1394,6 +1583,61 @@ function App() {
           setIsModalOpen(true);
         }}
       />
+
+      {/* Routine Assign Modal for Dashboard Split View */}
+      {assignRoutineModal.isOpen && assignRoutineModal.task && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-purple-600" />
+                Görevi Ustaya Ata
+              </h3>
+              <button onClick={() => setAssignRoutineModal({ isOpen: false, task: null })} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="mb-4 bg-slate-100 p-3 rounded-lg border border-slate-200">
+                <div className="text-xs font-bold text-slate-500 mb-1">Seçili Eksik/Not:</div>
+                <div className="font-semibold text-slate-800">{assignRoutineModal.task.customerName || 'İsimsiz Müşteri'}</div>
+                <div className="text-xs text-slate-600 mt-1 line-clamp-2">{assignRoutineModal.task.content}</div>
+              </div>
+              
+              <form onSubmit={handleRoutineAssignSubmit} className="space-y-4">
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Usta (Personel) Seçimi</label>
+                  <select
+                    value={routineAssignStaff}
+                    onChange={(e) => setRoutineAssignStaff(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-purple-500"
+                  >
+                    <option value="" disabled>Personel Seçin</option>
+                    {registeredStaff?.map(staff => (
+                      <option key={staff.email} value={staff.name}>{staff.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Atanacak Tarih</label>
+                  <input
+                    type="date"
+                    value={routineAssignDate}
+                    onChange={(e) => setRoutineAssignDate(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-purple-500"
+                  />
+                </div>
+                <button type="submit" disabled={!routineAssignStaff || !routineAssignDate} className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-2">
+                  <UserIcon className="w-4 h-4" />
+                  Görevi Ata
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 }

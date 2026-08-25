@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask, UserPermission } from '@/types';
-import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal, FileText, FolderOpen } from 'lucide-react';
+import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal, FileText, FolderOpen, AlertTriangle, Star } from 'lucide-react';
 import PersonalNotes from './PersonalNotes';
 import CalendarWidget from './CalendarWidget';
 // import InteractiveMap from './InteractiveMap'; // Later integration
@@ -10,6 +10,7 @@ interface DashboardProps {
     routineTasks: RoutineTask[];
     // staffList removed
     onNavigate: (status?: TaskStatus) => void;
+    onNavigatePriority?: () => void;
     onTaskClick: (task: Task) => void;
     onFilterMissing: () => void;
     onOpenRoutineModal: () => void;
@@ -29,6 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     routineTasks,
     // staffList removed
     onNavigate,
+    onNavigatePriority,
     onTaskClick,
     onFilterMissing,
     onOpenRoutineModal,
@@ -97,24 +99,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             color: 'text-indigo-500',
             borderColor: 'hover:border-indigo-500'
         },
-        // Role Based Card
-        userRole === 'admin' ? {
-            title: 'SAHADAKİ PERSONEL',
-            displayName: 'SAHADAKİ PERSONEL',
-            score: tasks.filter(t => t.assignee).length, // Count all assigned tasks
-            action: onOpenFieldStaffModal, // Open Live Modal
-            color: 'text-orange-600',
-            borderColor: 'hover:border-orange-600',
-            status: 'FIELD_STAFF' as any
-        } : {
-            title: 'ATANAN İŞLERİM',
-            displayName: 'ATANAN İŞLERİM',
-            score: getMyActiveTaskCount(),
-            action: onOpenFieldStaffModal, // Opens same modal, but App.tsx will filter content
-            color: 'text-emerald-600',
-            borderColor: 'hover:border-emerald-600',
-            status: 'MY_TASKS' as any
-        },
         {
             title: 'GAZI AÇILAN İŞLER',
             displayName: StatusLabels[TaskStatus.GAS_OPENED],
@@ -131,13 +115,34 @@ const Dashboard: React.FC<DashboardProps> = ({
             color: 'text-purple-500',
             borderColor: 'hover:border-purple-500'
         },
+        {
+            title: 'ÖNCELİKLİ İŞLER',
+            displayName: 'ÖNCELİKLİ İŞLER',
+            score: tasks.filter(t => t.isPriority && t.status !== TaskStatus.CHECK_COMPLETED).length + routineTasks.filter(t => t.isPriority && !t.isCompleted).length,
+            status: 'PRIORITY' as any,
+            color: 'text-yellow-500',
+            borderColor: 'hover:border-yellow-500',
+            action: onNavigatePriority
+        },
+        {
+            title: 'KOMBİ DEĞİŞİMİ VE TADİLAT YAPILACAK İŞLER',
+            displayName: StatusLabels[TaskStatus.COMBI_REPLACEMENT_RENOVATION],
+            score: getCount(TaskStatus.COMBI_REPLACEMENT_RENOVATION),
+            status: TaskStatus.COMBI_REPLACEMENT_RENOVATION,
+            color: 'text-pink-500',
+            borderColor: 'hover:border-pink-500'
+        }
     ];
 
     const visibleCards = cards.filter(card => {
         if (userRole === 'admin' || userRole === 'manager') return true;
-        if (card.status === 'MY_TASKS' || card.status === 'FIELD_STAFF') return true;
+        if (card.status === 'PRIORITY') return true; // Everyone can see priority tasks
         return userPermissions?.allowedColumns?.includes(card.status as TaskStatus);
     });
+
+    const bottomCardStatuses = ['PRIORITY', TaskStatus.COMBI_REPLACEMENT_RENOVATION];
+    const mainCards = visibleCards.filter(card => !bottomCardStatuses.includes(card.status as any));
+    const bottomCards = visibleCards.filter(card => bottomCardStatuses.includes(card.status as any));
 
     // Filtreleme Mantığı (Son Güncellemeler için)
     const filteredUpdates = React.useMemo(() => {
@@ -205,6 +210,71 @@ const Dashboard: React.FC<DashboardProps> = ({
     }, [tasks, routineTasks, filter]);
 
     const recentUpdates = filteredUpdates.slice(0, 10);
+
+    const renderCard = (card: any, idx: number) => {
+        const isGasAlert = card.status === TaskStatus.GAS_OPENED && card.score > 0;
+        return (
+            <button
+                key={idx}
+                onClick={() => card.action ? card.action() : onNavigate(card.status)}
+                className={`
+                    relative p-5 rounded-2xl border transition-all duration-300 text-left flex flex-col justify-between group h-36 overflow-hidden backdrop-blur-md
+                    ${isGasAlert
+                        ? isDarkMode ? 'bg-red-900/40 border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.4)]' : 'bg-red-100 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
+                        : isDarkMode ? 'bg-white/5 border-white/10 shadow-lg hover:shadow-2xl hover:bg-white/10' : 'bg-slate-200/80 border-slate-300 shadow-md hover:shadow-lg hover:bg-slate-300/80'
+                    }
+                    hover:-translate-y-1.5 active:translate-y-0 active:scale-[0.98]
+                `}
+            >
+                {/* Top Gradient Border */}
+                <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl transition-all duration-300 group-hover:opacity-0 ${isGasAlert ? 'bg-gradient-to-r from-red-500 to-orange-500' :
+                    card.status === TaskStatus.TO_CHECK ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
+                        card.status === TaskStatus.CHECK_COMPLETED ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
+                            card.status === TaskStatus.PROJECT_TO_BE_DRAWN ? 'bg-gradient-to-r from-amber-400 to-yellow-500' :
+                                card.status === TaskStatus.DEPOSIT_PAID ? 'bg-gradient-to-r from-indigo-400 to-purple-500' :
+                                    card.status === TaskStatus.SERVICE_DIRECTED ? 'bg-gradient-to-r from-purple-400 to-pink-500' :
+                                        'bg-gradient-to-r from-emerald-400 to-teal-500'
+                    }`} />
+
+                {/* Hover Glow Effect */}
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl ${isGasAlert ? '' : 'bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10'
+                    }`} />
+
+                <div className="flex justify-between items-start w-full mb-1 z-10 relative">
+                    <h3 className={`font-extrabold text-[11px] uppercase tracking-wider leading-tight max-w-[80%] ${isGasAlert ? (isDarkMode ? 'text-red-300' : 'text-red-700') : (isDarkMode ? 'text-slate-300' : 'text-slate-500')}`}>
+                        {card.title}
+                    </h3>
+                    {isGasAlert && (
+                        <div className="absolute -top-1 -right-1 flex items-center gap-1">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex flex-col z-10 relative mt-auto">
+                    <span className={`text-4xl font-black tracking-tight ${isGasAlert ? 'text-red-400' : card.color} drop-shadow-sm`}>
+                        {card.score}
+                    </span>
+                    <span className={`text-[10px] font-semibold mt-1 ${isGasAlert ? 'text-red-400' : 'text-slate-400'}`}>
+                        {isGasAlert ? '⚠️ MÜDAHALE!' : 'kayıt'}
+                    </span>
+                </div>
+
+                <div className={`absolute right-5 bottom-5 z-10 p-2.5 rounded-xl transition-all duration-300 ${isGasAlert
+                    ? (isDarkMode ? 'bg-red-500/20 animate-bounce' : 'bg-red-100 animate-bounce')
+                    : (isDarkMode ? 'bg-white/10 shadow-inner group-hover:scale-110 group-hover:shadow-lg backdrop-blur-sm border border-white/5' : 'bg-slate-50 group-hover:scale-110 group-hover:shadow-md border border-slate-100')
+                    }`}>
+                    <Activity className={`w-5 h-5 ${isGasAlert ? 'text-red-400' : card.color}`} />
+                </div>
+
+                {/* Decorative Background Pattern */}
+                <div className={`absolute -right-8 -bottom-8 w-36 h-36 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 z-0`}>
+                    <Activity className={`w-full h-full ${isGasAlert ? 'text-red-900' : 'text-slate-100'}`} />
+                </div>
+            </button>
+        );
+    };
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-transparent">
@@ -280,76 +350,20 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
                     </div>
 
-
-
                     {/* Stats Grid (Scrollable) */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar pb-2 pt-2 px-1 -mx-1">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {visibleCards.map((card, idx) => {
-                                const isGasAlert = card.status === TaskStatus.GAS_OPENED && card.score > 0;
-                                return (
-                                    <button
-                                        key={idx}
-                                        onClick={() => card.action ? card.action() : onNavigate(card.status)}
-                                        className={`
-                                            relative p-5 rounded-2xl border transition-all duration-300 text-left flex flex-col justify-between group h-36 overflow-hidden backdrop-blur-md
-                                            ${isGasAlert
-                                                ? isDarkMode ? 'bg-red-900/40 border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.4)]' : 'bg-red-100 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
-                                                : isDarkMode ? 'bg-white/5 border-white/10 shadow-lg hover:shadow-2xl hover:bg-white/10' : 'bg-slate-200/80 border-slate-300 shadow-md hover:shadow-lg hover:bg-slate-300/80'
-                                            }
-                                            hover:-translate-y-1.5 active:translate-y-0 active:scale-[0.98]
-                                        `}
-                                    >
-                                        {/* Top Gradient Border */}
-                                        <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl transition-all duration-300 group-hover:opacity-0 ${isGasAlert ? 'bg-gradient-to-r from-red-500 to-orange-500' :
-                                            card.status === TaskStatus.TO_CHECK ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
-                                                card.status === TaskStatus.CHECK_COMPLETED ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
-                                                    card.status === TaskStatus.PROJECT_TO_BE_DRAWN ? 'bg-gradient-to-r from-amber-400 to-yellow-500' :
-                                                        card.status === TaskStatus.DEPOSIT_PAID ? 'bg-gradient-to-r from-indigo-400 to-purple-500' :
-                                                            card.status === TaskStatus.SERVICE_DIRECTED ? 'bg-gradient-to-r from-purple-400 to-pink-500' :
-                                                                'bg-gradient-to-r from-emerald-400 to-teal-500'
-                                            }`} />
-
-                                        {/* Hover Glow Effect */}
-                                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl ${isGasAlert ? '' : 'bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10'
-                                            }`} />
-
-                                        <div className="flex justify-between items-start w-full mb-1 z-10 relative">
-                                            <h3 className={`font-extrabold text-[11px] uppercase tracking-wider leading-tight max-w-[80%] ${isGasAlert ? (isDarkMode ? 'text-red-300' : 'text-red-700') : (isDarkMode ? 'text-slate-300' : 'text-slate-500')}`}>
-                                                {card.title}
-                                            </h3>
-                                            {isGasAlert && (
-                                                <div className="absolute -top-1 -right-1 flex items-center gap-1">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex flex-col z-10 relative mt-auto">
-                                            <span className={`text-4xl font-black tracking-tight ${isGasAlert ? 'text-red-400' : card.color} drop-shadow-sm`}>
-                                                {card.score}
-                                            </span>
-                                            <span className={`text-[10px] font-semibold mt-1 ${isGasAlert ? 'text-red-400' : 'text-slate-400'}`}>
-                                                {isGasAlert ? '⚠️ MÜDAHALE!' : 'kayıt'}
-                                            </span>
-                                        </div>
-
-                                        <div className={`absolute right-5 bottom-5 z-10 p-2.5 rounded-xl transition-all duration-300 ${isGasAlert
-                                            ? (isDarkMode ? 'bg-red-500/20 animate-bounce' : 'bg-red-100 animate-bounce')
-                                            : (isDarkMode ? 'bg-white/10 shadow-inner group-hover:scale-110 group-hover:shadow-lg backdrop-blur-sm border border-white/5' : 'bg-slate-50 group-hover:scale-110 group-hover:shadow-md border border-slate-100')
-                                            }`}>
-                                            <Activity className={`w-5 h-5 ${isGasAlert ? 'text-red-400' : card.color}`} />
-                                        </div>
-
-                                        {/* Decorative Background Pattern */}
-                                        <div className={`absolute -right-8 -bottom-8 w-36 h-36 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 z-0`}>
-                                            <Activity className={`w-full h-full ${isGasAlert ? 'text-red-900' : 'text-slate-100'}`} />
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                            {mainCards.map((card, idx) => renderCard(card, idx))}
                         </div>
+                        
+                        {bottomCards.length > 0 && (
+                            <>
+                                <div className="my-6 opacity-30 h-px bg-current"></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-8">
+                                    {bottomCards.map((card, idx) => renderCard(card, idx + mainCards.length))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 

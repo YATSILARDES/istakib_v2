@@ -253,18 +253,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                   {isEdit ? `Müşteri Düzenle (#${task.orderNumber})` : `Yeni Müşteri (#${nextOrderNumber})`}
                 </h2>
 
-                {/* Desktop Status Selector */}
-                <div className="flex-1 max-w-xs">
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
-                    className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
-                  >
-                    {Object.entries(StatusLabels).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* Desktop Status Selector Removed */}
               </div>
 
               <div className="flex items-center gap-2">
@@ -621,9 +610,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
           {/* Footer */}
           <div className="px-6 py-4 border-t border-slate-700 bg-slate-800 flex flex-col md:flex-row justify-between items-center gap-3">
 
-            {/* Mobile Status Selector */}
-            <div className="w-full md:hidden mb-2">
-              <label className="text-xs text-slate-400 mb-1 block">Durum</label>
+            {/* Durum Seçici (Özellikle mobil cihazlar için) */}
+            <div className="w-full md:w-auto md:hidden mb-2 md:mb-0">
+              <label className="block text-xs font-medium text-slate-400 mb-1">Durum (Kategori) Seç</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}

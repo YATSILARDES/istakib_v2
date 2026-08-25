@@ -6,7 +6,8 @@ export enum TaskStatus {
   CHECK_COMPLETED = 'CHECK_COMPLETED',
   DEPOSIT_PAID = 'DEPOSIT_PAID',
   GAS_OPENED = 'GAS_OPENED',
-  SERVICE_DIRECTED = 'SERVICE_DIRECTED'
+  SERVICE_DIRECTED = 'SERVICE_DIRECTED',
+  COMBI_REPLACEMENT_RENOVATION = 'COMBI_REPLACEMENT_RENOVATION'
 }
 
 export interface StaffMember {
@@ -54,6 +55,7 @@ export interface Task {
   isCheckVerified?: boolean;
   isProjectDrawn?: boolean; // Proje Çizildi Durumu
   isWaiting?: boolean; // Beklemede Durumu (Mavi kart için)
+  isPriority?: boolean; // Öncelikli (Yıldızlı) İş
 }
 
 export interface AudioConfig {
@@ -73,7 +75,8 @@ export const StatusLabels: Record<TaskStatus, string> = {
   [TaskStatus.CHECK_COMPLETED]: 'Kontrol Edildi',
   [TaskStatus.DEPOSIT_PAID]: 'Depozito Yatırıldı',
   [TaskStatus.GAS_OPENED]: 'Gaz Açıldı',
-  [TaskStatus.SERVICE_DIRECTED]: 'Servis Yönlendirildi'
+  [TaskStatus.SERVICE_DIRECTED]: 'Servis Yönlendirildi',
+  [TaskStatus.COMBI_REPLACEMENT_RENOVATION]: 'Kombi Değişimi ve Tadilat Yapılacak İşler'
 };
 
 export interface AppSettings {
@@ -113,6 +116,7 @@ export interface RoutineTask {
   scheduledDate?: any; // Yeni: Planlanan Tarih
   completedAt?: any; // Tamamlanma Zamanı
   dailyOrder?: number; // Günlük Sıralama
+  isPriority?: boolean; // Öncelikli (Yıldızlı) İş
 }
 
 export interface StaffLocation {

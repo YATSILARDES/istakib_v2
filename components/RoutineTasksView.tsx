@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { RoutineTask, TaskStatus, StatusLabels } from '../types';
-import { X, Plus, User, Trash2, CalendarCheck, CheckSquare, Square, Phone, MapPin, UserCircle, ArrowRightCircle, Check, Pencil, Save, XCircle, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
+import { X, Plus, User, Trash2, CalendarCheck, CheckSquare, Square, Phone, MapPin, UserCircle, ArrowRightCircle, Check, Pencil, Save, XCircle, ChevronDown, ChevronRight, ChevronUp, Star } from 'lucide-react';
 import LocationPreviewModal from './LocationPreviewModal';
 
 interface RoutineTasksViewProps {
@@ -10,6 +10,8 @@ interface RoutineTasksViewProps {
     onDeleteTask: (taskId: string) => void;
     onConvertTask: (taskId: string, targetStatus: TaskStatus) => void;
     onUpdateTask: (taskId: string, updatedData: Partial<RoutineTask>) => void;
+    onOpenAssignModal?: (task: RoutineTask) => void;
+    staffList?: { name: string, email?: string }[];
 }
 
 const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
@@ -18,7 +20,9 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
     onToggleTask,
     onDeleteTask,
     onConvertTask,
-    onUpdateTask
+    onUpdateTask,
+    onOpenAssignModal,
+    staffList
 }) => {
     const [customerName, setCustomerName] = useState('');
     const [newTaskContent, setNewTaskContent] = useState('');
@@ -43,6 +47,53 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
     // Filter State
     const [activeTab, setActiveTab] = useState<'pool' | 'assigned' | 'completed'>('pool');
     const [activeDistrict, setActiveDistrict] = useState<string>('Tümü');
+
+    const [contextMenuState, setContextMenuState] = useState<{ visible: boolean, x: number, y: number, task: RoutineTask | null }>({ visible: false, x: 0, y: 0, task: null });
+
+    // Local Assign Modal State
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [assignTargetTask, setAssignTargetTask] = useState<RoutineTask | null>(null);
+    const [assignStaffName, setAssignStaffName] = useState('');
+    const [assignDate, setAssignDate] = useState('');
+
+    const handleAssignSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (assignTargetTask && assignStaffName && assignDate) {
+            const targetDate = new Date(assignDate);
+            targetDate.setHours(9, 0, 0, 0);
+
+            onUpdateTask(assignTargetTask.id, {
+                assignee: assignStaffName,
+                assignedAt: targetDate as any // Passing Date, Firebase functions map this to Timestamp usually, or we can just pass it directly.
+            });
+            setShowAssignModal(false);
+        }
+    };
+
+    React.useEffect(() => {
+        const handleClick = () => setContextMenuState(prev => ({ ...prev, visible: false }));
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, []);
+
+    const handleContextMenu = (e: React.MouseEvent, task: RoutineTask) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const x = e.clientX;
+        let y = e.clientY;
+        
+        if (y + 130 > window.innerHeight) {
+            y = window.innerHeight - 130;
+        }
+
+        setContextMenuState({
+            visible: true,
+            x,
+            y,
+            task
+        });
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -119,14 +170,20 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
         : poolTasks.filter(t => t.district === activeDistrict);
 
     const renderTaskCard = (task: RoutineTask, isCompletedView: boolean) => (
-        <div key={task.id} className={`group flex items-start gap-4 p-4 rounded-xl border-2 transition-all animate-in fade-in slide-in-from-bottom-2 ${isCompletedView ? 'bg-slate-100 border-slate-300 opacity-60' : 'bg-slate-50 border-slate-300 hover:border-blue-300 hover:shadow-lg'} ${editingTaskId === task.id ? 'ring-2 ring-blue-400 border-blue-400' : ''}`}>
-            <button
-                onClick={() => onToggleTask(task.id)}
-                className={`mt-1 transition-colors ${isCompletedView ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-500'}`}
-                title={isCompletedView ? "Tamamlanmadı yap" : "Tamamlandı işaretle"}
-            >
-                {isCompletedView ? <CheckSquare className="w-6 h-6" /> : <Square className="w-6 h-6" />}
-            </button>
+        <div 
+            key={task.id} 
+            onContextMenu={(e) => handleContextMenu(e, task)}
+            className={`group flex items-start gap-4 p-4 rounded-xl border-2 transition-all animate-in fade-in slide-in-from-bottom-2 ${isCompletedView ? 'bg-slate-100 border-slate-300 opacity-60' : 'bg-slate-50 border-slate-300 hover:border-blue-300 hover:shadow-lg'} ${editingTaskId === task.id ? 'ring-2 ring-blue-400 border-blue-400' : ''}`}
+        >
+            <div className="flex flex-col gap-2 mt-1 shrink-0">
+                <button
+                    onClick={() => onToggleTask(task.id)}
+                    className={`transition-colors ${isCompletedView ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-500'}`}
+                    title={isCompletedView ? "Tamamlanmadı yap" : "Tamamlandı işaretle"}
+                >
+                    {isCompletedView ? <CheckSquare className="w-6 h-6" /> : <Square className="w-6 h-6" />}
+                </button>
+            </div>
 
             <div className="flex-1 min-w-0">
                 {(task.customerName || task.phoneNumber || task.address || task.district) && (
@@ -210,7 +267,97 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
     );
 
     return (
-        <div className="flex flex-col h-full bg-slate-200 overflow-hidden animate-in fade-in duration-300">
+        <div className="flex flex-col h-full bg-slate-200 overflow-hidden animate-in fade-in duration-300 relative">
+            {/* --- CONTEXT MENU --- */}
+            {contextMenuState.visible && contextMenuState.task && (
+                <div 
+                    className="fixed bg-white border border-slate-200 shadow-xl rounded-lg py-1 z-[150] min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+                    style={{ top: contextMenuState.y, left: contextMenuState.x }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setContextMenuState(prev => ({ ...prev, visible: false }));
+                            setAssignTargetTask(contextMenuState.task!);
+                            setAssignStaffName(contextMenuState.task!.assignee || '');
+                            setAssignDate(new Date().toISOString().split('T')[0]);
+                            setShowAssignModal(true);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 font-medium border-b border-slate-100"
+                    >
+                        <User className="w-4 h-4" />
+                        Görev Ata
+                    </button>
+                    <button
+                        onClick={() => {
+                            onUpdateTask(contextMenuState.task!.id, { isPriority: !contextMenuState.task!.isPriority });
+                            setContextMenuState(prev => ({ ...prev, visible: false }));
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-yellow-50 hover:text-yellow-600 flex items-center gap-2 font-medium"
+                    >
+                        <Star className={`w-4 h-4 ${contextMenuState.task!.isPriority ? 'fill-current text-yellow-500' : ''}`} />
+                        {contextMenuState.task!.isPriority ? 'Öncelikli İşlerden Çıkar' : 'Öncelikli İşlere Ekle'}
+                    </button>
+                </div>
+            )}
+
+            {/* --- ASSIGN MODAL --- */}
+            {showAssignModal && assignTargetTask && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                <Plus className="w-4 h-4 text-blue-600" />
+                                Görevi Ustaya Ata
+                            </h3>
+                            <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <div className="mb-4 bg-slate-100 p-3 rounded-lg border border-slate-200">
+                                <div className="text-xs font-bold text-slate-500 mb-1">Seçili Eksik/Not:</div>
+                                <div className="font-semibold text-slate-800">
+                                    {assignTargetTask.customerName || 'İsimsiz Müşteri'}
+                                </div>
+                                <div className="text-xs text-slate-600 mt-1 line-clamp-2">{assignTargetTask.content}</div>
+                            </div>
+                            
+                            <form onSubmit={handleAssignSubmit} className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Usta (Personel) Seçimi</label>
+                                    <select
+                                        value={assignStaffName}
+                                        onChange={(e) => setAssignStaffName(e.target.value)}
+                                        required
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                                    >
+                                        <option value="" disabled>Personel Seçin</option>
+                                        {staffList?.map(staff => (
+                                            <option key={staff.email || staff.name} value={staff.name}>{staff.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Atanacak Tarih</label>
+                                    <input
+                                        type="date"
+                                        value={assignDate}
+                                        onChange={(e) => setAssignDate(e.target.value)}
+                                        required
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                                <button type="submit" disabled={!assignStaffName || !assignDate} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-2">
+                                    <User className="w-4 h-4" />
+                                    Görevi Ata
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Header */}
             <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm z-10">

@@ -141,7 +141,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
     // Verileri Filtrele
     const unassignedTasks = useMemo(() =>
         tasks.filter(t =>
-            (t.status === TaskStatus.TO_CHECK || t.status === TaskStatus.DEPOSIT_PAID || t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)) &&
+            (t.status === TaskStatus.TO_CHECK || t.status === TaskStatus.DEPOSIT_PAID || t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn) || t.status === TaskStatus.COMBI_REPLACEMENT_RENOVATION) &&
             (!t.checkStatus) &&
             (!t.assignee || t.assignee.trim() === '' || t.assignee === 'Atanmadı')
         ),

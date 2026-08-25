@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, StatusLabels, RoutineTask } from '../types';
-import { MoreVertical, ClipboardList, ClipboardCheck, Banknote, Flame, Wrench, Circle, Phone, MapPin, CheckCircle2, Search, CheckSquare, Square, UserCircle, Share2, PhoneCall } from 'lucide-react';
+import { MoreVertical, ClipboardList, ClipboardCheck, Banknote, Flame, Wrench, Circle, Phone, MapPin, CheckCircle2, Search, CheckSquare, Square, UserCircle, Share2, PhoneCall, Plus, X, User, Clock, Star, ChevronRight } from 'lucide-react';
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -16,6 +16,7 @@ interface KanbanBoardProps {
   staffList?: { name: string; email: string }[];
   hideCreator?: boolean;
   onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
+  onRoutineTaskUpdate?: (taskId: string, updates: Partial<RoutineTask>) => void;
   isDarkMode?: boolean;
 }
 
@@ -45,11 +46,100 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   staffList = [],
   hideCreator = false,
   onTaskUpdate,
+  onRoutineTaskUpdate,
   isDarkMode = false
 }) => {
   // State to track search queries for each column
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
   const [districtFilters, setDistrictFilters] = useState<Record<string, string>>({});
+
+  // --- NEW ASSIGNMENT STATE ---
+  const [contextMenuState, setContextMenuState] = useState<{ visible: boolean, x: number, y: number, task: Task | RoutineTask | null, taskType: 'main' | 'routine', openUpwards?: boolean }>({ visible: false, x: 0, y: 0, task: null, taskType: 'main' });
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignTargetTask, setAssignTargetTask] = useState<{task: Task | RoutineTask, type: 'main' | 'routine'} | null>(null);
+  const [assignStaffName, setAssignStaffName] = useState<string>('');
+  const [assignDate, setAssignDate] = useState<string>('');
+
+  useEffect(() => {
+    const handleClick = () => setContextMenuState(prev => ({ ...prev, visible: false }));
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
+
+  const handleContextMenu = (e: React.MouseEvent, task: Task | RoutineTask, taskType: 'main' | 'routine' = 'main') => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const x = e.clientX;
+    let y = e.clientY;
+    
+    // Yüksekliği taşma kontrolü (Ana menü için)
+    if (y + 130 > window.innerHeight) {
+      y = window.innerHeight - 130;
+    }
+
+    // Gönder alt menüsünün aşağı taşma durumu kontrolü (yaklaşık 280px yükseklik)
+    const openUpwards = e.clientY + 280 > window.innerHeight;
+
+    setContextMenuState({
+      visible: true,
+      x,
+      y,
+      task,
+      taskType,
+      openUpwards
+    });
+  };
+
+  const openAssignModal = (task: Task | RoutineTask, type: 'main' | 'routine') => {
+    setAssignTargetTask({ task, type });
+    setShowAssignModal(true);
+    setAssignStaffName(task.assignee || (staffList && staffList.length > 0 ? staffList[0].name : ''));
+    
+    let initialDateStr = '';
+    if ('scheduledDate' in task && task.scheduledDate) {
+      const d = new Date((task.scheduledDate as any).seconds ? (task.scheduledDate as any).seconds * 1000 : task.scheduledDate);
+      if (!isNaN(d.getTime())) {
+        initialDateStr = d.toISOString().split('T')[0];
+      }
+    } else if ('assignedAt' in task && task.assignedAt) {
+      const d = new Date((task.assignedAt as any).seconds ? (task.assignedAt as any).seconds * 1000 : task.assignedAt);
+      if (!isNaN(d.getTime())) {
+        initialDateStr = d.toISOString().split('T')[0];
+      }
+    }
+    if (!initialDateStr) {
+        initialDateStr = new Date().toISOString().split('T')[0];
+    }
+    setAssignDate(initialDateStr);
+  };
+
+  const handleAssignSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (assignTargetTask && assignStaffName && assignDate) {
+      const selectedStaff = staffList?.find(s => s.name === assignStaffName);
+      const targetDate = new Date(assignDate);
+      targetDate.setHours(9, 0, 0, 0);
+
+      if (assignTargetTask.type === 'main') {
+        if (onTaskUpdate) {
+          onTaskUpdate(assignTargetTask.task.id, {
+            assignee: assignStaffName,
+            assigneeEmail: selectedStaff?.email || '',
+            scheduledDate: targetDate
+          });
+        }
+      } else {
+        if (onRoutineTaskUpdate) {
+          onRoutineTaskUpdate(assignTargetTask.task.id, {
+            assignee: assignStaffName,
+            assignedAt: targetDate
+          });
+        }
+      }
+      setShowAssignModal(false);
+    }
+  };
 
   // Define the order explicitly including the new column
   const allColumns = [
@@ -58,11 +148,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     TaskStatus.CHECK_COMPLETED,
     TaskStatus.DEPOSIT_PAID,
     TaskStatus.GAS_OPENED,
-    TaskStatus.SERVICE_DIRECTED
+    TaskStatus.SERVICE_DIRECTED,
+    TaskStatus.COMBI_REPLACEMENT_RENOVATION
   ];
 
   const columns = visibleColumns
-    ? allColumns.filter(col => visibleColumns.includes(col))
+    ? (visibleColumns as string[])
     : allColumns;
 
   const handleSearchChange = (status: string, value: string) => {
@@ -72,12 +163,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }));
   };
 
-  const getFilteredTasks = (status: TaskStatus) => {
+  const getFilteredTasks = (status: string) => {
     const term = (searchTerms[status] || '').toLocaleLowerCase('tr').trim();
     const districtFilter = districtFilters[status];
     
     let columnTasks = [];
-    if (status === TaskStatus.PROJECT_TO_BE_DRAWN) {
+    if (status === 'MIXED') {
+      columnTasks = tasks;
+    } else if (status === TaskStatus.PROJECT_TO_BE_DRAWN) {
       columnTasks = tasks.filter(t => 
         t.status === TaskStatus.PROJECT_TO_BE_DRAWN || 
         (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)
@@ -172,6 +265,129 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const { routine: filteredRoutine, standard: filteredStandard } = getFilteredPersonalTasks();
 
   return (
+    <>
+      {/* --- CONTEXT MENU --- */}
+      {contextMenuState.visible && contextMenuState.task && (
+        <div 
+          className="fixed bg-white border border-slate-200 shadow-xl rounded-lg py-1 z-50 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+          style={{ top: contextMenuState.y, left: contextMenuState.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button 
+            onClick={() => {
+              setContextMenuState(prev => ({ ...prev, visible: false }));
+              openAssignModal(contextMenuState.task!, contextMenuState.taskType!);
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 font-medium border-b border-slate-100"
+          >
+            <User className="w-4 h-4" />
+            Görev Ata
+          </button>
+          
+          {contextMenuState.taskType === 'main' && (
+            <div className="relative group">
+              <button className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between font-medium">
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-4 h-4" />
+                  Gönder
+                </div>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              
+              {/* Gönder Alt Menüsü (Sağa açılır) */}
+              <div className={`absolute ${contextMenuState.openUpwards ? 'bottom-0' : 'top-0'} left-[95%] hidden group-hover:flex flex-col bg-white border border-slate-200 shadow-xl rounded-lg py-1 min-w-[220px]`}>
+                {Object.entries(StatusLabels).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                       if (onTaskUpdate) {
+                         onTaskUpdate(contextMenuState.task!.id, { status: key as TaskStatus });
+                       }
+                       setContextMenuState(prev => ({ ...prev, visible: false }));
+                    }}
+                    className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+               if (contextMenuState.taskType === 'main' && onTaskUpdate) {
+                 onTaskUpdate(contextMenuState.task!.id, { isPriority: !contextMenuState.task!.isPriority });
+               } else if (contextMenuState.taskType === 'routine' && onRoutineTaskUpdate) {
+                 onRoutineTaskUpdate(contextMenuState.task!.id, { isPriority: !contextMenuState.task!.isPriority });
+               }
+               setContextMenuState(prev => ({ ...prev, visible: false }));
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-yellow-50 hover:text-yellow-600 flex items-center gap-2 font-medium border-t border-slate-100"
+          >
+            <Star className={`w-4 h-4 ${contextMenuState.task!.isPriority ? 'fill-current text-yellow-500' : ''}`} />
+            {contextMenuState.task!.isPriority ? 'Öncelikli İşlerden Çıkar' : 'Öncelikli İşlere Ekle'}
+          </button>
+        </div>
+      )}
+
+      {/* --- ASSIGN MODAL --- */}
+      {showAssignModal && assignTargetTask && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-blue-600" />
+                Görevi Ustaya Ata
+              </h3>
+              <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="mb-4 bg-slate-100 p-3 rounded-lg border border-slate-200">
+                <div className="text-xs font-bold text-slate-500 mb-1">Seçili İş:</div>
+                <div className="font-semibold text-slate-800">
+                  {assignTargetTask.type === 'main' ? (assignTargetTask.task as Task).title : (assignTargetTask.task as RoutineTask).content}
+                </div>
+                {assignTargetTask.task.address && <div className="text-xs text-slate-500 truncate mt-1"><MapPin className="inline w-3 h-3 mr-1"/>{assignTargetTask.task.address}</div>}
+              </div>
+              
+              <form onSubmit={handleAssignSubmit} className="space-y-4">
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Usta (Personel) Seçimi</label>
+                  <select
+                    value={assignStaffName}
+                    onChange={(e) => setAssignStaffName(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                  >
+                    <option value="" disabled>Personel Seçin</option>
+                    {staffList?.map(staff => (
+                      <option key={staff.email} value={staff.name}>{staff.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Atanacak Tarih</label>
+                  <input
+                    type="date"
+                    value={assignDate}
+                    onChange={(e) => setAssignDate(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button type="submit" disabled={!assignStaffName || !assignDate} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-2">
+                  <User className="w-4 h-4" />
+                  Görevi Ata
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
     <div className={`flex-1 overflow-x-auto overflow-y-hidden ${isCompact ? 'p-2' : 'p-6'}`}>
       <div className={`flex ${isCompact ? 'gap-3 min-w-full' : 'gap-6 min-w-[1500px]'} h-full transition-all`}>
         {showRoutineColumn && (
@@ -225,7 +441,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       <div className="flex items-start gap-3">
                         {/* <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" /> REMOVED Dot, using Border-L instead for cleaner look */}
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm text-slate-700 font-medium leading-snug group-hover:text-blue-600 transition-colors">{t.title}</div>
+                          <div className="text-sm text-slate-700 font-medium leading-snug group-hover:text-blue-600 transition-colors flex items-center gap-1">
+                            {t.title}
+                          </div>
                           {t.address && (
                             <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 truncate">
                               <MapPin className="w-3 h-3 flex-shrink-0" />
@@ -248,7 +466,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 <div className="space-y-3">
                   {filteredStandard.length > 0 && <div className="text-[10px] font-bold text-purple-600 uppercase tracking-widest pl-1 pt-2 border-t border-slate-200">Eksikler / Notlar ({filteredRoutine.length})</div>}
                   {filteredRoutine.map(t => (
-                    <div key={t.id} className={`h-28 flex flex-col justify-between p-3 rounded-xl border transition-all shadow-md hover:shadow-xl hover:-translate-y-1 ${t.isCompleted
+                    <div key={t.id} onContextMenu={(e) => handleContextMenu(e, t, 'routine')} className={`h-28 flex flex-col justify-between p-3 rounded-xl border transition-all shadow-md hover:shadow-xl hover:-translate-y-1 ${t.isCompleted
                       ? 'bg-slate-100 border-slate-200 text-slate-500 opacity-60'
                       : 'bg-gradient-to-br from-white to-slate-50 border-slate-200 hover:border-purple-500/30'
                       }`}>
@@ -313,12 +531,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               {/* Column Header */}
               <div className={`p-4 border-b flex items-center justify-between ${!isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
                 <div className={`flex items-center gap-2 font-semibold ${!isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                  <StatusIcon status={status} />
-                  <span className="truncate">{StatusLabels[status]}</span>
+                  {status !== 'MIXED' && <StatusIcon status={status as TaskStatus} />}
+                  <span className="truncate">{status === 'MIXED' ? 'Tüm İşler' : StatusLabels[status as TaskStatus]}</span>
                   <span className={`ml-2 px-2 py-0.5 text-xs border rounded-full ${!isDarkMode ? 'bg-white/10 border-white/20 text-slate-300' : 'bg-white border-slate-200 text-slate-500'}`}>
-                    {status === TaskStatus.PROJECT_TO_BE_DRAWN 
-                      ? tasks.filter(t => t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length 
-                      : tasks.filter(t => t.status === status).length}
+                    {status === 'MIXED'
+                      ? tasks.length
+                      : status === TaskStatus.PROJECT_TO_BE_DRAWN 
+                        ? tasks.filter(t => t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length 
+                        : tasks.filter(t => t.status === status).length}
                   </span>
                 </div>
                 <button className="text-slate-400 hover:text-slate-600">
@@ -366,6 +586,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   <div
                     key={task.id}
                     onClick={() => onTaskClick(task)}
+                    onContextMenu={(e) => handleContextMenu(e, task)}
                     className={`
                       h-28 flex flex-col justify-between px-3 py-3 rounded-xl border transition-all cursor-pointer group relative shadow-md hover:shadow-xl hover:-translate-y-1
                       ${task.isWaiting
@@ -472,6 +693,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         })}
       </div>
     </div >
+    </>
   );
 };
 

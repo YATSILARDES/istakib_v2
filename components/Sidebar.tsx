@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Settings, BarChart2, FolderOpen, LogOut, Package, ChevronDown, ChevronRight, Circle, FileText } from 'lucide-react';
+import { Home, Settings, BarChart2, FolderOpen, LogOut, Package, ChevronDown, ChevronRight, Circle, FileText, Users } from 'lucide-react';
 import { UserPermission } from '../types';
 
 interface SidebarProps {
@@ -56,6 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
             label: 'Teklif Yönetimi',
             icon: FileText,
         }] : []),
+        { id: 'field_staff', label: 'Sahadaki Personel', icon: Users },
     ];
 
     const isChildActive = (item: MenuItem) => {
