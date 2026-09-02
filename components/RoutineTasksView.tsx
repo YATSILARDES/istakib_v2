@@ -64,7 +64,8 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
 
             onUpdateTask(assignTargetTask.id, {
                 assignee: assignStaffName,
-                assignedAt: targetDate as any // Passing Date, Firebase functions map this to Timestamp usually, or we can just pass it directly.
+                assignedAt: targetDate as any, // Passing Date, Firebase functions map this to Timestamp usually, or we can just pass it directly.
+                scheduledDate: targetDate as any
             });
             setShowAssignModal(false);
         }

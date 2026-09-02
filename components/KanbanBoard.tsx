@@ -133,7 +133,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         if (onRoutineTaskUpdate) {
           onRoutineTaskUpdate(assignTargetTask.task.id, {
             assignee: assignStaffName,
-            assignedAt: targetDate
+            assignedAt: targetDate,
+            scheduledDate: targetDate
           });
         }
       }
