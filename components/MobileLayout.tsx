@@ -10,6 +10,42 @@ import { auth, db } from '../src/firebase';
 import { QuotationApp } from '../teklif_app/QuotationApp';
 import QuotationsListView from './QuotationsListView';
 
+const formatSafeDate = (dateVal: any) => {
+  if (!dateVal) return '';
+  try {
+      if (typeof dateVal === 'string') {
+          // Eğer tarih string olarak geldiyse (Örn: "07.09.2026 17:25:32")
+          // Sadece tarih kısmını alıp saat/dakika/saniyeyi atıyoruz
+          const datePart = dateVal.split(' ')[0];
+          
+          // Eğer datePart zaten gg.aa.yyyy veya yyyy-aa-gg formatındaysa direkt onu döndür
+          if (datePart.includes('.') || datePart.includes('-') || datePart.includes('/')) {
+              return datePart;
+          }
+      }
+
+      let d: Date | null = null;
+      if (typeof dateVal === 'string' || typeof dateVal === 'number') {
+          d = new Date(dateVal);
+      } else if (dateVal instanceof Date) {
+          d = dateVal;
+      } else if (dateVal.toMillis && typeof dateVal.toMillis === 'function') {
+          d = new Date(dateVal.toMillis());
+      } else if (dateVal.seconds) {
+          d = new Date(dateVal.seconds * 1000);
+      } else if (dateVal._seconds) {
+          d = new Date(dateVal._seconds * 1000);
+      }
+      
+      if (!d || isNaN(d.getTime())) {
+          return typeof dateVal === 'string' ? dateVal.split(' ')[0] : String(dateVal);
+      }
+      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch (e) {
+      return typeof dateVal === 'string' ? dateVal.split(' ')[0] : String(dateVal);
+  }
+};
+
 interface MobileLayoutProps {
     user: FirebaseUser | null;
     userPermissions: UserPermission | null;
@@ -72,11 +108,11 @@ export default function MobileLayout({
 
     // Rename to avoid conflict
     const filteredMainTasks = myTasks.filter(t => {
-        // Filter by Status: Hide CHECK_COMPLETED (Kontrolü Yapılan İşler) unless project is missing
-        if (t.status === TaskStatus.CHECK_COMPLETED && t.isProjectDrawn !== false) return false;
+        // Filter by Status: Hide CHECK_COMPLETED (Kontrolü Yapılan İşler) unless project is missing OR explicitly reassigned
+        if (t.status === TaskStatus.CHECK_COMPLETED && t.isProjectDrawn !== false && !t.isReassignedForCheck) return false;
 
-        // Filter by Check Status: Hide logic if check is done (missing or clean)
-        if (t.checkStatus) return false;
+        // Filter by Check Status: Hide logic if check is done (missing or clean), unless explicitly reassigned
+        if (t.checkStatus && !t.isReassignedForCheck) return false;
 
         // Filter by Search
         if (!filterTask(t)) return false;
@@ -565,12 +601,19 @@ export default function MobileLayout({
                                                     </div>
 
                                                     <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                                                        <button
-                                                            onClick={() => onTaskClick(task)}
-                                                            className="flex items-center gap-2 text-slate-300 text-xs font-semibold hover:text-blue-400 transition-all bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl active:scale-95 border border-white/5"
-                                                        >
-                                                            <Calendar className="w-4 h-4" /> Detay
-                                                        </button>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => onTaskClick(task)}
+                                                                className="flex items-center gap-2 text-slate-300 text-xs font-semibold hover:text-blue-400 transition-all bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl active:scale-95 border border-white/5"
+                                                            >
+                                                                <Calendar className="w-4 h-4" /> Detay
+                                                            </button>
+                                                            {task.createdAt && (
+                                                                <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                                                                    {formatSafeDate(task.createdAt)}
+                                                                </span>
+                                                            )}
+                                                        </div>
 
                                                         <div className="flex items-center gap-2">
                                                             <button
@@ -762,12 +805,19 @@ export default function MobileLayout({
                                                             </div>
 
                                                             <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                                                                <button
-                                                                    onClick={() => onTaskClick(task)}
-                                                                    className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
-                                                                >
-                                                                    <Calendar className="w-3.5 h-3.5" /> Detay
-                                                                </button>
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={() => onTaskClick(task)}
+                                                                        className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
+                                                                    >
+                                                                        <Calendar className="w-3.5 h-3.5" /> Detay
+                                                                    </button>
+                                                                    {task.createdAt && (
+                                                                        <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                                                                            {formatSafeDate(task.createdAt)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
 
                                                                 <div className="flex items-center gap-3">
                                                                     <button
@@ -1043,12 +1093,19 @@ export default function MobileLayout({
                                                                                     </div>
 
                                                                                     <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                                                                                        <button
-                                                                                            onClick={() => onTaskClick(task)}
-                                                                                            className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
-                                                                                        >
-                                                                                            <Calendar className="w-3.5 h-3.5" /> Detay
-                                                                                        </button>
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <button
+                                                                                                onClick={() => onTaskClick(task)}
+                                                                                                className="flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-blue-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg active:scale-95"
+                                                                                            >
+                                                                                                <Calendar className="w-3.5 h-3.5" /> Detay
+                                                                                            </button>
+                                                                                            {task.createdAt && (
+                                                                                                <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                                                                                                    {formatSafeDate(task.createdAt)}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
 
                                                                                         <div className="flex items-center gap-3">
                                                                                             <button

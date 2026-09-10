@@ -2,6 +2,41 @@
 import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, StatusLabels, RoutineTask } from '../types';
 import { MoreVertical, ClipboardList, ClipboardCheck, Banknote, Flame, Wrench, Circle, Phone, MapPin, CheckCircle2, Search, CheckSquare, Square, UserCircle, Share2, PhoneCall, Plus, X, User, Clock, Star, ChevronRight } from 'lucide-react';
+const formatSafeDate = (dateVal: any) => {
+  if (!dateVal) return '';
+  try {
+      if (typeof dateVal === 'string') {
+          // Eğer tarih string olarak geldiyse (Örn: "07.09.2026 17:25:32")
+          // Sadece tarih kısmını alıp saat/dakika/saniyeyi atıyoruz
+          const datePart = dateVal.split(' ')[0];
+          
+          // Eğer datePart zaten gg.aa.yyyy veya yyyy-aa-gg formatındaysa direkt onu döndür
+          if (datePart.includes('.') || datePart.includes('-') || datePart.includes('/')) {
+              return datePart;
+          }
+      }
+
+      let d: Date | null = null;
+      if (typeof dateVal === 'string' || typeof dateVal === 'number') {
+          d = new Date(dateVal);
+      } else if (dateVal instanceof Date) {
+          d = dateVal;
+      } else if (dateVal.toMillis && typeof dateVal.toMillis === 'function') {
+          d = new Date(dateVal.toMillis());
+      } else if (dateVal.seconds) {
+          d = new Date(dateVal.seconds * 1000);
+      } else if (dateVal._seconds) {
+          d = new Date(dateVal._seconds * 1000);
+      }
+      
+      if (!d || isNaN(d.getTime())) {
+          return typeof dateVal === 'string' ? dateVal.split(' ')[0] : String(dateVal);
+      }
+      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch (e) {
+      return typeof dateVal === 'string' ? dateVal.split(' ')[0] : String(dateVal);
+  }
+};
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -31,6 +66,11 @@ const StatusIcon = ({ status }: { status: TaskStatus | 'ROUTINE' }) => {
     case TaskStatus.SERVICE_DIRECTED: return <Wrench className="w-4 h-4 text-blue-400" />;
     default: return <Circle className="w-4 h-4 text-gray-400" />;
   }
+};
+
+const normalizeDistrict = (district?: string | null) => {
+    if (!district) return '';
+    return district.trim().toLocaleUpperCase('tr-TR');
 };
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -123,11 +163,17 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
       if (assignTargetTask.type === 'main') {
         if (onTaskUpdate) {
-          onTaskUpdate(assignTargetTask.task.id, {
+          const updates: Partial<Task> = {
             assignee: assignStaffName,
             assigneeEmail: selectedStaff?.email || '',
             scheduledDate: targetDate
-          });
+          };
+
+          if ((assignTargetTask.task as Task).checkStatus) {
+            updates.isReassignedForCheck = true;
+          }
+
+          onTaskUpdate(assignTargetTask.task.id, updates);
         }
       } else {
         if (onRoutineTaskUpdate) {
@@ -183,7 +229,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
 
     if (districtFilter) {
-      columnTasks = columnTasks.filter(t => t.district === districtFilter);
+      columnTasks = columnTasks.filter(t => normalizeDistrict(t.district) === districtFilter);
     }
 
     if (!term) return columnTasks;
@@ -573,7 +619,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           }
                           return t.status === status;
                         })
-                        .map(t => t.district)
+                        .map(t => normalizeDistrict(t.district))
                         .filter(Boolean)
                     )).sort().map(d => (
                       <option key={d as string} value={d as string}>{d as string}</option>
@@ -583,7 +629,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
               {/* Tasks Container */}
               <div className="flex-1 overflow-y-auto p-3 pb-20 space-y-3 custom-scrollbar">
-                {filteredTasks.map(task => (
+                {filteredTasks.map(task => {
+                  const isColored = task.isWaiting || 
+                    (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2) || 
+                    task.checkStatus === 'missing' || 
+                    task.checkStatus === 'clean' || 
+                    (!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED);
+                  
+                  const isAssigned = task.assignee && task.assignee !== 'Atanmadı' && task.assignee.trim() !== '';
+
+                  return (
                   <div
                     key={task.id}
                     onClick={() => onTaskClick(task)}
@@ -604,11 +659,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       }
                     `}
                   >
-                    {/* Row Number Badge - Compact */}
-                    <div className={`absolute top-2 right-2 text-[10px] font-mono font-bold opacity-90 ${task.checkStatus === 'missing' ? 'text-red-700 bg-red-200 px-1.5 py-0.5 rounded border border-red-300' :
-                      task.checkStatus === 'clean' ? 'text-green-700 bg-green-200 px-1.5 py-0.5 rounded border border-green-300' : 'text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded'
-                      }`}>
-                      #{task.orderNumber}
+                    {/* Row Number Badge & Assigment Indicator - Compact */}
+                    <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
+                      {isAssigned && !isColored && (
+                        <div className="flex items-center justify-center w-5 h-5 bg-blue-100 text-blue-600 rounded-full border border-blue-200 animate-pulse font-black text-[10px] shadow-sm cursor-help" title={`Atanan Usta: ${task.assignee}`}>
+                          A
+                        </div>
+                      )}
+                      <div className={`text-[10px] font-mono font-bold opacity-90 ${task.checkStatus === 'missing' ? 'text-red-700 bg-red-200 px-1.5 py-0.5 rounded border border-red-300' :
+                        task.checkStatus === 'clean' ? 'text-green-700 bg-green-200 px-1.5 py-0.5 rounded border border-green-300' : 'text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded'
+                        }`}>
+                        #{task.orderNumber}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 mb-1 pr-8">
@@ -649,37 +711,49 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       </button>
                     )}
                     {/* Created By Info */}
-                    {!hideCreator && task.createdBy && (
-                      <div className="absolute bottom-2 right-2 text-[11px] text-slate-500 font-bold flex items-center gap-1 bg-white/50 px-1.5 py-0.5 rounded-md shadow-sm border border-slate-100">
-                        <span className="text-[9px] text-slate-400 font-normal italic">Ekleyen:</span>
-                        {(() => {
-                          const emailLower = task.createdBy?.toLowerCase() || '';
+                    {!hideCreator && (task.createdBy || task.createdAt) && (
+                      <div className="absolute bottom-2 right-2 flex flex-col items-end gap-1 z-10">
+                        {task.createdBy && (
+                          <div className="text-[11px] text-slate-500 font-bold flex items-center gap-1 bg-white/50 px-1.5 py-0.5 rounded-md shadow-sm border border-slate-100">
+                            <span className="text-[9px] text-slate-400 font-normal italic">Ekleyen:</span>
+                            {(() => {
+                              const emailLower = task.createdBy?.toLowerCase() || '';
 
-                          // 0. Manual Overrides (Admins)
-                          const knownNames: Record<string, string> = {
-                            'caner192@hotmail.com': 'CANER ÇELİK',
-                            'canercelik1994@gmail.com': 'CANER ÇELİK',
-                            'admin@onaymuhendislik.com': 'CANER ÇELİK',
-                            'demo@onay.com': 'DEMO'
-                          };
+                              // 0. Manual Overrides (Admins)
+                              const knownNames: Record<string, string> = {
+                                'caner192@hotmail.com': 'CANER ÇELİK',
+                                'canercelik1994@gmail.com': 'CANER ÇELİK',
+                                'admin@onaymuhendislik.com': 'CANER ÇELİK',
+                                'demo@onay.com': 'DEMO'
+                              };
 
-                          if (knownNames[emailLower]) return knownNames[emailLower];
+                              if (knownNames[emailLower]) return knownNames[emailLower];
 
-                          // 1. Try to find in staffList
-                          const found = staffList.find(s => s.email.toLowerCase() === emailLower);
-                          if (found) return found.name;
+                              // 1. Try to find in staffList
+                              const found = staffList.find(s => s.email && s.email.trim().toLowerCase() === emailLower.trim());
+                              if (found) return found.name;
 
-                          // 2. Fallback: Parse Name from Email
-                          const emailName = (task.createdBy || '').split('@')[0];
-                          return emailName
-                            .split(/[._]/)
-                            .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-                            .join(' ');
-                        })()}
+                              // 2. Fallback: Parse Name from Email
+                              const emailName = (task.createdBy || '').split('@')[0];
+                              const nameWithoutNumbers = emailName.replace(/[0-9]/g, '');
+                              return (nameWithoutNumbers || emailName)
+                                .split(/[._]/)
+                                .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+                                .join(' ');
+                            })()}
+                          </div>
+                        )}
+                        {task.createdAt && (
+                          <div className="text-[9px] text-slate-500 font-medium bg-white/50 px-1.5 py-0.5 rounded-md shadow-sm border border-slate-100 flex items-center gap-1">
+                            <span className="text-[9px] text-slate-400 italic font-normal">Tarih:</span>
+                            {formatSafeDate(task.createdAt)}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                ))}
+                );
+                })}
 
                 {filteredTasks.length === 0 && (
                   <div className={`flex flex-col items-center justify-center h-20 border-2 border-dashed rounded-lg ${!isDarkMode ? 'border-white/10 text-slate-500' : 'border-slate-300/50 text-slate-400'}`}>

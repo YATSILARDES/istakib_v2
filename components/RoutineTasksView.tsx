@@ -14,6 +14,11 @@ interface RoutineTasksViewProps {
     staffList?: { name: string, email?: string }[];
 }
 
+const normalizeDistrict = (district?: string | null) => {
+    if (!district) return '';
+    return district.trim().toLocaleUpperCase('tr-TR');
+};
+
 const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
     tasks,
     onAddTask,
@@ -164,11 +169,11 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
     const assignedTasks = tasks.filter(t => !t.isCompleted && t.assignee && t.assignee.trim() !== '');
     const doneTasks = tasks.filter(t => t.isCompleted);
 
-    const uniqueDistricts = ['Tümü', ...Array.from(new Set(poolTasks.map(t => t.district).filter(d => d && d.trim() !== ''))).sort()];
+    const uniqueDistricts = ['Tümü', ...Array.from(new Set(poolTasks.map(t => normalizeDistrict(t.district)).filter(d => d && d.trim() !== ''))).sort()];
 
     const filteredPoolTasks = activeDistrict === 'Tümü'
         ? poolTasks
-        : poolTasks.filter(t => t.district === activeDistrict);
+        : poolTasks.filter(t => normalizeDistrict(t.district) === activeDistrict);
 
     const renderTaskCard = (task: RoutineTask, isCompletedView: boolean) => (
         <div 
@@ -408,8 +413,8 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                             <div>
                                 <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Müşteri Bilgileri</label>
                                 <div className="space-y-3">
-                                    <input type="text" placeholder="Ad Soyad" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder:text-slate-400" />
-                                    <input type="tel" placeholder="Telefon" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder:text-slate-400" />
+                                    <input type="text" placeholder="Ad Soyad" value={customerName} onChange={e => setCustomerName(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder:text-slate-400" />
+                                    <input type="tel" placeholder="Telefon" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder:text-slate-400" />
                                 </div>
                             </div>
 
@@ -417,11 +422,11 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                                 <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Konum</label>
                                 <div className="space-y-3">
                                     <div className="flex gap-2">
-                                        <input type="text" placeholder="İlçe" value={district} onChange={e => setDistrict(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="İl" value={city} onChange={e => setCity(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-purple-500" />
+                                        <input type="text" placeholder="İlçe" value={district} onChange={e => setDistrict(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-purple-500" />
+                                        <input type="text" placeholder="İl" value={city} onChange={e => setCity(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-purple-500" />
                                     </div>
                                     <div className="relative">
-                                        <input type="text" placeholder="Açık Adres" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pl-9 text-sm text-slate-800 outline-none focus:border-purple-500" />
+                                        <input type="text" placeholder="Açık Adres" value={address} onChange={e => setAddress(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pl-9 text-sm text-slate-800 outline-none focus:border-purple-500" />
                                         <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                     </div>
                                     {locationCoordinates ? (
@@ -442,7 +447,7 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                                 <textarea
                                     placeholder="Yapılacak işlem veya not..."
                                     value={newTaskContent}
-                                    onChange={e => setNewTaskContent(e.target.value)}
+                                    onChange={e => setNewTaskContent(e.target.value.toLocaleUpperCase('tr-TR'))}
                                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 min-h-[100px] outline-none focus:border-purple-500 resize-none"
                                 />
                             </div>

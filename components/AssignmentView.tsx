@@ -16,6 +16,11 @@ interface AssignmentViewProps {
     onAddRoutineTask?: (content: string, assignee: string, customerName?: string, phoneNumber?: string, address?: string, locationCoordinates?: string, district?: string, city?: string, customDate?: string | Date) => void;
 }
 
+const normalizeDistrict = (district?: string | null) => {
+    if (!district) return '';
+    return district.trim().toLocaleUpperCase('tr-TR');
+};
+
 const AssignmentView: React.FC<AssignmentViewProps> = ({
     tasks,
     routineTasks,
@@ -153,16 +158,16 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
 
     const filteredMainTasks = useMemo(() => {
         if (activeMainDistrict === 'Tümü') return unassignedTasks;
-        return unassignedTasks.filter(t => t.district === activeMainDistrict);
+        return unassignedTasks.filter(t => normalizeDistrict(t.district) === activeMainDistrict);
     }, [unassignedTasks, activeMainDistrict]);
 
     const filteredRoutineTasks = useMemo(() => {
         if (activeRoutineDistrict === 'Tümü') return unassignedRoutineTasks;
-        return unassignedRoutineTasks.filter(t => t.district === activeRoutineDistrict);
+        return unassignedRoutineTasks.filter(t => normalizeDistrict(t.district) === activeRoutineDistrict);
     }, [unassignedRoutineTasks, activeRoutineDistrict]);
 
     const staffTasks = useMemo(() =>
-        tasks.filter(t => t.assignee === selectedStaffName && !t.checkStatus)
+        tasks.filter(t => t.assignee === selectedStaffName && (!t.checkStatus || t.isReassignedForCheck))
             .sort((a, b) => (a.orderNumber || 0) - (b.orderNumber || 0)),
         [tasks, selectedStaffName]);
 
@@ -379,7 +384,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                   {activePoolModal === 'main' ? (
                                       <>
                                           <div className="flex gap-1 overflow-x-auto no-scrollbar pb-2 mb-2" onClick={(e) => e.stopPropagation()}>
-                                              {['Tümü', ...Array.from(new Set(unassignedTasks.map(t => t.district).filter(Boolean)))].sort().map(dist => (
+                                              {['Tümü', ...Array.from(new Set(unassignedTasks.map(t => normalizeDistrict(t.district)).filter(Boolean)))].sort().map(dist => (
                                                   <button
                                                       key={dist}
                                                       onClick={() => setActiveMainDistrict(dist || 'Tümü')}
@@ -412,7 +417,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                   ) : (
                                       <>
                                           <div className="flex gap-1 overflow-x-auto no-scrollbar pb-2 mb-2" onClick={(e) => e.stopPropagation()}>
-                                              {['Tümü', ...Array.from(new Set(unassignedRoutineTasks.map(t => t.district).filter(Boolean)))].sort().map(dist => (
+                                              {['Tümü', ...Array.from(new Set(unassignedRoutineTasks.map(t => normalizeDistrict(t.district)).filter(Boolean)))].sort().map(dist => (
                                                   <button
                                                       key={dist}
                                                       onClick={() => setActiveRoutineDistrict(dist || 'Tümü')}
@@ -748,7 +753,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                     {/* District Filter */}
                                     {isMainTasksExpanded && (
                                         <div className="flex gap-1 overflow-x-auto no-scrollbar max-w-[200px]" onClick={(e) => e.stopPropagation()}>
-                                            {['Tümü', ...Array.from(new Set(unassignedTasks.map(t => t.district).filter(Boolean)))].sort().map(dist => (
+                                            {['Tümü', ...Array.from(new Set(unassignedTasks.map(t => normalizeDistrict(t.district)).filter(Boolean)))].sort().map(dist => (
                                                 <button
                                                     key={dist}
                                                     onClick={() => setActiveMainDistrict(dist || 'Tümü')}
@@ -824,7 +829,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
 
                                     {isRoutineTasksExpanded && (
                                         <div className="flex gap-1 overflow-x-auto no-scrollbar max-w-[200px]" onClick={(e) => e.stopPropagation()}>
-                                            {['Tümü', ...Array.from(new Set(unassignedRoutineTasks.map(t => t.district).filter(Boolean)))].sort().map(dist => (
+                                            {['Tümü', ...Array.from(new Set(unassignedRoutineTasks.map(t => normalizeDistrict(t.district)).filter(Boolean)))].sort().map(dist => (
                                                 <button
                                                     key={dist}
                                                     onClick={() => setActiveRoutineDistrict(dist || 'Tümü')}

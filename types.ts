@@ -56,6 +56,7 @@ export interface Task {
   isProjectDrawn?: boolean; // Proje Çizildi Durumu
   isWaiting?: boolean; // Beklemede Durumu (Mavi kart için)
   isPriority?: boolean; // Öncelikli (Yıldızlı) İş
+  isReassignedForCheck?: boolean; // Kontrol sonrası tekrar atanan iş
 }
 
 export interface AudioConfig {

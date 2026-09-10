@@ -320,20 +320,20 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">Adı Soyadı</label>
-                        <input required type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        <input required type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value.toLocaleUpperCase('tr-TR') })}
                           className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Ahmet Yılmaz" />
                       </div>
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">İşin Tanımı</label>
-                        <input type="text" value={formData.jobDescription || ''} onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
+                        <input type="text" value={formData.jobDescription || ''} onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value.toLocaleUpperCase('tr-TR') })}
                           className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Mutfak Dolabı, Vestiyer..." />
                       </div>
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">Telefon</label>
                         <div className="flex gap-2">
-                          <input type="text" inputMode="text" value={formData.phone || ''} onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          <input type="text" inputMode="text" value={formData.phone || ''} onChange={(e) => setFormData({ ...formData, phone: e.target.value.toLocaleUpperCase('tr-TR') })}
                             className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="05XX XXX XX XX" />
                           {formData.phone && (
                             <a href={`tel:${formData.phone}`} className="bg-green-600 hover:bg-green-500 text-white p-2.5 rounded-lg">
@@ -345,7 +345,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">İşi Yapan Usta</label>
-                        <input type="text" value={formData.assignee || ''} onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
+                        <input type="text" value={formData.assignee || ''} onChange={(e) => setFormData({ ...formData, assignee: e.target.value.toLocaleUpperCase('tr-TR') })}
                           className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Ahmet Usta" />
                       </div>
                     </div>
@@ -366,7 +366,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-400">Adres</label>
                       <div className="relative">
-                        <input type="text" value={formData.address || ''} onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        <input type="text" value={formData.address || ''} onChange={(e) => setFormData({ ...formData, address: e.target.value.toLocaleUpperCase('tr-TR') })}
                           className="w-full bg-slate-700/50 border border-slate-600 rounded-lg pl-4 pr-10 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                         <button
                           type="button"
@@ -382,12 +382,12 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                       <div className="flex gap-4">
                         <div className="flex-1 space-y-2">
                           <label className="text-sm font-medium text-slate-400">İlçe</label>
-                          <input type="text" value={formData.district || ''} onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                          <input type="text" value={formData.district || ''} onChange={(e) => setFormData({ ...formData, district: e.target.value.toLocaleUpperCase('tr-TR') })}
                             className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İlçe" />
                         </div>
                         <div className="flex-1 space-y-2">
                           <label className="text-sm font-medium text-slate-400">İl</label>
-                          <input type="text" value={formData.city || ''} onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          <input type="text" value={formData.city || ''} onChange={(e) => setFormData({ ...formData, city: e.target.value.toLocaleUpperCase('tr-TR') })}
                             className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İl" />
                         </div>
                       </div>
@@ -417,7 +417,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-400">Genel Not</label>
-                      <textarea rows={3} value={formData.generalNote || ''} onChange={(e) => setFormData({ ...formData, generalNote: e.target.value })}
+                      <textarea rows={3} value={formData.generalNote || ''} onChange={(e) => setFormData({ ...formData, generalNote: e.target.value.toLocaleUpperCase('tr-TR') })}
                         className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Müşteri hakkında genel notlar..." />
                     </div>
                   </div>
@@ -461,7 +461,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                         <textarea
                           rows={2}
                           value={formData.gasNote || ''}
-                          onChange={(e) => setFormData({ ...formData, gasNote: e.target.value })}
+                          onChange={(e) => setFormData({ ...formData, gasNote: e.target.value.toLocaleUpperCase('tr-TR') })}
                           className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-orange-500 outline-none"
                           placeholder="Randevu saati, eksikler vb."
                         />
@@ -480,7 +480,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                           <input
                             type="text"
                             value={formData.serviceSerialNumber || ''}
-                            onChange={(e) => setFormData({ ...formData, serviceSerialNumber: e.target.value })}
+                            onChange={(e) => setFormData({ ...formData, serviceSerialNumber: e.target.value.toLocaleUpperCase('tr-TR') })}
                             className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="SN-123456789"
                           />
@@ -546,7 +546,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                         <textarea
                           rows={3}
                           value={formData.serviceNote || ''}
-                          onChange={(e) => setFormData({ ...formData, serviceNote: e.target.value })}
+                          onChange={(e) => setFormData({ ...formData, serviceNote: e.target.value.toLocaleUpperCase('tr-TR') })}
                           className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                           placeholder="Yönlendirme notları, garanti durumu vb."
                         />
@@ -595,7 +595,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                       <textarea
                         rows={6}
                         value={formData.teamNote || ''}
-                        onChange={(e) => setFormData({ ...formData, teamNote: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, teamNote: e.target.value.toLocaleUpperCase('tr-TR') })}
                         className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500/50 outline-none"
                         placeholder="Kontrol sırasında fark edilen eksikler, kaçaklar veya diğer notlar..."
                       />
