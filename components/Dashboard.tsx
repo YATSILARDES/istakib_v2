@@ -45,7 +45,24 @@ const Dashboard: React.FC<DashboardProps> = ({
     isDarkMode = true
 }) => {
     const [filter, setFilter] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+        try {
+            const saved = localStorage.getItem('isDashboardSidebarOpen');
+            return saved !== null ? JSON.parse(saved) : true;
+        } catch (e) {
+            return true;
+        }
+    });
+
+    const toggleSidebar = () => {
+        const newState = !isSidebarOpen;
+        setIsSidebarOpen(newState);
+        try {
+            localStorage.setItem('isDashboardSidebarOpen', JSON.stringify(newState));
+        } catch (e) {
+            console.error('Failed to save sidebar state to localStorage', e);
+        }
+    };
 
     // --- İstatistik Hesaplamaları ---
     const getCount = (status: TaskStatus) => tasks.filter(t => t.status === status).length;
@@ -371,7 +388,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 {/* Toggle Button */}
                 <div className="relative flex items-center justify-center shrink-0 w-4 h-full">
                     <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        onClick={toggleSidebar}
                         title={isSidebarOpen ? "Notlar ve Takvimi Gizle" : "Notlar ve Takvimi Göster"}
                         className={`absolute z-20 p-1.5 rounded-full shadow-lg transition-transform hover:scale-110 ${
                             isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
