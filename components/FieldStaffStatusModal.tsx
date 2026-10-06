@@ -11,6 +11,7 @@ interface FieldStaffModalProps {
     routineTasks: RoutineTask[];
     staffList: StaffMember[];
     onUpdateTask: (taskId: string, newStatus: TaskStatus) => void;
+    onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
     onToggleRoutineTask: (taskId: string, currentStatus: boolean) => void;
     onTaskClick: (task: Task) => void;
 }
@@ -22,6 +23,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
     routineTasks,
     staffList,
     onUpdateTask,
+    onTaskUpdate,
     onToggleRoutineTask,
     onTaskClick
 }) => {
@@ -161,7 +163,8 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                     // MATCH MOBILE FILTERING:
                     // 1. Hide CHECK_COMPLETED
                     // 2. Hide if checkStatus exists (missing/clean)
-                    const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && !t.checkStatus;
+                    // 3. ALLOW if it is reassigned for check
+                    const isTaskActive = !(t.status === TaskStatus.CHECK_COMPLETED && !t.isReassignedForCheck) && !(t.checkStatus && !t.isReassignedForCheck);
                     if (t.assignee && isTaskActive) {
                         const date = getTaskDate(t);
                         if (isToday(date) || isOverdue(date)) {
@@ -235,7 +238,8 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                     // 1. Hide CHECK_COMPLETED
                     // 2. Hide if checkStatus exists (missing/clean)
                     // 3. Allow DEPOSIT_PAID (removed exclusion)
-                    const isTaskActive = t.status !== TaskStatus.CHECK_COMPLETED && !t.checkStatus;
+                    // 4. ALLOW if it is reassigned for check
+                    const isTaskActive = !(t.status === TaskStatus.CHECK_COMPLETED && !t.isReassignedForCheck) && !(t.checkStatus && !t.isReassignedForCheck);
                     return (t.assigneeEmail === staffEmail || t.assignee === staffName) && isTaskActive;
                 }).map(t => ({
                     type: 'main' as const,
@@ -365,7 +369,21 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                                 </div>
                                                                 <span className="text-[9px] font-bold bg-white border border-slate-100 px-1 rounded text-slate-500">#{t.orderNumber}</span>
                                                             </div>
-                                                            <div className={`w-1.5 h-1.5 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500' : 'bg-blue-500'}`} />
+                                                            <div className="flex items-center gap-2">
+                                                                {t.isReassignedForCheck && onTaskUpdate && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            onTaskUpdate(t.id, { isReassignedForCheck: false });
+                                                                        }}
+                                                                        className="w-5 h-5 rounded border border-emerald-300 bg-white flex items-center justify-center hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-colors"
+                                                                        title="Kontrolü Onayla"
+                                                                    >
+                                                                        <CheckCircle2 className="w-3.5 h-3.5 opacity-0 group-hover/task:opacity-100" />
+                                                                    </button>
+                                                                )}
+                                                                <div className={`w-1.5 h-1.5 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500' : 'bg-blue-500'}`} />
+                                                            </div>
                                                         </div>
                                                         <div className="text-[10px] font-bold text-slate-700 mb-1">{t.title}</div>
                                                         <div className="text-[9px] text-slate-500 truncate">{t.district}</div>
@@ -503,7 +521,21 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                                                 <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 rounded">#{t.orderNumber}</span>
                                                                                 <span className="text-xs font-bold text-slate-700">{t.title}</span>
                                                                             </div>
-                                                                            <div className={`w-2 h-2 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
+                                                                            <div className="flex items-center gap-2">
+                                                                                {t.isReassignedForCheck && onTaskUpdate && (
+                                                                                    <button
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            onTaskUpdate(t.id, { isReassignedForCheck: false });
+                                                                                        }}
+                                                                                        className="w-5 h-5 rounded border border-emerald-300 bg-white flex items-center justify-center hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-colors"
+                                                                                        title="Kontrolü Onayla"
+                                                                                    >
+                                                                                        <CheckCircle2 className="w-3.5 h-3.5 opacity-0 group-hover/task:opacity-100" />
+                                                                                    </button>
+                                                                                )}
+                                                                                <div className={`w-2 h-2 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
+                                                                            </div>
                                                                         </div>
                                                                         <div className="flex items-center justify-between text-[10px]">
                                                                             <span className="text-slate-500">{StatusLabels[t.status]}</span>

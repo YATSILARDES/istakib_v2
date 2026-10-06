@@ -1563,6 +1563,7 @@ function App() {
               (s.email && user?.email && s.email.toLowerCase() === user.email.toLowerCase())
             )
         }
+        onTaskUpdate={handleQuickUpdateTask}
         onUpdateTask={async (taskId, newStatus) => {
           await updateDoc(doc(db, 'tasks', taskId), {
             status: newStatus,

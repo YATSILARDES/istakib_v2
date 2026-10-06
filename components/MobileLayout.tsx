@@ -820,6 +820,18 @@ export default function MobileLayout({
                                                                 </div>
 
                                                                 <div className="flex items-center gap-3">
+                                                                    {task.isReassignedForCheck && onTaskUpdate && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                onTaskUpdate(task.id, { isReassignedForCheck: false });
+                                                                            }}
+                                                                            className="w-8 h-8 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 transition-colors shadow-[0_0_10px_-2px_rgba(16,185,129,0.2)]"
+                                                                            title="Kontrolü Onayla"
+                                                                        >
+                                                                            <CheckCircle2 className="w-4 h-4" />
+                                                                        </button>
+                                                                    )}
                                                                     <button
                                                                         onClick={(e) => handleShareTask(task, e)}
                                                                         className="w-8 h-8 rounded-full bg-white/5 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-white/10 transition-colors"

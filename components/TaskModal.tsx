@@ -595,7 +595,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                       <textarea
                         rows={6}
                         value={formData.teamNote || ''}
-                        onChange={(e) => setFormData({ ...formData, teamNote: e.target.value.toLocaleUpperCase('tr-TR') })}
+                        onChange={(e) => setFormData({ ...formData, teamNote: e.target.value })}
                         className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500/50 outline-none"
                         placeholder="Kontrol sırasında fark edilen eksikler, kaçaklar veya diğer notlar..."
                       />

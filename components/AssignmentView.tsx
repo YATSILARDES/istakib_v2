@@ -167,7 +167,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
     }, [unassignedRoutineTasks, activeRoutineDistrict]);
 
     const staffTasks = useMemo(() =>
-        tasks.filter(t => t.assignee === selectedStaffName && (!t.checkStatus || t.isReassignedForCheck))
+        tasks.filter(t => t.assignee === selectedStaffName && (!(t.status === TaskStatus.CHECK_COMPLETED && !t.isReassignedForCheck) && !(t.checkStatus && !t.isReassignedForCheck)))
             .sort((a, b) => (a.orderNumber || 0) - (b.orderNumber || 0)),
         [tasks, selectedStaffName]);
 

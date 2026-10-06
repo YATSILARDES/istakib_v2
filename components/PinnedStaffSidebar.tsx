@@ -111,7 +111,9 @@ const PinnedStaffSidebar: React.FC<PinnedStaffSidebarProps> = ({
     // 2. Normal Görevler (Standart İşler)
     const staffStandardTasks = tasks.filter(t => {
       if (t.assignee !== name) return false;
-      if (t.status === TaskStatus.CHECK_COMPLETED) return false;
+      if (t.status === TaskStatus.CHECK_COMPLETED && !t.isReassignedForCheck) return false;
+      // Kontrol edilmiş ama tekrar atanmamışsa gizle (personel sayfasındakiyle aynı mantık)
+      if (t.checkStatus && !t.isReassignedForCheck) return false;
 
       // Main Task Date Filtering
       if (t.scheduledDate) {

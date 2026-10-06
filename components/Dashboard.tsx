@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask, UserPermission } from '@/types';
-import { ChevronRight, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal, FileText, FolderOpen, AlertTriangle, Star } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal, FileText, FolderOpen, AlertTriangle, Star } from 'lucide-react';
 import PersonalNotes from './PersonalNotes';
 import CalendarWidget from './CalendarWidget';
 // import InteractiveMap from './InteractiveMap'; // Later integration
@@ -45,6 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     isDarkMode = true
 }) => {
     const [filter, setFilter] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     // --- İstatistik Hesaplamaları ---
     const getCount = (status: TaskStatus) => tasks.filter(t => t.status === status).length;
@@ -367,12 +368,25 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 </div>
 
+                {/* Toggle Button */}
+                <div className="relative flex items-center justify-center shrink-0 w-4 h-full">
+                    <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        title={isSidebarOpen ? "Notlar ve Takvimi Gizle" : "Notlar ve Takvimi Göster"}
+                        className={`absolute z-20 p-1.5 rounded-full shadow-lg transition-transform hover:scale-110 ${
+                            isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                        }`}
+                    >
+                        {isSidebarOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                    </button>
+                </div>
+
                 {/* Right Column: Personal Notes & Calendar (Fixed Width, Full Height) */}
-                <div className="w-80 shrink-0 h-full flex flex-col gap-4">
-                    <div className="h-[45%]">
+                <div className={`transition-all duration-300 shrink-0 h-full flex flex-col gap-4 overflow-hidden ${isSidebarOpen ? 'w-80 opacity-100 ml-2' : 'w-0 opacity-0 ml-0'}`}>
+                    <div className="h-[45%] w-80">
                         <PersonalNotes userEmail={currentUser?.email} isDarkMode={isDarkMode} />
                     </div>
-                    <div className="flex-1 min-h-0">
+                    <div className="flex-1 min-h-0 w-80">
                         <CalendarWidget userEmail={currentUser?.email} isDarkMode={isDarkMode} />
                     </div>
                 </div>
