@@ -68,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
             className={`
         fixed inset-y-0 left-0 z-50 w-64 border-r shadow-none
         transform transition-all duration-500 ease-in-out
-        bg-transparent border-transparent
+        bg-transparent border-transparent print:hidden
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         md:relative md:translate-x-0
         flex flex-col

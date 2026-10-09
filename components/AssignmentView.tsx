@@ -540,78 +540,80 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
             )}
 
             {/* PRINT LAYOUT (Visible only when printing) */}
-            <div className="hidden print:block p-8 bg-white text-black">
+            <div className="hidden print:block p-8 bg-white text-black print:text-sm">
                 {/* Header */}
-                <div className="flex justify-between items-end border-b-2 border-black pb-4 mb-8">
+                <div className="flex justify-between items-end border-b-2 border-black pb-4 mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold uppercase tracking-wider mb-2">{selectedStaffName || 'Personel'}</h1>
-                        <p className="text-sm text-gray-600">İş Listesi ve Saha Programı</p>
+                        <h1 className="text-2xl font-bold uppercase tracking-wider mb-1">{selectedStaffName || 'Personel'}</h1>
+                        <p className="text-xs text-gray-600">Haftalık İş Listesi ve Saha Programı</p>
                     </div>
                     <div className="text-right">
-                        <div className="text-lg font-bold">{new Date().toLocaleDateString('tr-TR')}</div>
-                        <div className="text-sm text-gray-500">
-                            {viewMode === 'week' ? 'Haftalık Görünüm' : 'Günlük Liste'}
+                        <div className="text-base font-bold">{new Date().toLocaleDateString('tr-TR')}</div>
+                        <div className="text-xs text-gray-500">
+                            Pazartesi - Cumartesi Programı
                         </div>
                     </div>
                 </div>
 
-                {/* Main Tasks Table */}
-                {staffTasks.length > 0 && (
-                    <div className="mb-8">
-                        <h2 className="text-xl font-bold mb-4 border-b border-gray-300 pb-2 flex items-center gap-2">
-                            <ClipboardList className="w-5 h-5" /> Saha Görevleri
-                        </h2>
-                        <table className="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr className="border-b-2 border-gray-800">
-                                    <th className="py-2 w-12">No</th>
-                                    <th className="py-2 w-48">Müşteri</th>
-                                    <th className="py-2">Adres / Konum</th>
-                                    <th className="py-2">İş Tanımı</th>
-                                    <th className="py-2 w-32">Telefon</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {staffTasks.map((t, i) => (
-                                    <tr key={t.id} className="border-b border-gray-200">
-                                        <td className="py-3 font-bold align-top">{t.orderNumber}</td>
-                                        <td className="py-3 font-semibold align-top">{t.title}</td>
-                                        <td className="py-3 align-top">{t.address || '-'}</td>
-                                        <td className="py-3 align-top text-gray-700">{t.jobDescription || '-'}</td>
-                                        <td className="py-3 align-top whitespace-nowrap">{t.phone || '-'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                <div className="space-y-6">
+                    {[0, 1, 2, 3, 4, 5].map(dayOffset => {
+                        const currentDay = new Date(weekStartDate);
+                        currentDay.setDate(currentDay.getDate() + dayOffset);
+                        const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+                        const dateStr = currentDay.toLocaleDateString('tr-TR');
 
-                {/* Routine Tasks Table */}
-                {staffRoutineTasks.length > 0 && (
-                    <div className="mb-8 break-inside-avoid">
-                        <h2 className="text-xl font-bold mb-4 border-b border-gray-300 pb-2 flex items-center gap-2">
-                            <CheckSquare className="w-5 h-5" /> Eksikler ve Notlar
-                        </h2>
-                        <table className="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr className="border-b-2 border-gray-800">
-                                    <th className="py-2 w-48">Müşteri / İlgili</th>
-                                    <th className="py-2">Açıklama / Eksik Detayı</th>
-                                    <th className="py-2 w-64">Adres</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {staffRoutineTasks.map((t) => (
-                                    <tr key={t.id} className="border-b border-gray-200">
-                                        <td className="py-3 font-semibold align-top">{t.customerName || '-'}</td>
-                                        <td className="py-3 align-top text-gray-700">{t.content}</td>
-                                        <td className="py-3 align-top">{t.address || '-'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                        const dayTasks = staffTasks.filter(t => {
+                            if (!t.scheduledDate) return false;
+                            const d = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
+                            return d.toDateString() === currentDay.toDateString();
+                        });
+
+                        const dayRoutines = staffRoutineTasks.filter(t => {
+                            const date = t.scheduledDate || t.createdAt;
+                            const d = new Date(date?.seconds ? date.seconds * 1000 : date);
+                            return d.toDateString() === currentDay.toDateString();
+                        });
+
+                        if (dayTasks.length === 0 && dayRoutines.length === 0) return null;
+
+                        return (
+                            <div key={dayOffset} className="break-inside-avoid mb-4">
+                                <h3 className="font-bold text-base mb-2 border-b-2 border-black pb-1 flex items-center justify-between">
+                                    <span>{dayNames[dayOffset]} <span className="text-sm font-normal text-gray-600">({dateStr})</span></span>
+                                    <span className="text-xs font-normal text-gray-500">{dayTasks.length + dayRoutines.length} İş</span>
+                                </h3>
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-gray-400 bg-gray-50">
+                                            <th className="py-1.5 px-1 w-1/4">Müşteri</th>
+                                            <th className="py-1.5 px-1 w-1/3">Adres</th>
+                                            <th className="py-1.5 px-1 w-1/4">İş Tanımı</th>
+                                            <th className="py-1.5 px-1 w-1/6">Telefon</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {dayTasks.map((t) => (
+                                            <tr key={t.id} className="border-b border-gray-200">
+                                                <td className="py-1.5 px-1 font-semibold align-top">{t.title}</td>
+                                                <td className="py-1.5 px-1 align-top">{t.address || '-'}</td>
+                                                <td className="py-1.5 px-1 align-top text-gray-700">{t.jobDescription || '-'}</td>
+                                                <td className="py-1.5 px-1 align-top whitespace-nowrap">{t.phone || '-'}</td>
+                                            </tr>
+                                        ))}
+                                        {dayRoutines.map((t) => (
+                                            <tr key={t.id} className="border-b border-gray-200">
+                                                <td className="py-1.5 px-1 font-semibold align-top text-purple-700">{t.customerName || '-'}</td>
+                                                <td className="py-1.5 px-1 align-top">{t.address || '-'}</td>
+                                                <td className="py-1.5 px-1 align-top text-gray-700">{t.content}</td>
+                                                <td className="py-1.5 px-1 align-top whitespace-nowrap">{t.phoneNumber || '-'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        );
+                    })}
+                </div>
 
                 {/* Empty State */}
                 {staffTasks.length === 0 && staffRoutineTasks.length === 0 && (
@@ -621,7 +623,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                 )}
 
                 {/* Footer */}
-                <div className="fixed bottom-0 left-0 right-0 text-center text-[10px] text-gray-400 py-4 border-t border-gray-100">
+                <div className="fixed bottom-0 left-0 right-0 text-center text-[10px] text-gray-400 py-2 border-t border-gray-100">
                     İş Takibi v2 • {new Date().toLocaleString()} tarihinde oluşturulmuştur.
                 </div>
             </div>
@@ -690,20 +692,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {selectedStaffName && (
-                            <button
-                                onClick={() => onTogglePinStaff(selectedStaffName)}
-                                className={`px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border shadow-sm ${isPinned
-                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
-                                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                                    }`}
-                            >
-                                {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
-                                {isPinned ? 'Ana Sayfadan Kaldır' : 'Sütun Aç'}
-                            </button>
-                        )}
-
+                    <div className="flex items-center gap-2 mr-8">
                         <button
                             onClick={handlePrint}
                             className="bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 text-slate-500 px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all shadow-sm"
