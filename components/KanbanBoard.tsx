@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, StatusLabels, RoutineTask } from '../types';
 import { MoreVertical, ClipboardList, ClipboardCheck, Banknote, Flame, Wrench, Circle, Phone, MapPin, CheckCircle2, Search, CheckSquare, Square, UserCircle, Share2, PhoneCall, Plus, X, User, Clock, Star, ChevronRight } from 'lucide-react';
+import ServiceRedirectDropdown from './ServiceRedirectDropdown';
 const formatSafeDate = (dateVal: any) => {
   if (!dateVal) return '';
   try {
@@ -588,9 +589,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         : tasks.filter(t => t.status === status).length}
                   </span>
                 </div>
-                <button className="text-slate-400 hover:text-slate-600">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {status === TaskStatus.GAS_OPENED && (
+                    <ServiceRedirectDropdown isDarkMode={isDarkMode} />
+                  )}
+                  <button className="text-slate-400 hover:text-slate-600">
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Search & Filter Bar */}

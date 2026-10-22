@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, User as UserIcon, Menu, Loader2, FileText, ChevronRight, FolderOpen, Sun, Moon, CheckSquare, Square, Star, UserCircle, Phone, MapPin } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, User as UserIcon, Menu, Loader2, FileText, ChevronRight, FolderOpen, Sun, Moon, CheckSquare, Square, Star, UserCircle, Phone, MapPin, Filter, Search, ChevronDown } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -87,6 +87,26 @@ function App() {
   const [isMissingFilterActive, setIsMissingFilterActive] = useState(false);
   const [isPriorityFilter, setIsPriorityFilter] = useState(false);
   const [searchTerm, setSearchTerm] = useState(''); // NEW: Global Search
+  const [selectedGlobalDistrict, setSelectedGlobalDistrict] = useState<string>(''); // NEW: Global District Filter
+
+  // Global unique districts and counts
+  const allGlobalDistricts = useMemo(() => {
+    const districts = new Set<string>();
+    tasks.forEach(t => {
+      const d = t.district?.trim().toLocaleUpperCase('tr-TR');
+      if (d) districts.add(d);
+    });
+    return Array.from(districts).sort((a, b) => a.localeCompare(b, 'tr-TR'));
+  }, [tasks]);
+
+  const globalDistrictCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    tasks.forEach(t => {
+      const d = t.district?.trim().toLocaleUpperCase('tr-TR');
+      if (d) counts[d] = (counts[d] || 0) + 1;
+    });
+    return counts;
+  }, [tasks]);
 
   // Routine Assign Modal State
   const [assignRoutineModal, setAssignRoutineModal] = useState<{ isOpen: boolean; task: RoutineTask | null }>({ isOpen: false, task: null });
@@ -768,14 +788,21 @@ function App() {
   // FiltrelemeLogic
   let visibleTasks: Task[] = tasks;
 
-  // 1. Global Search Filter
+  // 1. Global District Filter
+  if (selectedGlobalDistrict) {
+    visibleTasks = visibleTasks.filter(t => (t.district?.trim().toLocaleUpperCase('tr-TR') || '') === selectedGlobalDistrict);
+  }
+
+  // 1.1 Global Search Filter (Proje Adı / Müşteri)
   if (searchTerm) {
-    const lower = searchTerm.toLocaleLowerCase('tr');
+    const lower = searchTerm.toLocaleLowerCase('tr').trim();
     visibleTasks = visibleTasks.filter(t =>
       t.title.toLocaleLowerCase('tr').includes(lower) ||
+      String(t.orderNumber || '').includes(lower) ||
       (t.jobDescription && t.jobDescription.toLocaleLowerCase('tr').includes(lower)) ||
       (t.address && t.address.toLocaleLowerCase('tr').includes(lower)) ||
       (t.assignee && t.assignee.toLocaleLowerCase('tr').includes(lower)) ||
+      (t.district && t.district.toLocaleLowerCase('tr').includes(lower)) ||
       (t.status && StatusLabels[t.status].toLocaleLowerCase('tr').includes(lower))
     );
   }
@@ -1176,31 +1203,67 @@ function App() {
                   </div>
                 </div>
 
-                <div className="flex-1 max-w-md mx-6 flex justify-end">
-                  {/* Search Bar remains here */}
-                  <div className="relative group w-full">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                      </svg>
-                    </div>
+                {/* Fotoğraf 2 Tarzı Profesyonel Filtre Çubuğu */}
+                <div className="flex-1 max-w-xl mx-4 flex items-center justify-end gap-1.5 sm:gap-2">
+                  {/* İlçe Seçimi (Açılır Menü) */}
+                  <div className="relative min-w-[120px] sm:min-w-[140px]">
+                    <select
+                      value={selectedGlobalDistrict}
+                      onChange={(e) => setSelectedGlobalDistrict(e.target.value)}
+                      className="w-full bg-white border border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md pl-2.5 pr-7 py-1.5 text-xs text-slate-700 font-medium shadow-xs transition-all outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="">İlçe (Tümü)</option>
+                      {allGlobalDistricts.map(dist => (
+                        <option key={dist} value={dist}>
+                          {dist} ({globalDistrictCounts[dist] || 0})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+
+                  {/* Proje Adı / Müşteri Ara */}
+                  <div className="relative min-w-[140px] sm:min-w-[180px] flex-1 max-w-[240px]">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm"
-                      placeholder="Müşteri Ara..."
+                      placeholder="Proje Adı / Müşteri..."
+                      className="w-full bg-white border border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md pl-8 pr-7 py-1.5 text-xs text-slate-700 placeholder-slate-400 shadow-xs transition-all outline-none"
                     />
                     {searchTerm && (
-                      <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
-                        <X className="w-4 h-4" />
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                        title="Temizle"
+                      >
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
+
+                  {/* Sıfırla Butonu */}
+                  {(selectedGlobalDistrict || searchTerm) && (
+                    <button
+                      onClick={() => {
+                        setSelectedGlobalDistrict('');
+                        setSearchTerm('');
+                      }}
+                      className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded-md flex items-center gap-1 transition-colors cursor-pointer shrink-0 shadow-xs"
+                      title="Filtreleri Sıfırla"
+                    >
+                      <X className="w-3 h-3" />
+                      <span>Sıfırla</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <ServiceRedirectDropdown isDarkMode={isDarkMode} />
+                  {/* Servis Yönlendirme sadece Gaz Açıldı sayfasındayken gösterilir */}
+                  {boardFilter === TaskStatus.GAS_OPENED && (
+                    <ServiceRedirectDropdown isDarkMode={isDarkMode} />
+                  )}
 
                   {/* Theme Toggle */}
                   <button
@@ -1219,6 +1282,8 @@ function App() {
                         setBoardFilter(undefined);
                         setIsMissingFilterActive(false);
                         setIsPriorityFilter(false);
+                        setSelectedGlobalDistrict('');
+                        setSearchTerm('');
                       }}
                       className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-2 rounded-full transition-all hover:rotate-90 border border-slate-600 shadow-sm"
                       title="Panele Dön"

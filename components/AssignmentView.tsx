@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Task, RoutineTask, TaskStatus, StaffMember } from '../types';
-import { User, ArrowRight, ArrowLeft, ClipboardList, CheckSquare, Printer, Plus, Trash2, Save, Pin, PinOff, Phone, MapPin, UserCircle, ChevronDown, ChevronRight, Calendar, List, ChevronLeft, X, Clock } from 'lucide-react';
+import { User, ArrowRight, ArrowLeft, ClipboardList, CheckSquare, Printer, Plus, Trash2, Save, Pin, PinOff, Phone, MapPin, UserCircle, ChevronDown, ChevronRight, Calendar, List, ChevronLeft, X, Clock, Filter, Search } from 'lucide-react';
 
 interface AssignmentViewProps {
     tasks: Task[];
@@ -39,9 +39,9 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
     const [newStaffName, setNewStaffName] = useState('');
     const [newStaffEmail, setNewStaffEmail] = useState('');
 
-    // DISTRICT FILTER STATE
-    const [activeMainDistrict, setActiveMainDistrict] = useState<string>('Tümü');
-    const [activeRoutineDistrict, setActiveRoutineDistrict] = useState<string>('Tümü');
+    // POOL FILTER STATE (İlçe ve Proje Adı)
+    const [selectedPoolDistrict, setSelectedPoolDistrict] = useState<string>('');
+    const [poolSearchQuery, setPoolSearchQuery] = useState<string>('');
 
     // VIEW MODE STATE (List vs Weekly)
     const [viewMode, setViewMode] = useState<'list' | 'week'>('week'); // Default week view for preview
@@ -156,15 +156,77 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
         routineTasks.filter(t => !t.isCompleted && (!t.assignee || t.assignee.trim() === '' || t.assignee === 'Atanmadı')),
         [routineTasks]);
 
+    const normalizeTr = (str?: string | null) => {
+        if (!str) return '';
+        return str.trim().toLocaleLowerCase('tr-TR');
+    };
+
+    // Tüm benzersiz ilçeler ve iş sayıları
+    const allPoolDistricts = useMemo(() => {
+        const districts = new Set<string>();
+        unassignedTasks.forEach(t => {
+            const d = normalizeDistrict(t.district);
+            if (d) districts.add(d);
+        });
+        unassignedRoutineTasks.forEach(t => {
+            const d = normalizeDistrict(t.district);
+            if (d) districts.add(d);
+        });
+        return Array.from(districts).sort((a, b) => a.localeCompare(b, 'tr-TR'));
+    }, [unassignedTasks, unassignedRoutineTasks]);
+
+    const districtCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        unassignedTasks.forEach(t => {
+            const d = normalizeDistrict(t.district);
+            if (d) counts[d] = (counts[d] || 0) + 1;
+        });
+        unassignedRoutineTasks.forEach(t => {
+            const d = normalizeDistrict(t.district);
+            if (d) counts[d] = (counts[d] || 0) + 1;
+        });
+        return counts;
+    }, [unassignedTasks, unassignedRoutineTasks]);
+
+    const isPoolFilterActive = Boolean(selectedPoolDistrict || poolSearchQuery.trim());
+
     const filteredMainTasks = useMemo(() => {
-        if (activeMainDistrict === 'Tümü') return unassignedTasks;
-        return unassignedTasks.filter(t => normalizeDistrict(t.district) === activeMainDistrict);
-    }, [unassignedTasks, activeMainDistrict]);
+        const q = normalizeTr(poolSearchQuery);
+        return unassignedTasks.filter(t => {
+            if (selectedPoolDistrict && normalizeDistrict(t.district) !== selectedPoolDistrict) {
+                return false;
+            }
+            if (q) {
+                const titleMatch = normalizeTr(t.title).includes(q);
+                const descMatch = normalizeTr(t.jobDescription).includes(q);
+                const addrMatch = normalizeTr(t.address).includes(q);
+                const orderMatch = String(t.orderNumber || '').includes(q);
+                if (!titleMatch && !descMatch && !addrMatch && !orderMatch) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }, [unassignedTasks, selectedPoolDistrict, poolSearchQuery]);
 
     const filteredRoutineTasks = useMemo(() => {
-        if (activeRoutineDistrict === 'Tümü') return unassignedRoutineTasks;
-        return unassignedRoutineTasks.filter(t => normalizeDistrict(t.district) === activeRoutineDistrict);
-    }, [unassignedRoutineTasks, activeRoutineDistrict]);
+        const q = normalizeTr(poolSearchQuery);
+        return unassignedRoutineTasks.filter(t => {
+            if (selectedPoolDistrict && normalizeDistrict(t.district) !== selectedPoolDistrict) {
+                return false;
+            }
+            if (q) {
+                const customerMatch = normalizeTr(t.customerName).includes(q);
+                const contentMatch = normalizeTr(t.content).includes(q);
+                const addrMatch = normalizeTr(t.address).includes(q);
+                const phoneMatch = normalizeTr(t.phoneNumber).includes(q);
+                if (!customerMatch && !contentMatch && !addrMatch && !phoneMatch) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }, [unassignedRoutineTasks, selectedPoolDistrict, poolSearchQuery]);
 
     const staffTasks = useMemo(() =>
         tasks.filter(t => t.assignee === selectedStaffName && (!(t.status === TaskStatus.CHECK_COMPLETED && !t.isReassignedForCheck) && !(t.checkStatus && !t.isReassignedForCheck)))
@@ -380,22 +442,51 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                  </div>
                              )}
 
+                             {/* Mobil Filtre Çubuğu */}
+                             <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex gap-2 items-center shrink-0">
+                                 <div className="relative flex-1">
+                                     <select
+                                         value={selectedPoolDistrict}
+                                         onChange={(e) => setSelectedPoolDistrict(e.target.value)}
+                                         className="w-full bg-white border border-slate-300 rounded-lg pl-2 pr-6 py-1.5 text-xs text-slate-700 font-medium outline-none appearance-none"
+                                     >
+                                         <option value="">İlçe (Tümü)</option>
+                                         {allPoolDistricts.map(dist => (
+                                             <option key={dist} value={dist}>{dist} ({districtCounts[dist] || 0})</option>
+                                         ))}
+                                     </select>
+                                     <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                 </div>
+                                 <div className="relative flex-1">
+                                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                     <input
+                                         type="text"
+                                         value={poolSearchQuery}
+                                         onChange={(e) => setPoolSearchQuery(e.target.value)}
+                                         placeholder="Proje Adı..."
+                                         className="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-6 py-1.5 text-xs text-slate-700 outline-none"
+                                     />
+                                     {poolSearchQuery && (
+                                         <button onClick={() => setPoolSearchQuery('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 p-0.5">
+                                             <X className="w-3 h-3" />
+                                         </button>
+                                     )}
+                                 </div>
+                                 {isPoolFilterActive && (
+                                     <button
+                                         onClick={() => { setSelectedPoolDistrict(''); setPoolSearchQuery(''); }}
+                                         className="p-1.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-lg text-xs"
+                                         title="Filtreleri Temizle"
+                                     >
+                                         <X className="w-3 h-3" />
+                                     </button>
+                                 )}
+                             </div>
+
                              <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar pb-10">
                                   {activePoolModal === 'main' ? (
                                       <>
-                                          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-2 mb-2" onClick={(e) => e.stopPropagation()}>
-                                              {['Tümü', ...Array.from(new Set(unassignedTasks.map(t => normalizeDistrict(t.district)).filter(Boolean)))].sort().map(dist => (
-                                                  <button
-                                                      key={dist}
-                                                      onClick={() => setActiveMainDistrict(dist || 'Tümü')}
-                                                      className={`text-[10px] px-2 py-1 rounded-md whitespace-nowrap transition-colors border shadow-sm ${activeMainDistrict === (dist || 'Tümü')
-                                                          ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
-                                                  >
-                                                      {dist || 'Yok'}
-                                                  </button>
-                                              ))}
-                                          </div>
-                                          {filteredMainTasks.length === 0 ? <p className="text-center text-slate-400 text-sm mt-10">Atanmamış iş bulunmuyor.</p> :
+                                          {filteredMainTasks.length === 0 ? <p className="text-center text-slate-400 text-sm mt-10">{isPoolFilterActive ? 'Filtreye uygun atanmamış iş bulunamadı.' : 'Atanmamış iş bulunmuyor.'}</p> :
                                           filteredMainTasks.map(t => (
                                           <div 
                                               key={t.id} 
@@ -416,19 +507,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                       </>
                                   ) : (
                                       <>
-                                          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-2 mb-2" onClick={(e) => e.stopPropagation()}>
-                                              {['Tümü', ...Array.from(new Set(unassignedRoutineTasks.map(t => normalizeDistrict(t.district)).filter(Boolean)))].sort().map(dist => (
-                                                  <button
-                                                      key={dist}
-                                                      onClick={() => setActiveRoutineDistrict(dist || 'Tümü')}
-                                                      className={`text-[10px] px-2 py-1 rounded-md whitespace-nowrap transition-colors border shadow-sm ${activeRoutineDistrict === (dist || 'Tümü')
-                                                          ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
-                                                  >
-                                                      {dist || 'Yok'}
-                                                  </button>
-                                              ))}
-                                          </div>
-                                          {filteredRoutineTasks.length === 0 ? <p className="text-center text-slate-400 text-sm mt-10">Atanmamış eksik/not bulunmuyor.</p> :
+                                          {filteredRoutineTasks.length === 0 ? <p className="text-center text-slate-400 text-sm mt-10">{isPoolFilterActive ? 'Filtreye uygun atanmamış eksik bulunamadı.' : 'Atanmamış eksik/not bulunmuyor.'}</p> :
                                           filteredRoutineTasks.map(t => (
                                           <div 
                                               key={t.id} 
@@ -707,22 +786,102 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
 
                     {/* LEFT COLUMN: POOL (Unassigned) */}
                     <div className="flex flex-col min-h-0 bg-white/30 backdrop-blur-xl">
-                        <div
-                            className="bg-white/50 backdrop-blur px-4 py-3 border-b border-white/20 flex justify-between items-center cursor-pointer select-none lg:cursor-default sticky top-0 z-20"
-                            onClick={() => setIsPoolSectionExpanded(!isPoolSectionExpanded)}
-                        >
-                            <div className="flex items-center gap-2">
-                                <div className="bg-slate-100 p-1.5 rounded-lg">
-                                    <ClipboardList className="w-4 h-4 text-slate-600" />
+                        {/* POOL HEADER & PROFESSIONAL FILTER BAR */}
+                        <div className="bg-white/85 backdrop-blur-md border-b border-slate-200 sticky top-0 z-20 shadow-xs">
+                            <div
+                                className="px-4 py-2.5 flex justify-between items-center cursor-pointer select-none lg:cursor-default"
+                                onClick={() => setIsPoolSectionExpanded(!isPoolSectionExpanded)}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-slate-100 p-1.5 rounded-lg text-slate-700">
+                                        <ClipboardList className="w-4 h-4" />
+                                    </div>
+                                    <span className="font-bold text-slate-800 text-sm tracking-tight">Havuz (Atanmamış İşler)</span>
+                                    <span className="bg-slate-800 text-white text-[11px] font-bold px-2 py-0.5 rounded-full ml-1">
+                                        {isPoolFilterActive
+                                            ? `${filteredMainTasks.length + filteredRoutineTasks.length} / ${unassignedTasks.length + unassignedRoutineTasks.length}`
+                                            : unassignedTasks.length + unassignedRoutineTasks.length}
+                                    </span>
                                 </div>
-                                <span className="font-bold text-slate-700">Havuz (Atanmamış İşler)</span>
-                                <span className="bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-2">
-                                    {unassignedTasks.length + unassignedRoutineTasks.length}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    {isPoolFilterActive && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedPoolDistrict('');
+                                                setPoolSearchQuery('');
+                                            }}
+                                            className="text-[11px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors cursor-pointer"
+                                            title="Filtreleri Sıfırla"
+                                        >
+                                            <X className="w-3 h-3" />
+                                            Sıfırla
+                                        </button>
+                                    )}
+                                    <div className="lg:hidden text-slate-400">
+                                        {isPoolSectionExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="lg:hidden">
-                                {isPoolSectionExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-                            </div>
+
+                            {/* Fotoğraf 2 Tarzı Profesyonel Filtreleme Satırı */}
+                            {isPoolSectionExpanded && (
+                                <div className="px-3 pb-3 pt-1 border-t border-slate-100 bg-slate-50/70">
+                                    <div className="flex items-center gap-1.5 sm:gap-2">
+                                        {/* İlçe Seçimi (Fotoğraf 2'deki İlçe kutusu) */}
+                                        <div className="relative flex-1 min-w-[105px]">
+                                            <select
+                                                value={selectedPoolDistrict}
+                                                onChange={(e) => setSelectedPoolDistrict(e.target.value)}
+                                                className="w-full bg-white border border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md pl-2 pr-6 py-1.5 text-xs text-slate-700 font-medium shadow-xs transition-all outline-none appearance-none cursor-pointer"
+                                            >
+                                                <option value="">İlçe (Tümü)</option>
+                                                {allPoolDistricts.map(dist => (
+                                                    <option key={dist} value={dist}>
+                                                        {dist} ({districtCounts[dist] || 0})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                        </div>
+
+                                        {/* Proje Adı Girişi (Fotoğraf 2'deki Proje Adı kutusu) */}
+                                        <div className="relative flex-1 min-w-[115px]">
+                                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                            <input
+                                                type="text"
+                                                value={poolSearchQuery}
+                                                onChange={(e) => setPoolSearchQuery(e.target.value)}
+                                                placeholder="Proje Adı..."
+                                                className="w-full bg-white border border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md pl-7 pr-6 py-1.5 text-xs text-slate-700 placeholder-slate-400 shadow-xs transition-all outline-none"
+                                            />
+                                            {poolSearchQuery && (
+                                                <button
+                                                    onClick={() => setPoolSearchQuery('')}
+                                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                                                    title="Temizle"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Aktif Filtre İpucu / Sonuç Sayacı */}
+                                    {isPoolFilterActive && (
+                                        <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500 bg-white/90 rounded px-2 py-1 border border-slate-200">
+                                            <span className="truncate">
+                                                {selectedPoolDistrict && <span className="font-semibold text-blue-700 mr-1">📍 {selectedPoolDistrict}</span>}
+                                                {poolSearchQuery && <span className="italic text-slate-600 font-medium mr-1">🔍 "{poolSearchQuery}"</span>}
+                                                <span className="text-slate-400">eşleşen:</span>
+                                            </span>
+                                            <span className="font-bold text-slate-800 shrink-0 ml-1">
+                                                {filteredMainTasks.length + filteredRoutineTasks.length} iş bulundu
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className={`flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar pb-32 ${!isPoolSectionExpanded ? 'hidden lg:block' : ''}`}>
@@ -736,31 +895,19 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                                         {isMainTasksExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                                         Kontrolü Yapılacak İşler
-                                        <span className="bg-blue-100 text-blue-600 px-1.5 rounded py-0.5 text-[10px]">{unassignedTasks.length}</span>
+                                        <span className="bg-blue-100 text-blue-600 px-1.5 rounded py-0.5 text-[10px] font-bold">
+                                            {isPoolFilterActive ? `${filteredMainTasks.length} / ${unassignedTasks.length}` : filteredMainTasks.length}
+                                        </span>
                                     </h4>
-
-                                    {/* District Filter */}
-                                    {isMainTasksExpanded && (
-                                        <div className="flex gap-1 overflow-x-auto no-scrollbar max-w-[200px]" onClick={(e) => e.stopPropagation()}>
-                                            {['Tümü', ...Array.from(new Set(unassignedTasks.map(t => normalizeDistrict(t.district)).filter(Boolean)))].sort().map(dist => (
-                                                <button
-                                                    key={dist}
-                                                    onClick={() => setActiveMainDistrict(dist || 'Tümü')}
-                                                    className={`text-[9px] px-2 py-0.5 rounded-md whitespace-nowrap transition-colors border ${activeMainDistrict === (dist || 'Tümü')
-                                                        ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}
-                                                >
-                                                    {dist || 'Yok'}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* List */}
                                 {isMainTasksExpanded && (
                                     <div className="p-2 space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar">
                                         {filteredMainTasks.length === 0 ? (
-                                            <div className="text-center py-8 text-slate-400 text-xs italic">Listelenecek iş yok.</div>
+                                            <div className="text-center py-8 text-slate-400 text-xs italic">
+                                                {isPoolFilterActive ? 'Filtreye uygun kontrol işi bulunamadı.' : 'Listelenecek iş yok.'}
+                                            </div>
                                         ) : (
                                             filteredMainTasks.map(task => (
                                                 <div
@@ -813,30 +960,19 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                                         {isRoutineTasksExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                                         Eksikler / Notlar
-                                        <span className="bg-purple-100 text-purple-600 px-1.5 rounded py-0.5 text-[10px]">{unassignedRoutineTasks.length}</span>
+                                        <span className="bg-purple-100 text-purple-600 px-1.5 rounded py-0.5 text-[10px] font-bold">
+                                            {isPoolFilterActive ? `${filteredRoutineTasks.length} / ${unassignedRoutineTasks.length}` : filteredRoutineTasks.length}
+                                        </span>
                                     </h4>
-
-                                    {isRoutineTasksExpanded && (
-                                        <div className="flex gap-1 overflow-x-auto no-scrollbar max-w-[200px]" onClick={(e) => e.stopPropagation()}>
-                                            {['Tümü', ...Array.from(new Set(unassignedRoutineTasks.map(t => normalizeDistrict(t.district)).filter(Boolean)))].sort().map(dist => (
-                                                <button
-                                                    key={dist}
-                                                    onClick={() => setActiveRoutineDistrict(dist || 'Tümü')}
-                                                    className={`text-[9px] px-2 py-0.5 rounded-md whitespace-nowrap transition-colors border ${activeRoutineDistrict === (dist || 'Tümü')
-                                                        ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-slate-500 border-slate-200 hover:border-purple-300'}`}
-                                                >
-                                                    {dist || 'Yok'}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* List */}
                                 {isRoutineTasksExpanded && (
                                     <div className="p-2 space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar">
                                         {filteredRoutineTasks.length === 0 ? (
-                                            <div className="text-center py-8 text-slate-400 text-xs italic">Listelenecek eksik yok.</div>
+                                            <div className="text-center py-8 text-slate-400 text-xs italic">
+                                                {isPoolFilterActive ? 'Filtreye uygun eksik/not bulunamadı.' : 'Listelenecek eksik yok.'}
+                                            </div>
                                         ) : (
                                             filteredRoutineTasks.map(task => (
                                                 <div
