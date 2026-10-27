@@ -1,6 +1,23 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Task, RoutineTask, StaffMember, TaskStatus, StatusLabels } from '../types';
-import { X, Users, BarChart3, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+    X,
+    Users,
+    User,
+    BarChart3,
+    Clock,
+    CheckCircle2,
+    AlertCircle,
+    ChevronLeft,
+    ChevronRight,
+    MapPin,
+    Phone,
+    Search,
+    Calendar,
+    Filter,
+    CheckSquare,
+    Square
+} from 'lucide-react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../src/firebase';
 
@@ -29,6 +46,52 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 }) => {
     const [selectedStaffEmail, setSelectedStaffEmail] = useState<string | null>(null);
     const [userPresence, setUserPresence] = useState<Record<string, any>>({});
+
+    // Mobile Navigation States
+    const [isMobile, setIsMobile] = useState(
+        typeof window !== 'undefined' ? window.innerWidth < 768 : false
+    );
+    const [mobileSelectedStaffName, setMobileSelectedStaffName] = useState<string | null>(null);
+    const [mobileSearchTerm, setMobileSearchTerm] = useState('');
+    const [mobileTabFilter, setMobileTabFilter] = useState<'all' | 'main' | 'routine'>('all');
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Reset mobile state on close
+    useEffect(() => {
+        if (!isOpen) {
+            setMobileSelectedStaffName(null);
+            setMobileSearchTerm('');
+            setMobileTabFilter('all');
+            setSelectedStaffEmail(null);
+        }
+    }, [isOpen]);
+
+    // Status badge style helper
+    const getStatusBadge = (status: TaskStatus) => {
+        switch (status) {
+            case TaskStatus.PROJECT_TO_BE_DRAWN:
+                return { label: 'Projesi Çizilecek', bg: 'bg-orange-50', text: 'text-[#e65100]', border: 'border-orange-200', stripe: 'bg-orange-500' };
+            case TaskStatus.SERVICE_DIRECTED:
+                return { label: 'Servis Yönlendirildi', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', stripe: 'bg-blue-500' };
+            case TaskStatus.COMBI_REPLACEMENT_RENOVATION:
+                return { label: 'Kombi Değişimi', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', stripe: 'bg-indigo-500' };
+            case TaskStatus.TO_CHECK:
+                return { label: 'Kontrol Yapılacak', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', stripe: 'bg-amber-500' };
+            case TaskStatus.CHECK_COMPLETED:
+                return { label: 'Kontrol Yapıldı', bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', stripe: 'bg-teal-500' };
+            case TaskStatus.GAS_OPENED:
+                return { label: 'Gazı Açıldı', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', stripe: 'bg-rose-500' };
+            case TaskStatus.DEPOSIT_PAID:
+                return { label: 'Kapora / Avans', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', stripe: 'bg-purple-500' };
+            default:
+                return { label: StatusLabels[status] || status, bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200', stripe: 'bg-slate-400' };
+        }
+    };
 
     // --- Date Helpers ---
     const getTaskDate = (t: any): Date => {
@@ -208,6 +271,107 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
     }, [tasks, routineTasks, staffList]);
 
     const totalActive = staffStats.reduce((acc, s) => acc + s.activeTasks.length + s.activeRoutine.length, 0);
+
+    // --- Mobile Specific Data & Calculations ---
+    const mobileSelectedStaffObj = useMemo(() => {
+        if (!mobileSelectedStaffName) return null;
+        return staffList.find(s => s.name === mobileSelectedStaffName) || { name: mobileSelectedStaffName, email: '', phone: '' };
+    }, [mobileSelectedStaffName, staffList]);
+
+    const mobileStaffPresence = useMemo(() => {
+        if (!mobileSelectedStaffObj?.email) return { text: 'Çevrimdışı', color: 'text-slate-400', isOnline: false };
+        const p = formatLastSeen(userPresence[mobileSelectedStaffObj.email.toLowerCase()]);
+        return { ...p, isOnline: p.text === 'Çevrimiçi' };
+    }, [mobileSelectedStaffObj, userPresence]);
+
+    const mobileSelectedStaffTasks = useMemo(() => {
+        if (!mobileSelectedStaffName) return { main: [], routine: [], total: 0 };
+        const sName = mobileSelectedStaffName;
+        const sEmail = (mobileSelectedStaffObj?.email || '').toLowerCase();
+
+        const main = tasks.filter(t => {
+            const isTaskActive = !(t.status === TaskStatus.CHECK_COMPLETED && !t.isReassignedForCheck) && !(t.checkStatus && !t.isReassignedForCheck);
+            const matchesAssignee = t.assignee === sName || (t.assigneeEmail && t.assigneeEmail.toLowerCase() === sEmail);
+            return isTaskActive && matchesAssignee;
+        }).sort((a, b) => {
+            const dateA = getEffectiveDate(a).getTime();
+            const dateB = getEffectiveDate(b).getTime();
+            if (dateA !== dateB) return dateA - dateB;
+            return (a.dailyOrder || 0) - (b.dailyOrder || 0);
+        });
+
+        const routine = routineTasks.filter(t => {
+            const matchesAssignee = t.assignee === sName || (t.assigneeEmail && t.assigneeEmail.toLowerCase() === sEmail);
+            return !t.isCompleted && matchesAssignee;
+        }).sort((a, b) => {
+            const dateA = getEffectiveDate(a).getTime();
+            const dateB = getEffectiveDate(b).getTime();
+            if (dateA !== dateB) return dateA - dateB;
+            return (a.dailyOrder || 0) - (b.dailyOrder || 0);
+        });
+
+        return { main, routine, total: main.length + routine.length };
+    }, [mobileSelectedStaffName, mobileSelectedStaffObj, tasks, routineTasks]);
+
+    const filteredMobileTasks = useMemo(() => {
+        if (!mobileSelectedStaffName) return { main: [], routine: [] };
+        const q = mobileSearchTerm.trim().toLocaleLowerCase('tr-TR');
+
+        let main = mobileSelectedStaffTasks.main;
+        let routine = mobileSelectedStaffTasks.routine;
+
+        if (mobileTabFilter === 'main') {
+            routine = [];
+        } else if (mobileTabFilter === 'routine') {
+            main = [];
+        }
+
+        if (q) {
+            main = main.filter(t =>
+                (t.title && t.title.toLocaleLowerCase('tr-TR').includes(q)) ||
+                (t.orderNumber && String(t.orderNumber).includes(q)) ||
+                (t.district && t.district.toLocaleLowerCase('tr-TR').includes(q)) ||
+                (t.address && t.address.toLocaleLowerCase('tr-TR').includes(q)) ||
+                (t.phone && t.phone.includes(q)) ||
+                (t.description && t.description.toLocaleLowerCase('tr-TR').includes(q))
+            );
+
+            routine = routine.filter(t =>
+                (t.customerName && t.customerName.toLocaleLowerCase('tr-TR').includes(q)) ||
+                (t.content && t.content.toLocaleLowerCase('tr-TR').includes(q))
+            );
+        }
+
+        return { main, routine };
+    }, [mobileSelectedStaffTasks, mobileTabFilter, mobileSearchTerm, mobileSelectedStaffName]);
+
+    const mobileStaffList = useMemo(() => {
+        const list = staffStats.map(stat => {
+            const p = formatLastSeen(userPresence[stat.email.toLowerCase()]);
+            const sEmail = stat.email.toLowerCase();
+            const totalMain = tasks.filter(t => {
+                const isTaskActive = !(t.status === TaskStatus.CHECK_COMPLETED && !t.isReassignedForCheck) && !(t.checkStatus && !t.isReassignedForCheck);
+                return (t.assignee === stat.name || (t.assigneeEmail && t.assigneeEmail.toLowerCase() === sEmail)) && isTaskActive;
+            }).length;
+            const totalRoutine = routineTasks.filter(t => {
+                return (t.assignee === stat.name || (t.assigneeEmail && t.assigneeEmail.toLowerCase() === sEmail)) && !t.isCompleted;
+            }).length;
+
+            return {
+                ...stat,
+                presence: p,
+                totalWork: totalMain + totalRoutine,
+                todayWork: stat.activeTasks.length + stat.activeRoutine.length
+            };
+        });
+
+        if (!mobileSearchTerm.trim()) return list;
+        const q = mobileSearchTerm.trim().toLocaleLowerCase('tr-TR');
+        return list.filter(s =>
+            s.name.toLocaleLowerCase('tr-TR').includes(q) ||
+            s.email.toLocaleLowerCase('tr-TR').includes(q)
+        );
+    }, [staffStats, userPresence, tasks, routineTasks, mobileSearchTerm]);
 
     // --- Weekly View Data ---
     const getWeeklyData = (staffEmail: string) => {
@@ -420,7 +584,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                 {/* Staff Header */}
                                 <div className="flex items-center justify-between mb-4 relative z-10">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shadow-sm ${totalWork > 0 ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shadow-sm ${totalWork > 0 ? 'bg-gradient-to-br from-[#f57c00] to-[#e65100] text-white' : 'bg-slate-100 text-slate-400'}`}>
                                             {staff.name.charAt(0)}
                                         </div>
                                         <div>
@@ -574,6 +738,422 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 
     if (!isOpen) return null;
 
+    // =========================================================================
+    // MOBILE ERP RENDERING (DIA-STYLE CORPORATE WARM ORANGE THEME)
+    // =========================================================================
+    if (isMobile) {
+        if (mobileSelectedStaffName) {
+            // -----------------------------------------------------------------
+            // LEVEL 2: SEÇİLEN PERSONELİN İŞ LİSTESİ
+            // -----------------------------------------------------------------
+            return (
+                <div className="fixed inset-0 z-[100] bg-[#f1f5f9] flex flex-col font-sans overflow-hidden animate-in fade-in duration-200">
+                    {/* Top Orange Header Bar */}
+                    <div className="bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white p-3 shadow-md flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <button
+                                onClick={() => {
+                                    setMobileSelectedStaffName(null);
+                                    setMobileSearchTerm('');
+                                    setMobileTabFilter('all');
+                                }}
+                                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center transition-all shadow-xs shrink-0"
+                                title="Geri Dön"
+                            >
+                                <ChevronLeft className="w-5 h-5 text-white" />
+                            </button>
+                            <div className="min-w-0">
+                                <h1 className="text-base font-bold tracking-wide text-white truncate">
+                                    {mobileSelectedStaffName}
+                                </h1>
+                                <p className="text-[11px] text-orange-100 font-medium truncate flex items-center gap-1.5">
+                                    <span>{mobileSelectedStaffTasks.total} Aktif Görev</span>
+                                    <span>•</span>
+                                    <span className={mobileStaffPresence.color}>{mobileStaffPresence.text}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            {(mobileSelectedStaffObj as any)?.phone && (
+                                <a
+                                    href={`tel:${(mobileSelectedStaffObj as any).phone}`}
+                                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs"
+                                    title="Personeli Ara"
+                                >
+                                    <Phone className="w-4 h-4" />
+                                </a>
+                            )}
+                            <button
+                                onClick={onClose}
+                                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs"
+                                title="Kapat"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Search Row */}
+                    <div className="bg-white px-3 py-2 border-b border-slate-200 flex items-center gap-2 shrink-0 z-10 shadow-xs">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Müşteri, iş no veya adres ara..."
+                                value={mobileSearchTerm}
+                                onChange={(e) => setMobileSearchTerm(e.target.value)}
+                                className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition-all"
+                            />
+                            {mobileSearchTerm && (
+                                <button
+                                    onClick={() => setMobileSearchTerm('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Sub-Toolbar (Dark Slate #1e293b) */}
+                    <div className="bg-[#1e293b] text-white px-3 py-2 flex items-center justify-between shrink-0 shadow-xs">
+                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                            <button
+                                onClick={() => setMobileTabFilter('all')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                                    mobileTabFilter === 'all'
+                                        ? 'bg-orange-500 text-white shadow-xs'
+                                        : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                                }`}
+                            >
+                                Tümü ({mobileSelectedStaffTasks.total})
+                            </button>
+                            <button
+                                onClick={() => setMobileTabFilter('main')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                                    mobileTabFilter === 'main'
+                                        ? 'bg-orange-500 text-white shadow-xs'
+                                        : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                                }`}
+                            >
+                                İşler ({mobileSelectedStaffTasks.main.length})
+                            </button>
+                            <button
+                                onClick={() => setMobileTabFilter('routine')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                                    mobileTabFilter === 'routine'
+                                        ? 'bg-orange-500 text-white shadow-xs'
+                                        : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                                }`}
+                            >
+                                Eksikler ({mobileSelectedStaffTasks.routine.length})
+                            </button>
+                        </div>
+
+                        <span className="text-[11px] font-semibold text-slate-300 shrink-0 ml-2">
+                            {filteredMobileTasks.main.length + filteredMobileTasks.routine.length} Kayıt
+                        </span>
+                    </div>
+
+                    {/* Task List Content */}
+                    <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                        {filteredMobileTasks.main.length === 0 && filteredMobileTasks.routine.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 mt-4 shadow-xs">
+                                <AlertCircle className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                                <p className="font-bold text-sm text-slate-600">Görev Bulunamadı</p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {mobileSearchTerm ? 'Arama kriterinize uygun iş bulunamadı.' : 'Bu personele atanmış aktif bir görev bulunmuyor.'}
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Main Tasks */}
+                                {filteredMobileTasks.main.map((t, idx) => {
+                                    const badge = getStatusBadge(t.status);
+                                    const taskDate = getTaskDate(t);
+                                    const isTaskToday = isToday(taskDate);
+                                    const isTaskOverdue = isOverdue(taskDate);
+
+                                    return (
+                                        <div
+                                            key={t.id || idx}
+                                            onClick={() => onTaskClick(t)}
+                                            className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs hover:border-orange-200 active:scale-[0.99] transition-all relative overflow-hidden cursor-pointer"
+                                        >
+                                            {/* Left Status Stripe */}
+                                            <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${badge.stripe}`} />
+
+                                            {/* Top Badge Row */}
+                                            <div className="flex items-center justify-between gap-2 pl-2 mb-2">
+                                                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                                                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                                                        #{t.orderNumber}
+                                                    </span>
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badge.bg} ${badge.text} ${badge.border}`}>
+                                                        {badge.label}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    {isTaskToday ? (
+                                                        <span className="text-[10px] font-black text-[#e65100] bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-md">
+                                                            Bugün
+                                                        </span>
+                                                    ) : isTaskOverdue ? (
+                                                        <span className="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+                                                            Gecikmiş
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] font-medium text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                                                            {safeFormatDate(taskDate)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Customer / Job Title */}
+                                            <div className="pl-2">
+                                                <h3 className="font-black text-slate-800 text-sm leading-snug">
+                                                    {t.title}
+                                                </h3>
+
+                                                {/* District & Address */}
+                                                {(t.district || t.address) && (
+                                                    <div className="flex items-start gap-1.5 mt-1 text-slate-500 text-xs">
+                                                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                                                        <span className="line-clamp-2">
+                                                            {t.district && <strong className="text-slate-700 mr-1">{t.district}</strong>}
+                                                            {t.address}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Phone & Actions Bar */}
+                                                <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
+                                                    {t.phone ? (
+                                                        <a
+                                                            href={`tel:${t.phone}`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1.5 active:scale-95 transition-all"
+                                                        >
+                                                            <Phone className="w-3 h-3" />
+                                                            <span>{t.phone}</span>
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-[11px] text-slate-400 italic">Telefon yok</span>
+                                                    )}
+
+                                                    {/* Reassigned for check action */}
+                                                    {t.isReassignedForCheck && onTaskUpdate && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onTaskUpdate(t.id, { isReassignedForCheck: false });
+                                                            }}
+                                                            className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-xs active:scale-95 transition-all"
+                                                        >
+                                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                                            <span>Kontrolü Onayla</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Routine Tasks */}
+                                {filteredMobileTasks.routine.map((rt, idx) => {
+                                    const rtDate = getTaskDate(rt);
+                                    return (
+                                        <div
+                                            key={rt.id || idx}
+                                            className="bg-amber-50/50 rounded-2xl border border-amber-200/80 p-3.5 shadow-xs relative overflow-hidden"
+                                        >
+                                            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500" />
+                                            <div className="pl-2 flex items-start gap-3">
+                                                <button
+                                                    onClick={() => onToggleRoutineTask(rt.id, rt.isCompleted)}
+                                                    className="mt-0.5 w-6 h-6 rounded-lg border-2 border-amber-500 bg-white flex items-center justify-center text-amber-600 active:scale-90 transition-all shrink-0 hover:bg-amber-50"
+                                                    title="Tamamla"
+                                                >
+                                                    <Square className="w-4 h-4" />
+                                                </button>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <h4 className="font-bold text-amber-950 text-xs truncate">
+                                                            {rt.customerName || 'Eksik / Rutin Not'}
+                                                        </h4>
+                                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded">
+                                                            {safeFormatDate(rtDate)}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-amber-900 mt-1 leading-relaxed">
+                                                        {rt.content}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // ---------------------------------------------------------------------
+        // LEVEL 1: SAHADAKİ PERSONEL LİSTESİ
+        // ---------------------------------------------------------------------
+        return (
+            <div className="fixed inset-0 z-[100] bg-[#f1f5f9] flex flex-col font-sans overflow-hidden animate-in fade-in duration-200">
+                {/* Top Orange Header Bar */}
+                <div className="bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white p-3 shadow-md flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center transition-all shadow-xs"
+                            title="Geri Dön"
+                        >
+                            <ChevronLeft className="w-5 h-5 text-white" />
+                        </button>
+                        <div>
+                            <h1 className="text-base font-bold tracking-wide">SAHADAKİ PERSONEL</h1>
+                            <p className="text-[11px] text-orange-100 font-medium">
+                                Toplam {staffList.length} Personel • {totalActive} Aktif İş
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs"
+                        title="Kapat"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* Search Row */}
+                <div className="bg-white px-3 py-2 border-b border-slate-200 flex items-center gap-2 shrink-0 z-10 shadow-xs">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Personel ara..."
+                            value={mobileSearchTerm}
+                            onChange={(e) => setMobileSearchTerm(e.target.value)}
+                            className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition-all"
+                        />
+                        {mobileSearchTerm && (
+                            <button
+                                onClick={() => setMobileSearchTerm('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Sub-Toolbar Row (Dark Slate #1e293b) */}
+                <div className="bg-[#1e293b] text-white px-3 py-2 flex items-center justify-between shrink-0 shadow-xs">
+                    <span className="text-[11px] font-semibold text-slate-300">
+                        PERSONEL LİSTESİ ({mobileStaffList.length})
+                    </span>
+                    <span className="text-[11px] font-bold text-orange-400">
+                        BUGÜNKÜ AKTİF: {totalActive}
+                    </span>
+                </div>
+
+                {/* Staff Cards List */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                    {mobileStaffList.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 mt-4 shadow-xs">
+                            <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                            <p className="font-bold text-sm text-slate-600">Personel Bulunamadı</p>
+                            <p className="text-xs text-slate-400 mt-1">Arama kriterinize uygun personel bulunamadı.</p>
+                        </div>
+                    ) : (
+                        mobileStaffList.map((stat, idx) => {
+                            const initials = stat.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                            const isOnline = stat.presence.text === 'Çevrimiçi';
+
+                            return (
+                                <div
+                                    key={stat.email || stat.name || idx}
+                                    onClick={() => {
+                                        setMobileSelectedStaffName(stat.name);
+                                        setMobileSearchTerm('');
+                                        setMobileTabFilter('all');
+                                    }}
+                                    className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs hover:border-orange-300 active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer"
+                                >
+                                    {/* Left: Avatar + Details */}
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        {/* Avatar */}
+                                        <div className="relative shrink-0">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#f57c00] to-[#e65100] text-white font-black text-sm flex items-center justify-center shadow-md">
+                                                {initials}
+                                            </div>
+                                            <span
+                                                className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                                                    isOnline
+                                                        ? 'bg-emerald-500 ring-1 ring-emerald-300'
+                                                        : stat.presence.text.includes('dk')
+                                                        ? 'bg-amber-500 ring-1 ring-amber-300'
+                                                        : 'bg-slate-300'
+                                                }`}
+                                            />
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="min-w-0">
+                                            <h3 className="font-bold text-slate-800 text-sm truncate">
+                                                {stat.name}
+                                            </h3>
+                                            <div className="flex items-center gap-1.5 mt-0.5 text-xs">
+                                                <span className={`font-semibold text-[11px] ${stat.presence.color}`}>
+                                                    • {stat.presence.text}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                {stat.todayWork > 0 ? (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-orange-50 text-[#e65100] border border-orange-200">
+                                                        {stat.todayWork} Bugün
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-500">
+                                                        Bugün iş yok
+                                                    </span>
+                                                )}
+                                                {stat.totalWork > 0 && (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                                                        {stat.totalWork} Toplam
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Right: Total Badge + Chevron */}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span className="px-2.5 py-1 rounded-xl text-xs font-black bg-orange-50 text-[#e65100] border border-orange-200 shadow-2xs">
+                                            {stat.totalWork} İş
+                                        </span>
+                                        <ChevronRight className="w-5 h-5 text-orange-500" />
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm bg-slate-900/40 animate-in fade-in duration-200">
             {/* Modal Container */}
@@ -581,7 +1161,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
 
                 {/* Header */}
                 <div className="bg-white border-b border-slate-200 px-8 py-6 flex items-center justify-between shrink-0 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 via-red-500 to-purple-600" />
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00]" />
 
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="bg-orange-100 p-3 rounded-2xl shadow-inner">

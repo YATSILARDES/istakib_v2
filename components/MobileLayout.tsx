@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, ChevronDown, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2, Package, FileText, FolderOpen } from 'lucide-react';
+import { Home, Search, Plus, User, Bell, MapPin, Phone, Calendar, ChevronRight, ChevronDown, ChevronLeft, Filter, LogOut, KeyRound, LayoutGrid, List, CheckSquare, Clock, AlertTriangle, Check, CheckCircle2, Shield, Users, Share2, Package, FileText, FolderOpen, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import StockCombisView from './StockCombisView';
 import StockRadiatorsView from './StockRadiatorsView';
 import StockGenericView from './StockGenericView';
@@ -9,6 +9,9 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth, db } from '../src/firebase';
 import { QuotationApp } from '../teklif_app/QuotationApp';
 import QuotationsListView from './QuotationsListView';
+import { MobileDiaMenu } from './MobileDiaMenu';
+import { MobileErpTaskList } from './MobileErpTaskList';
+import { MobileErpStockView } from './MobileErpStockView';
 
 const formatSafeDate = (dateVal: any) => {
   if (!dateVal) return '';
@@ -46,6 +49,66 @@ const formatSafeDate = (dateVal: any) => {
   }
 };
 
+const parseEffectiveDate = (dateVal: any): Date | null => {
+    if (!dateVal) return null;
+    try {
+        if (dateVal instanceof Date) {
+            return isNaN(dateVal.getTime()) ? null : dateVal;
+        }
+        if (typeof dateVal.toDate === 'function') {
+            return dateVal.toDate();
+        }
+        if (typeof dateVal.toMillis === 'function') {
+            return new Date(dateVal.toMillis());
+        }
+        if (typeof dateVal.seconds === 'number') {
+            return new Date(dateVal.seconds * 1000);
+        }
+        if (typeof dateVal._seconds === 'number') {
+            return new Date(dateVal._seconds * 1000);
+        }
+        if (typeof dateVal === 'number') {
+            return new Date(dateVal > 1e11 ? dateVal : dateVal * 1000);
+        }
+        if (typeof dateVal === 'string') {
+            const trimmed = dateVal.trim();
+            if (!trimmed) return null;
+            if (trimmed.includes('.')) {
+                const parts = trimmed.split(' ')[0].split('.');
+                if (parts.length === 3) {
+                    const d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                    if (!isNaN(d.getTime())) return d;
+                }
+            }
+            if (trimmed.includes('/')) {
+                const parts = trimmed.split(' ')[0].split('/');
+                if (parts.length === 3) {
+                    const d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                    if (!isNaN(d.getTime())) return d;
+                }
+            }
+            if (trimmed.includes('-')) {
+                const parts = trimmed.split(' ')[0].split('-');
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) {
+                        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                        if (!isNaN(d.getTime())) return d;
+                    }
+                    if (parts[2].length === 4) {
+                        const d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                        if (!isNaN(d.getTime())) return d;
+                    }
+                }
+            }
+            const fallback = new Date(trimmed);
+            if (!isNaN(fallback.getTime())) return fallback;
+        }
+    } catch (e) {
+        return null;
+    }
+    return null;
+};
+
 interface MobileLayoutProps {
     user: FirebaseUser | null;
     userPermissions: UserPermission | null;
@@ -56,10 +119,12 @@ interface MobileLayoutProps {
     onTaskClick: (task: Task) => void;
     onAddTask: () => void;
     onToggleRoutineTask: (taskId: string) => void;
+    onUpdateRoutineTask?: (taskId: string, updates: Partial<RoutineTask>) => void;
     onOpenAdmin: () => void;
     onOpenRoutineModal: () => void;
     onOpenAssignmentModal: () => void;
     onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
+    onOpenFieldStaff?: () => void;
 }
 
 export default function MobileLayout({
@@ -72,11 +137,33 @@ export default function MobileLayout({
     onTaskClick,
     onAddTask,
     onToggleRoutineTask,
+    onUpdateRoutineTask,
     onOpenAdmin,
     onOpenRoutineModal,
     onOpenAssignmentModal,
-    onTaskUpdate
+    onTaskUpdate,
+    onOpenFieldStaff
 }: MobileLayoutProps) {
+    // Menu Style: 'dia' vs 'classic'
+    const [menuStyle, setMenuStyle] = useState<'dia' | 'classic'>(() => {
+        try {
+            return (localStorage.getItem('mobile_menu_style') as 'dia' | 'classic') || 'dia';
+        } catch (e) {
+            return 'dia';
+        }
+    });
+
+    const setAndPersistMenuStyle = (style: 'dia' | 'classic') => {
+        setMenuStyle(style);
+        try {
+            localStorage.setItem('mobile_menu_style', style);
+        } catch (e) {}
+    };
+
+    // Sub-view inside DIA mode: 'menu' (main DIA accordion grid) vs active sub-view
+    const [diaSubView, setDiaSubView] = useState<'menu' | 'task_list' | 'my_tasks' | 'priority_tasks' | 'stock' | 'quotations' | 'profile'>('menu');
+    const [taskSearchQuery, setTaskSearchQuery] = useState<string>('');
+
     const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile' | 'stock' | 'quotations'>('home');
     const [editingQuotation, setEditingQuotation] = useState<{ data: any; id: string } | null>(null);
     const [quotationSubView, setQuotationSubView] = useState<'hub' | 'prepare' | 'list'>('hub');
@@ -92,21 +179,26 @@ export default function MobileLayout({
     // --- DATA FILTERING LOGIC ---
 
     // 1. My Items (Tasks & Routine Tasks)
-    const myTasks = tasks.filter(t => t.assigneeEmail === user?.email);
+    const userEmail = (user?.email || '').toLowerCase();
+    const userName = (userPermissions?.name || '').trim().toLowerCase();
 
-    // 3. Filtered Tasks (Main Tasks)
+    const myTasks = tasks.filter(t => {
+        const emailMatch = t.assigneeEmail && userEmail && t.assigneeEmail.toLowerCase() === userEmail;
+        const nameMatch = userName && t.assignee && t.assignee.trim().toLowerCase() === userName;
+        return emailMatch || nameMatch;
+    });
+
+    // Filtered Tasks (Main Tasks)
     const filterTask = (task: Task) => {
         if (!searchQuery.trim()) return true;
         const lowerQ = searchQuery.toLocaleLowerCase('tr');
         const title = (task.title || '').toLocaleLowerCase('tr');
         const address = (task.address || '').toLocaleLowerCase('tr');
         const phone = (task.phone || '').toLocaleLowerCase('tr');
-        // Task interface doesn't have customerName by default, checking generic description if needed or just skipping
         const desc = (task.description || '').toLocaleLowerCase('tr');
         return title.includes(lowerQ) || address.includes(lowerQ) || phone.includes(lowerQ) || desc.includes(lowerQ);
     };
 
-    // Rename to avoid conflict
     const filteredMainTasks = myTasks.filter(t => {
         // Filter by Status: Hide CHECK_COMPLETED (Kontrolü Yapılan İşler) unless project is missing OR explicitly reassigned
         if (t.status === TaskStatus.CHECK_COMPLETED && t.isProjectDrawn !== false && !t.isReassignedForCheck) return false;
@@ -117,109 +209,56 @@ export default function MobileLayout({
         // Filter by Search
         if (!filterTask(t)) return false;
 
-        // Filter by Date (Weekly Plan Logic)
-        // Checks `scheduledDate` (new) or `date` (legacy string)
-        let taskDate: Date | null = null;
-
-        if (t.scheduledDate) {
-            taskDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
-        } else if (t.date) {
-            // Handle legacy string date "YYYY-MM-DD" or "DD.MM.YYYY"
-            // Assuming standard ISO or Turkish format. Let's try to parse.
-            const d = new Date(t.date);
-            if (!isNaN(d.getTime())) {
-                taskDate = d;
-            } else {
-                // Try DD.MM.YYYY
-                const parts = t.date.split('.');
-                if (parts.length === 3) {
-                    taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                }
-            }
-        }
-
-        if (taskDate && !isNaN(taskDate.getTime())) {
+        // Filter by Date: Show only Today or Past (uncompleted backlog), HIDE Future!
+        const taskDate = parseEffectiveDate(t.scheduledDate || t.date || t.createdAt);
+        if (taskDate) {
             const today = new Date();
             taskDate.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0);
 
-            const isToday = taskDate.getTime() === today.getTime();
-            const isPast = taskDate.getTime() < today.getTime();
-
-            // Show if Today OR (Past AND Not Completed)
-            if (isToday) return true;
-            if (isPast) return true; // Rollover
-
-            return false; // Future -> HIDE
+            // Future -> HIDE! (Günü geldiğinde görünsün)
+            if (taskDate.getTime() > today.getTime()) {
+                return false;
+            }
         }
 
-        // If NO Date at all, show it? Or hide?
-        // Existing logic was "Show".
         return true;
     }).sort((a, b) => {
         // Sort by Date (Scheduled > Created)
         const getDate = (t: Task) => {
-            if (t.scheduledDate) return new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate).getTime();
-            if (t.date) { const d = new Date(t.date); if (!isNaN(d.getTime())) return d.getTime(); }
-            return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+            const d = parseEffectiveDate(t.scheduledDate || t.date || t.createdAt);
+            return d ? d.getTime() : 0;
         };
         return getDate(a) - getDate(b);
     });
 
     const myRoutineTasks = routineTasks.filter(t => {
         // 1. Assignment Check
-        const emailMatch = t.assigneeEmail && user?.email && t.assigneeEmail.toLowerCase() === user.email.toLowerCase();
-        const nameMatch = userPermissions?.name && t.assignee === userPermissions.name;
-        const isAssignedToMe = emailMatch || nameMatch;
+        const emailMatch = t.assigneeEmail && userEmail && t.assigneeEmail.toLowerCase() === userEmail;
+        const nameMatch = userName && t.assignee && t.assignee.trim().toLowerCase() === userName;
+        if (!emailMatch && !nameMatch) return false;
 
-        if (!isAssignedToMe) return false;
+        // 2. Hide completed routine tasks from active list
+        if (t.isCompleted) return false;
 
-        // Check `scheduledDate` (New) or fall back to `createdAt` (Legacy)
-        let filterDate: Date | null = null;
-        let hasSchedule = false;
-
-        if (t.scheduledDate) {
-            filterDate = new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate);
-            hasSchedule = true;
-        } else if (t.createdAt) {
-            // Fallback: Check createdAt.
-            // If createdAt is in the FUTURE, it means it's a legacy scheduled task (where schedule overwrote creation).
-            // We must HIDE these too.
-            const d = new Date(t.createdAt.seconds ? t.createdAt.seconds * 1000 : t.createdAt);
-            const today = new Date();
-            d.setHours(0, 0, 0, 0);
-            today.setHours(0, 0, 0, 0);
-
-            if (d.getTime() > today.getTime()) {
-                return false; // HIDE Future CreatedAt (Legacy Schedule)
-            }
-
-            // If Backlog (Past/Today), Show it.
-            return true;
-        } else {
-            return true;
-        }
-
-        if (hasSchedule && filterDate) {
+        // 3. Filter by Date: Show only Today or Past (uncompleted rollover), HIDE Future!
+        const filterDate = parseEffectiveDate(t.scheduledDate || t.createdAt);
+        if (filterDate) {
             const today = new Date();
             filterDate.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0);
 
-            const isToday = filterDate.getTime() === today.getTime();
-            const isPast = filterDate.getTime() < today.getTime();
-
-            if (isToday) return true;
-            if (isPast && !t.isCompleted) return true; // Rollover
-
-            return false; // Future -> Hide
+            // Future -> HIDE! (Günü geldiğinde görünsün)
+            if (filterDate.getTime() > today.getTime()) {
+                return false;
+            }
         }
 
         return true;
     }).sort((a, b) => {
-        // Sort by Date Ascending
         const getDate = (t: RoutineTask) => {
-            if (t.scheduledDate) return new Date(t.scheduledDate.seconds ? t.scheduledDate.seconds * 1000 : t.scheduledDate).getTime();
-            return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+            const d = parseEffectiveDate(t.scheduledDate || t.createdAt);
+            return d ? d.getTime() : 0;
         };
         return getDate(a) - getDate(b);
     });
@@ -458,57 +497,274 @@ export default function MobileLayout({
         }
     };
 
+    if (menuStyle === 'dia') {
+        if (diaSubView === 'menu') {
+            return (
+                <MobileDiaMenu
+                    user={user}
+                    userPermissions={userPermissions}
+                    tasks={tasks}
+                    routineTasks={routineTasks}
+                    staffList={staffList}
+                    initialSearch={taskSearchQuery}
+                    onSearchChange={(q) => setTaskSearchQuery(q)}
+                    onSelectTaskFilter={(status, initialSearch) => {
+                        setFilterStatus(status);
+                        setTaskSearchQuery(initialSearch || '');
+                        setActiveTab('home');
+                        setDiaSubView('task_list');
+                    }}
+                    onSelectMyTasks={(initialSearch) => {
+                        setTaskSearchQuery(initialSearch || '');
+                        setActiveTab('tasks');
+                        setDiaSubView('my_tasks');
+                    }}
+                    onSelectPriorityTasks={(initialSearch) => {
+                        setTaskSearchQuery(initialSearch || '');
+                        setDiaSubView('priority_tasks');
+                    }}
+                    onSelectStockCategory={(cat) => {
+                        setStockCategory(cat);
+                        setActiveTab('stock');
+                        setDiaSubView('stock');
+                    }}
+                    onSelectQuotationSubView={(sub) => {
+                        setEditingQuotation(null);
+                        setQuotationSubView(sub);
+                        setActiveTab('quotations');
+                        setDiaSubView('quotations');
+                    }}
+                    onOpenAssignmentModal={onOpenAssignmentModal}
+                    onOpenRoutineModal={onOpenRoutineModal}
+                    onOpenFieldStaff={onOpenFieldStaff}
+                    onOpenAdmin={onOpenAdmin}
+                    onAddTask={onAddTask}
+                    onSignOut={onSignOut}
+                    onOpenProfile={() => {
+                        setActiveTab('profile');
+                        setDiaSubView('profile');
+                    }}
+                    onPasswordReset={handlePasswordReset}
+                    onSwitchToClassic={() => setAndPersistMenuStyle('classic')}
+                />
+            );
+        }
+
+        if (diaSubView === 'priority_tasks') {
+            const priorityTasks = tasks.filter(t => t.isPriority);
+            const priorityRoutineTasks = routineTasks.filter(r => r.isPriority && !r.isCompleted);
+
+            return (
+                <MobileErpTaskList
+                    title="Öncelikli İşler"
+                    tasks={priorityTasks}
+                    routineTasks={priorityRoutineTasks}
+                    initialSearchQuery={taskSearchQuery}
+                    onToggleRoutineTask={(id) => onToggleRoutineTask(id)}
+                    onUpdateRoutineTask={onUpdateRoutineTask}
+                    user={user}
+                    userPermissions={userPermissions}
+                    onBackToMenu={() => setDiaSubView('menu')}
+                    onTaskClick={onTaskClick}
+                    onAddTask={onAddTask}
+                    onTaskUpdate={onTaskUpdate}
+                    onSwitchToClassic={() => setAndPersistMenuStyle('classic')}
+                    currentFilterStatus="ALL"
+                />
+            );
+        }
+
+        if (diaSubView === 'task_list') {
+            const isStaff = userPermissions && userPermissions.role !== 'admin' && userPermissions.role !== 'manager';
+            const allowedCols = userPermissions?.allowedColumns || [];
+
+            const taskSource = filterStatus === 'ALL'
+                ? (isStaff ? tasks.filter(t => allowedCols.includes(t.status)) : tasks)
+                : tasks.filter(t => filterStatus === TaskStatus.PROJECT_TO_BE_DRAWN
+                    ? (t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn))
+                    : t.status === filterStatus
+                );
+
+            return (
+                <MobileErpTaskList
+                    title={filterStatus === 'ALL' ? 'Tüm İşler' : (StatusLabels[filterStatus] || 'İş Listesi')}
+                    tasks={taskSource}
+                    initialSearchQuery={taskSearchQuery}
+                    onUpdateRoutineTask={onUpdateRoutineTask}
+                    user={user}
+                    userPermissions={userPermissions}
+                    onBackToMenu={() => setDiaSubView('menu')}
+                    onTaskClick={onTaskClick}
+                    onAddTask={onAddTask}
+                    onTaskUpdate={onTaskUpdate}
+                    onSwitchToClassic={() => setAndPersistMenuStyle('classic')}
+                    currentFilterStatus={filterStatus}
+                />
+            );
+        }
+
+        if (diaSubView === 'my_tasks') {
+            return (
+                <MobileErpTaskList
+                    title="Bana Atananlar (İşlerim)"
+                    tasks={filteredMainTasks}
+                    routineTasks={myRoutineTasks}
+                    initialSearchQuery={taskSearchQuery}
+                    onToggleRoutineTask={(id) => onToggleRoutineTask(id)}
+                    onUpdateRoutineTask={onUpdateRoutineTask}
+                    user={user}
+                    userPermissions={userPermissions}
+                    onBackToMenu={() => setDiaSubView('menu')}
+                    onTaskClick={onTaskClick}
+                    onAddTask={onAddTask}
+                    onTaskUpdate={onTaskUpdate}
+                    onSwitchToClassic={() => setAndPersistMenuStyle('classic')}
+                    currentFilterStatus="ALL"
+                />
+            );
+        }
+
+        if (diaSubView === 'stock') {
+            return (
+                <MobileErpStockView
+                    category={stockCategory}
+                    userPermissions={userPermissions}
+                    onBackToMenu={() => setDiaSubView('menu')}
+                    onSwitchToClassic={() => setAndPersistMenuStyle('classic')}
+                />
+            );
+        }
+    }
+
     return (
         <div className="flex flex-col h-screen bg-slate-900 font-sans overflow-hidden">
 
-            {/* HEADER (Only for Home & Tasks) - Premium Sticky Design */}
-            {activeTab !== 'profile' && (
-                <div className="sticky top-0 z-30 px-5 pt-6 pb-3 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/10 shrink-0 space-y-4">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Merhaba,</h2>
-                            <h1 className="text-xl font-bold text-white leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">{displayName}</h1>
-                        </div>
-                        {/* Conditional Add Button - Premium */}
-                        {(userPermissions?.canAddCustomers || userPermissions?.role === 'admin') && (
-                            <button
-                                onClick={onAddTask}
-                                className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 text-white flex items-center justify-center active:scale-95 transition-all duration-200 hover:shadow-blue-500/50"
-                            >
-                                <Plus className="w-6 h-6" />
-                            </button>
-                        )}
+            {/* HEADER AREA: DIA Subview Header vs Classic Header */}
+            {menuStyle === 'dia' ? (
+                /* DIA Subview Sticky Top Header (Warm Orange) */
+                <div className="sticky top-0 z-30 px-4 py-3 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white flex items-center justify-between shadow-md shrink-0">
+                    <button
+                        onClick={() => setDiaSubView('menu')}
+                        className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center text-white transition-all shadow-xs"
+                    >
+                        <ChevronLeft className="w-6 h-6 stroke-[2.5] -ml-0.5" />
+                    </button>
+
+                    <div className="flex flex-col items-center">
+                        <h2 className="text-sm font-bold tracking-tight text-white truncate max-w-[200px] text-center">
+                            {diaSubView === 'stock' && (
+                                stockCategory === 'combis' ? 'Kombiler' :
+                                stockCategory === 'radiators' ? 'Radyatörler' :
+                                stockCategory === 'heatpumps' ? 'Isı Pompaları' :
+                                stockCategory === 'thermosiphons' ? 'Termosifonlar' :
+                                stockCategory === 'acs' ? 'Klimalar' :
+                                stockCategory === 'electric_combis' ? 'Elektrikli Kombi' :
+                                stockCategory === 'instant_heaters' ? 'Ani Isıtıcı (DDEİ)' : 'Diğer Stoklar'
+                            )}
+                            {diaSubView === 'quotations' && (
+                                quotationSubView === 'prepare' ? 'Teklif Hazırla' :
+                                quotationSubView === 'list' ? 'Hazırlanan Teklifler' : 'Teklif Yönetimi'
+                            )}
+                            {diaSubView === 'profile' && 'Profil & Güvenlik'}
+                        </h2>
+                        <span className="text-[10px] text-orange-100 font-medium">
+                            {diaSubView === 'stock' ? 'Stok Takip Modülü' : 'Onay Mühendislik'}
+                        </span>
                     </div>
 
-                    {/* Search Input - Enhanced */}
-                    <div className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                inputMode="search"
-                                placeholder="İş, müşteri, adres veya telefon ara..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onClick={(e) => {
-                                    // Prevent default focus which causes scrolling
-                                    e.preventDefault();
-                                    // Manually focus without scrolling
-                                    inputRef.current?.focus({ preventScroll: true });
-                                }}
-                                className="w-full bg-slate-800/60 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/30 outline-none transition-all"
-                            />
-                        </div>
-                    </div>
+                    <button
+                        onClick={() => setAndPersistMenuStyle('classic')}
+                        className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[10px] font-bold border border-white/30 active:scale-95 transition-all"
+                        title="Klasik Görünüme Geç"
+                    >
+                        Klasik
+                    </button>
                 </div>
+            ) : (
+                /* Classic Header (Sticky Top) */
+                <>
+                    {activeTab !== 'profile' && (
+                        <div className="sticky top-0 z-30 px-5 pt-6 pb-3 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/10 shrink-0 space-y-4">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Merhaba,</h2>
+                                    <h1 className="text-xl font-bold text-white leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">{displayName}</h1>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setDiaSubView('menu');
+                                            setAndPersistMenuStyle('dia');
+                                        }}
+                                        className="px-3 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-500/20 flex items-center gap-1.5 active:scale-95 transition-all"
+                                    >
+                                        <span>📱 ONAY Menü</span>
+                                    </button>
+                                    {(userPermissions?.canAddCustomers || userPermissions?.role === 'admin') && (
+                                        <button
+                                            onClick={onAddTask}
+                                            className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg shadow-orange-500/30 text-white flex items-center justify-center active:scale-95 transition-all duration-200 hover:shadow-orange-500/50"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Search Input - Enhanced */}
+                            <div className="relative group">
+                                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                                <div className="relative">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-orange-400 transition-colors" />
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        inputMode="search"
+                                        placeholder="İş, müşteri, adres veya telefon ara..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            inputRef.current?.focus({ preventScroll: true });
+                                        }}
+                                        className="w-full bg-slate-800/60 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500/30 outline-none transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* HEADER (Profile) */}
+                    {activeTab === 'profile' && (
+                        <div className="px-5 pt-8 pb-4 bg-slate-900 shrink-0 flex items-center justify-between">
+                            <h1 className="text-2xl font-bold text-white">Profilim</h1>
+                            <button
+                                onClick={() => {
+                                    setDiaSubView('menu');
+                                    setAndPersistMenuStyle('dia');
+                                }}
+                                className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-xs"
+                            >
+                                📱 ONAY Menü
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
 
-            {/* HEADER (Profile) */}
-            {activeTab === 'profile' && (
-                <div className="px-5 pt-8 pb-4 bg-slate-900 shrink-0">
-                    <h1 className="text-2xl font-bold text-white">Profilim</h1>
+            {/* DIA Search bar for tasks subview */}
+            {menuStyle === 'dia' && (diaSubView === 'task_list' || diaSubView === 'my_tasks') && (
+                <div className="px-4 py-2 bg-slate-900 border-b border-slate-800/80 shrink-0">
+                    <div className="relative">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Müşteri, adres, telefon veya iş ara..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                        />
+                    </div>
                 </div>
             )}
 
@@ -867,21 +1123,6 @@ export default function MobileLayout({
                                                                         </button>
                                                                     )}
 
-                                                                    {onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                onTaskUpdate(task.id, { isWaiting: !task.isWaiting });
-                                                                            }}
-                                                                            className={`px-2 py-1 rounded-lg text-[9px] font-bold shadow-sm transition-all active:scale-95 border ${
-                                                                                task.isWaiting 
-                                                                                    ? 'bg-blue-600 text-white border-blue-500' 
-                                                                                    : 'bg-white/5 text-slate-400 border-white/10'
-                                                                            }`}
-                                                                        >
-                                                                            {task.isWaiting ? 'BEKLEMEDE' : 'BEKLET'}
-                                                                        </button>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1167,13 +1408,13 @@ export default function MobileLayout({
                         {/* Profile Card - Glassmorphism */}
                         <div className="relative overflow-hidden">
                             {/* Background Gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/10 to-transparent rounded-3xl" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-amber-600/10 to-transparent rounded-3xl" />
 
                             <div className="relative bg-slate-800/60 backdrop-blur-xl rounded-3xl p-6 flex flex-col items-center border border-white/10">
                                 {/* Avatar with Gradient Ring */}
                                 <div className="relative mb-4">
-                                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 rounded-full blur-sm opacity-75 animate-pulse" />
-                                    <div className="relative w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-3xl font-bold text-white shadow-2xl shadow-blue-900/50 border-2 border-white/20">
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 rounded-full blur-sm opacity-75 animate-pulse" />
+                                    <div className="relative w-24 h-24 bg-gradient-to-br from-[#e65100] to-[#f57c00] rounded-full flex items-center justify-center text-3xl font-bold text-white shadow-2xl shadow-orange-950/50 border-2 border-white/20">
                                         {displayName.charAt(0).toUpperCase()}
                                     </div>
                                 </div>
@@ -1184,7 +1425,7 @@ export default function MobileLayout({
                                 {/* Role Badge - Premium */}
                                 <div className={`mt-3 px-4 py-1.5 rounded-full border ${userPermissions?.role === 'admin'
                                     ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-300'
-                                    : 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30 text-blue-300'
+                                    : 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 border-orange-500/30 text-orange-300'
                                     }`}>
                                     <span className="text-xs font-bold uppercase tracking-wider">{roleName}</span>
                                 </div>
@@ -1212,7 +1453,7 @@ export default function MobileLayout({
                                 onClick={handlePasswordReset}
                                 className="w-full bg-slate-800/60 hover:bg-slate-800 p-4 rounded-2xl flex items-center gap-4 text-white transition-all border border-slate-700/50 group active:scale-[0.98]"
                             >
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform">
                                     <KeyRound className="w-5 h-5" />
                                 </div>
                                 <span className="font-semibold text-sm flex-1 text-left">Şifremi Değiştir</span>
@@ -1343,72 +1584,75 @@ export default function MobileLayout({
 
             </div>
 
-            {/* BOTTOM NAVIGATION BAR - Premium Design */}
-            <div className="bg-gradient-to-t from-slate-900 via-slate-900 to-slate-900/95 backdrop-blur-xl border-t border-slate-800/50 flex justify-around items-center h-[72px] pb-3 shrink-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
-                <button
-                    onClick={() => setActiveTab('home')}
-                    className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'home'
-                        ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 shadow-lg shadow-blue-500/10'
-                        : 'hover:bg-white/5'}`}
-                >
-                    <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'home' ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30' : ''}`}>
-                        <Home className={`w-5 h-5 transition-colors ${activeTab === 'home' ? 'text-white' : 'text-slate-500'}`} />
-                    </div>
-                    <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'home' ? 'text-blue-400' : 'text-slate-500'}`}>Ana Sayfa</span>
-                </button>
+            {/* BOTTOM BAR: Classic 5-Tab Bar (None for DIA mode) */}
+            {menuStyle === 'dia' ? null : (
+                /* BOTTOM NAVIGATION BAR - Premium Design (Classic) */
+                <div className="bg-gradient-to-t from-slate-900 via-slate-900 to-slate-900/95 backdrop-blur-xl border-t border-slate-800/50 flex justify-around items-center h-[72px] pb-3 shrink-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+                    <button
+                        onClick={() => setActiveTab('home')}
+                        className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'home'
+                            ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 shadow-lg shadow-blue-500/10'
+                            : 'hover:bg-white/5'}`}
+                    >
+                        <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'home' ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30' : ''}`}>
+                            <Home className={`w-5 h-5 transition-colors ${activeTab === 'home' ? 'text-white' : 'text-slate-500'}`} />
+                        </div>
+                        <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'home' ? 'text-blue-400' : 'text-slate-500'}`}>Ana Sayfa</span>
+                    </button>
 
-                <button
-                    onClick={() => setActiveTab('tasks')}
-                    className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'tasks'
-                        ? 'bg-gradient-to-br from-purple-500/20 to-purple-600/10 shadow-lg shadow-purple-500/10'
-                        : 'hover:bg-white/5'}`}
-                >
-                    <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'tasks' ? 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30' : ''}`}>
-                        <List className={`w-5 h-5 transition-colors ${activeTab === 'tasks' ? 'text-white' : 'text-slate-500'}`} />
-                    </div>
-                    <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'tasks' ? 'text-purple-400' : 'text-slate-500'}`}>İşlerim</span>
-                </button>
+                    <button
+                        onClick={() => setActiveTab('tasks')}
+                        className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'tasks'
+                            ? 'bg-gradient-to-br from-purple-500/20 to-purple-600/10 shadow-lg shadow-purple-500/10'
+                            : 'hover:bg-white/5'}`}
+                    >
+                        <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'tasks' ? 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30' : ''}`}>
+                            <List className={`w-5 h-5 transition-colors ${activeTab === 'tasks' ? 'text-white' : 'text-slate-500'}`} />
+                        </div>
+                        <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'tasks' ? 'text-purple-400' : 'text-slate-500'}`}>İşlerim</span>
+                    </button>
 
-                {(userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessStock) && (
-                <button
-                    onClick={() => setActiveTab('stock')}
-                    className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'stock'
-                        ? 'bg-gradient-to-br from-orange-500/20 to-orange-600/10 shadow-lg shadow-orange-500/10'
-                        : 'hover:bg-white/5'}`}
-                >
-                    <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'stock' ? 'bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30' : ''}`}>
-                        <Package className={`w-5 h-5 transition-colors ${activeTab === 'stock' ? 'text-white' : 'text-slate-500'}`} />
-                    </div>
-                    <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'stock' ? 'text-orange-400' : 'text-slate-500'}`}>Stok</span>
-                </button>
-                )}
+                    {(userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessStock) && (
+                    <button
+                        onClick={() => setActiveTab('stock')}
+                        className={`flex flex-col items-center gap-1.5 w-20 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'stock'
+                            ? 'bg-gradient-to-br from-orange-500/20 to-orange-600/10 shadow-lg shadow-orange-500/10'
+                            : 'hover:bg-white/5'}`}
+                    >
+                        <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'stock' ? 'bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30' : ''}`}>
+                            <Package className={`w-5 h-5 transition-colors ${activeTab === 'stock' ? 'text-white' : 'text-slate-500'}`} />
+                        </div>
+                        <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'stock' ? 'text-orange-400' : 'text-slate-500'}`}>Stok</span>
+                    </button>
+                    )}
 
-                {(userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessQuotations || userPermissions?.isEngineer) && (
-                <button
-                    onClick={() => setActiveTab('quotations')}
-                    className={`flex flex-col items-center gap-1.5 w-16 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'quotations'
-                        ? 'bg-gradient-to-br from-amber-500/20 to-amber-600/10 shadow-lg shadow-amber-500/10'
-                        : 'hover:bg-white/5'}`}
-                >
-                    <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'quotations' ? 'bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/30' : ''}`}>
-                        <FileText className={`w-5 h-5 transition-colors ${activeTab === 'quotations' ? 'text-white' : 'text-slate-500'}`} />
-                    </div>
-                    <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'quotations' ? 'text-amber-400' : 'text-slate-500'}`}>Teklifler</span>
-                </button>
-                )}
+                    {(userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessQuotations || userPermissions?.isEngineer) && (
+                    <button
+                        onClick={() => setActiveTab('quotations')}
+                        className={`flex flex-col items-center gap-1.5 w-16 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'quotations'
+                            ? 'bg-gradient-to-br from-amber-500/20 to-amber-600/10 shadow-lg shadow-amber-500/10'
+                            : 'hover:bg-white/5'}`}
+                    >
+                        <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'quotations' ? 'bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/30' : ''}`}>
+                            <FileText className={`w-5 h-5 transition-colors ${activeTab === 'quotations' ? 'text-white' : 'text-slate-500'}`} />
+                        </div>
+                        <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'quotations' ? 'text-amber-400' : 'text-slate-500'}`}>Teklifler</span>
+                    </button>
+                    )}
 
-                <button
-                    onClick={() => setActiveTab('profile')}
-                    className={`flex flex-col items-center gap-1.5 w-16 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'profile'
-                        ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 shadow-lg shadow-emerald-500/10'
-                        : 'hover:bg-white/5'}`}
-                >
-                    <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'profile' ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30' : ''}`}>
-                        <User className={`w-5 h-5 transition-colors ${activeTab === 'profile' ? 'text-white' : 'text-slate-500'}`} />
-                    </div>
-                    <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'profile' ? 'text-emerald-400' : 'text-slate-500'}`}>Profil</span>
-                </button>
-            </div>
+                    <button
+                        onClick={() => setActiveTab('profile')}
+                        className={`flex flex-col items-center gap-1.5 w-16 py-2 rounded-2xl transition-all duration-300 ${activeTab === 'profile'
+                            ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 shadow-lg shadow-emerald-500/10'
+                            : 'hover:bg-white/5'}`}
+                    >
+                        <div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === 'profile' ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30' : ''}`}>
+                            <User className={`w-5 h-5 transition-colors ${activeTab === 'profile' ? 'text-white' : 'text-slate-500'}`} />
+                        </div>
+                        <span className={`text-[10px] font-semibold transition-colors ${activeTab === 'profile' ? 'text-emerald-400' : 'text-slate-500'}`}>Profil</span>
+                    </button>
+                </div>
+            )}
 
         </div>
     );

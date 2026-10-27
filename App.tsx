@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, User as UserIcon, Menu, Loader2, FileText, ChevronRight, FolderOpen, Sun, Moon, CheckSquare, Square, Star, UserCircle, Phone, MapPin, Filter, Search, ChevronDown } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, Users, User as UserIcon, Menu, Loader2, FileText, ChevronRight, ChevronLeft, FolderOpen, Sun, Moon, CheckSquare, Square, Star, UserCircle, Phone, MapPin, Filter, Search, ChevronDown } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -432,29 +432,34 @@ function App() {
 
   const handleSaveTask = async (taskData: Partial<Task>) => {
     try {
+      const dataToSave = { ...taskData };
+      if (dataToSave.status === TaskStatus.GAS_OPENED && !dataToSave.gasOpeningDate) {
+        dataToSave.gasOpeningDate = new Date().toISOString().split('T')[0];
+      }
+
       if (selectedTask) {
         const taskRef = doc(db, 'tasks', selectedTask.id);
-        await updateDoc(taskRef, { ...taskData, lastUpdatedBy: user?.email });
+        await updateDoc(taskRef, { ...dataToSave, lastUpdatedBy: user?.email });
       } else {
         await addDoc(collection(db, 'tasks'), {
           orderNumber: nextOrderNumber,
-          title: taskData.title || 'Yeni Müşteri',
-          jobDescription: taskData.jobDescription || '',
-          status: taskData.status || TaskStatus.TO_CHECK,
-          assignee: taskData.assignee || '',
-          date: taskData.date || new Date().toISOString(),
-          address: taskData.address || '',
-          district: taskData.district || '',
-          city: taskData.city || '',
-          locationCoordinates: taskData.locationCoordinates || '',
-          phone: taskData.phone || '',
-          generalNote: taskData.generalNote || '',
-          teamNote: taskData.teamNote || '',
-          checkStatus: taskData.checkStatus || null,
-          gasOpeningDate: taskData.gasOpeningDate || '',
-          gasNote: taskData.gasNote || '',
-          serviceSerialNumber: taskData.serviceSerialNumber || '',
-          serviceNote: taskData.serviceNote || '',
+          title: dataToSave.title || 'Yeni Müşteri',
+          jobDescription: dataToSave.jobDescription || '',
+          status: dataToSave.status || TaskStatus.TO_CHECK,
+          assignee: dataToSave.assignee || '',
+          date: dataToSave.date || new Date().toISOString(),
+          address: dataToSave.address || '',
+          district: dataToSave.district || '',
+          city: dataToSave.city || '',
+          locationCoordinates: dataToSave.locationCoordinates || '',
+          phone: dataToSave.phone || '',
+          generalNote: dataToSave.generalNote || '',
+          teamNote: dataToSave.teamNote || '',
+          checkStatus: dataToSave.checkStatus || null,
+          gasOpeningDate: dataToSave.gasOpeningDate || '',
+          gasNote: dataToSave.gasNote || '',
+          serviceSerialNumber: dataToSave.serviceSerialNumber || '',
+          serviceNote: dataToSave.serviceNote || '',
           createdBy: user?.email,
           createdAt: serverTimestamp()
         });
@@ -477,9 +482,13 @@ function App() {
 
   const handleQuickUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
+      const dataUpdates = { ...updates };
+      if (dataUpdates.status === TaskStatus.GAS_OPENED && !dataUpdates.gasOpeningDate) {
+        dataUpdates.gasOpeningDate = new Date().toISOString().split('T')[0];
+      }
       const taskRef = doc(db, 'tasks', taskId);
       await updateDoc(taskRef, {
-        ...updates,
+        ...dataUpdates,
         updatedAt: serverTimestamp(),
         lastUpdatedBy: user?.email || 'System'
       });
@@ -946,11 +955,33 @@ function App() {
         onTaskClick={handleTaskClick}
         onAddTask={handleAddTaskClick}
         onToggleRoutineTask={handleToggleRoutineTask}
+        onUpdateRoutineTask={handleUpdateRoutineTask}
         onTaskUpdate={handleQuickUpdateTask}
         onOpenAdmin={() => setIsAdminPanelOpen(true)}
         onOpenRoutineModal={() => setActiveTab('routine_pool')}
         onOpenAssignmentModal={() => setActiveTab('assignment')}
+        onOpenFieldStaff={() => setIsFieldStaffModalOpen(true)}
       />
+
+      {isFieldStaffModalOpen && (
+        <FieldStaffStatusModal
+          isOpen={isFieldStaffModalOpen}
+          onClose={() => setIsFieldStaffModalOpen(false)}
+          tasks={tasks}
+          routineTasks={routineTasks}
+          staffList={
+            (hasAdminAccess || userPermissions?.role === 'admin')
+              ? (appSettings.staffList || [])
+              : (appSettings.staffList || []).filter(s =>
+                (s.email && user?.email && s.email.toLowerCase() === user.email.toLowerCase())
+              )
+          }
+          onUpdateTask={(taskId, newStatus) => handleQuickUpdateTask(taskId, { status: newStatus })}
+          onTaskUpdate={handleQuickUpdateTask}
+          onToggleRoutineTask={handleToggleRoutineTask}
+          onTaskClick={handleTaskClick}
+        />
+      )}
 
       {isAdminPanelOpen && (
         <MobileAdminPanel
@@ -967,9 +998,20 @@ function App() {
 
       {activeTab === 'routine_pool' && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b bg-slate-50">
-            <h2 className="font-bold text-lg">Eksikler Havuzu</h2>
-            <button onClick={() => setActiveTab('dashboard')} className="p-2 bg-slate-200 rounded-full"><X className="w-6 h-6" /></button>
+          <div className="sticky top-0 z-30 px-4 py-3 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white flex items-center justify-between shadow-md shrink-0">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center text-white transition-all shadow-xs shrink-0"
+                title="Geri Dön"
+              >
+                <ChevronLeft className="w-6 h-6 stroke-[2.5] -ml-0.5" />
+              </button>
+              <div>
+                <h2 className="text-sm font-black tracking-tight text-white uppercase">Eksikler Havuzu</h2>
+                <span className="text-[11px] text-orange-100 font-medium">Hızlı İşlemler • Rutin Görevler & Notlar</span>
+              </div>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto">
             <RoutineTasksView
@@ -987,9 +1029,20 @@ function App() {
 
       {activeTab === 'assignment' && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b bg-slate-50">
-            <h2 className="font-bold text-lg">Görev Dağıtımı</h2>
-            <button onClick={() => setActiveTab('dashboard')} className="p-2 bg-slate-200 rounded-full"><X className="w-6 h-6" /></button>
+          <div className="sticky top-0 z-30 px-4 py-3 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white flex items-center justify-between shadow-md shrink-0">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center text-white transition-all shadow-xs shrink-0"
+                title="Geri Dön"
+              >
+                <ChevronLeft className="w-6 h-6 stroke-[2.5] -ml-0.5" />
+              </button>
+              <div>
+                <h2 className="text-sm font-black tracking-tight text-white uppercase">Görev Dağıtımı</h2>
+                <span className="text-[11px] text-orange-100 font-medium">Hızlı İşlemler • Saha Personeli Planlama</span>
+              </div>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto">
             <AssignmentView

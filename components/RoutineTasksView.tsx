@@ -181,7 +181,7 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
             onContextMenu={(e) => handleContextMenu(e, task)}
             className={`group flex items-start gap-4 p-4 rounded-xl border-2 transition-all animate-in fade-in slide-in-from-bottom-2 ${isCompletedView ? 'bg-slate-100 border-slate-300 opacity-60' : 'bg-slate-50 border-slate-300 hover:border-blue-300 hover:shadow-lg'} ${editingTaskId === task.id ? 'ring-2 ring-blue-400 border-blue-400' : ''}`}
         >
-            <div className="flex flex-col gap-2 mt-1 shrink-0">
+            <div className="flex flex-col gap-2 mt-1 shrink-0 items-center">
                 <button
                     onClick={() => onToggleTask(task.id)}
                     className={`transition-colors ${isCompletedView ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-500'}`}
@@ -189,13 +189,23 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                 >
                     {isCompletedView ? <CheckSquare className="w-6 h-6" /> : <Square className="w-6 h-6" />}
                 </button>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateTask(task.id, { isPriority: !task.isPriority });
+                    }}
+                    className="p-1 rounded-full hover:bg-slate-200 transition-all active:scale-110"
+                    title={task.isPriority ? "Önceliği Kaldır" : "Öncelikli Yap"}
+                >
+                    <Star className={`w-4 h-4 ${task.isPriority ? 'fill-amber-400 text-amber-500' : 'text-slate-300 hover:text-amber-400'}`} />
+                </button>
             </div>
 
             <div className="flex-1 min-w-0">
                 {(task.customerName || task.phoneNumber || task.address || task.district) && (
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-2 text-sm">
                         {task.customerName && (
-                            <span className={`font-bold flex items-center gap-1.5 ${isCompletedView ? 'text-slate-600' : 'text-blue-700'}`}>
+                            <span className={`font-bold flex items-center gap-1.5 ${isCompletedView ? 'text-slate-600' : 'text-[#e65100]'}`}>
                                 <UserCircle className="w-4 h-4" /> {task.customerName}
                             </span>
                         )}
@@ -205,7 +215,7 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                             </a>
                         )}
                         {task.district && (
-                            <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-bold border border-orange-600 shadow-sm">
+                            <span className="bg-gradient-to-r from-[#e65100] to-[#f57c00] text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-xs">
                                 {task.district}
                             </span>
                         )}
@@ -222,8 +232,8 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                 {!isCompletedView && (
                     <div className="flex items-center gap-3 mt-3">
                         {task.assignee ? (
-                            <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md border border-purple-100 flex items-center gap-1.5 font-medium">
-                                <User className="w-3.5 h-3.5" /> {task.assignee}
+                            <span className="text-xs bg-orange-50 text-orange-800 px-2 py-1 rounded-md border border-orange-200 flex items-center gap-1.5 font-bold">
+                                <User className="w-3.5 h-3.5 text-[#e65100]" /> {task.assignee}
                             </span>
                         ) : (
                             <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-md">Atanmadı</span>
@@ -235,19 +245,19 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                 )}
 
                 {convertingTaskId === task.id ? (
-                    <div className="mt-4 p-3 bg-purple-50 border border-purple-100 rounded-lg max-w-md animate-in fade-in">
-                        <p className="text-xs text-purple-800 mb-2 font-bold">Bu kaydı ana panele taşı:</p>
+                    <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-xl max-w-md animate-in fade-in">
+                        <p className="text-xs text-orange-900 mb-2 font-bold">Bu kaydı ana panele taşı:</p>
                         <div className="flex gap-2">
                             <select
                                 value={targetStatus}
                                 onChange={(e) => setTargetStatus(e.target.value as TaskStatus)}
-                                className="flex-1 bg-white border border-slate-300 rounded text-sm px-2 py-1.5 outline-none focus:border-purple-500"
+                                className="flex-1 bg-white border border-slate-300 rounded text-sm px-2 py-1.5 outline-none focus:border-orange-500"
                             >
                                 {Object.entries(StatusLabels).map(([key, label]) => (
                                     <option key={key} value={key}>{label}</option>
                                 ))}
                             </select>
-                            <button onClick={handleConfirmConversion} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">Oluştur</button>
+                            <button onClick={handleConfirmConversion} className="bg-gradient-to-r from-[#e65100] to-[#f57c00] hover:brightness-105 text-white px-3 py-1.5 rounded text-sm font-bold transition-all shadow-xs">Oluştur</button>
                             <button onClick={() => setConvertingTaskId(null)} className="bg-white border border-slate-300 text-slate-600 px-3 py-1.5 rounded text-sm hover:bg-slate-50">İptal</button>
                         </div>
                     </div>
@@ -256,7 +266,7 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                         <div className="mt-2">
                             <button
                                 onClick={() => handleStartConversion(task.id)}
-                                className="text-xs flex items-center gap-1.5 text-slate-400 hover:text-purple-600 transition-colors py-1"
+                                className="text-xs flex items-center gap-1.5 text-slate-400 hover:text-[#e65100] transition-colors py-1 font-medium"
                             >
                                 <ArrowRightCircle className="w-3.5 h-3.5" /> Kişi Kartı Oluştur
                             </button>
@@ -352,10 +362,10 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                                         value={assignDate}
                                         onChange={(e) => setAssignDate(e.target.value)}
                                         required
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-orange-500"
                                     />
                                 </div>
-                                <button type="submit" disabled={!assignStaffName || !assignDate} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-2">
+                                <button type="submit" disabled={!assignStaffName || !assignDate} className="w-full bg-gradient-to-r from-[#e65100] to-[#f57c00] hover:brightness-105 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 mt-2">
                                     <User className="w-4 h-4" />
                                     Görevi Ata
                                 </button>
@@ -368,24 +378,24 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
             {/* Header */}
             <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm z-10">
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className="bg-purple-100 p-2 rounded-xl">
-                        <CalendarCheck className="w-6 h-6 text-purple-600" />
+                    <div className="bg-orange-100 p-2.5 rounded-xl text-[#e65100]">
+                        <CalendarCheck className="w-6 h-6 stroke-[2.2]" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800 tracking-tight">Eksikler Havuzu</h2>
+                        <h2 className="text-xl font-black text-slate-800 tracking-tight">Eksikler Havuzu</h2>
                         <p className="text-xs text-slate-500 font-medium">Veri girişi ve eksik takibi</p>
                     </div>
                 </div>
 
                 {/* Quick Stats Tabs */}
                 <div className="flex gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200">
-                    <button onClick={() => setActiveTab('pool')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'pool' ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <button onClick={() => setActiveTab('pool')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'pool' ? 'bg-white text-[#e65100] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                         Havuz ({poolTasks.length})
                     </button>
-                    <button onClick={() => setActiveTab('assigned')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'assigned' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <button onClick={() => setActiveTab('assigned')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'assigned' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                         Atanan ({assignedTasks.length})
                     </button>
-                    <button onClick={() => setActiveTab('completed')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'completed' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <button onClick={() => setActiveTab('completed')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'completed' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                         Biten ({doneTasks.length})
                     </button>
                 </div>
@@ -399,7 +409,7 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                         onClick={() => setIsAddFormExpanded(!isAddFormExpanded)}
                     >
                         <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                            {editingTaskId ? <Pencil className="w-4 h-4 text-orange-500" /> : <Plus className="w-4 h-4 text-purple-600" />}
+                            {editingTaskId ? <Pencil className="w-4 h-4 text-orange-500" /> : <Plus className="w-4 h-4 text-[#e65100]" />}
                             {editingTaskId ? 'Düzenle' : 'Yeni Ekle'}
                         </h3>
                         {editingTaskId && <button onClick={(e) => { e.stopPropagation(); cancelEdit(); }} className="text-xs bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-100">İptal</button>}
@@ -413,8 +423,8 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                             <div>
                                 <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Müşteri Bilgileri</label>
                                 <div className="space-y-3">
-                                    <input type="text" placeholder="Ad Soyad" value={customerName} onChange={e => setCustomerName(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder:text-slate-400" />
-                                    <input type="tel" placeholder="Telefon" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder:text-slate-400" />
+                                    <input type="text" placeholder="Ad Soyad" value={customerName} onChange={e => setCustomerName(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400" />
+                                    <input type="tel" placeholder="Telefon" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400" />
                                 </div>
                             </div>
 
@@ -422,20 +432,20 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                                 <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Konum</label>
                                 <div className="space-y-3">
                                     <div className="flex gap-2">
-                                        <input type="text" placeholder="İlçe" value={district} onChange={e => setDistrict(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="İl" value={city} onChange={e => setCity(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-purple-500" />
+                                        <input type="text" placeholder="İlçe" value={district} onChange={e => setDistrict(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-500" />
+                                        <input type="text" placeholder="İl" value={city} onChange={e => setCity(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-500" />
                                     </div>
                                     <div className="relative">
-                                        <input type="text" placeholder="Açık Adres" value={address} onChange={e => setAddress(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pl-9 text-sm text-slate-800 outline-none focus:border-purple-500" />
+                                        <input type="text" placeholder="Açık Adres" value={address} onChange={e => setAddress(e.target.value.toLocaleUpperCase('tr-TR'))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pl-9 text-sm text-slate-800 outline-none focus:border-orange-500" />
                                         <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                     </div>
                                     {locationCoordinates ? (
-                                        <div className="flex items-center justify-between bg-blue-50 border border-blue-100 p-2 rounded-lg text-xs text-blue-600">
-                                            <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Konum Bağlandı</span>
+                                        <div className="flex items-center justify-between bg-orange-50 border border-orange-200 p-2 rounded-lg text-xs text-orange-700">
+                                            <span className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> Konum Bağlandı</span>
                                             <button type="button" onClick={() => setLocationCoordinates('')}><X className="w-3 h-3 text-slate-400 hover:text-red-500" /></button>
                                         </div>
                                     ) : (
-                                        <button type="button" onClick={() => setShowLocationModal(true)} className="w-full py-2 border border-slate-200 border-dashed rounded-lg text-slate-400 text-xs hover:border-blue-400 hover:text-blue-500 transition-colors">
+                                        <button type="button" onClick={() => setShowLocationModal(true)} className="w-full py-2 border border-slate-200 border-dashed rounded-lg text-slate-400 text-xs hover:border-orange-400 hover:text-orange-600 transition-colors">
                                             + Harita Konumu Ekle
                                         </button>
                                     )}
@@ -448,7 +458,7 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                                     placeholder="Yapılacak işlem veya not..."
                                     value={newTaskContent}
                                     onChange={e => setNewTaskContent(e.target.value.toLocaleUpperCase('tr-TR'))}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 min-h-[100px] outline-none focus:border-purple-500 resize-none"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 min-h-[100px] outline-none focus:border-orange-500 resize-none"
                                 />
                             </div>
 
@@ -457,10 +467,10 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                                     <span>Tarih</span>
                                     <span className="font-normal text-[9px] lowercase italic text-slate-300">Opsiyonel</span>
                                 </label>
-                                <input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500 text-slate-600" />
+                                <input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 text-slate-600" />
                             </div>
 
-                            <button disabled={!newTaskContent.trim()} className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg shadow-slate-200 transition-all flex items-center justify-center gap-2">
+                            <button disabled={!newTaskContent.trim()} className="w-full bg-gradient-to-r from-[#e65100] to-[#f57c00] hover:brightness-105 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2">
                                 {editingTaskId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                                 {editingTaskId ? 'Güncelle' : 'Listeye Ekle'}
                             </button>
@@ -477,7 +487,7 @@ const RoutineTasksView: React.FC<RoutineTasksViewProps> = ({
                                 <button
                                     key={dist}
                                     onClick={() => setActiveDistrict(dist)}
-                                    className={`text-xs px-3 py-1.5 rounded-full transition-all border ${activeDistrict === dist ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-200' : 'bg-white text-slate-500 border-slate-200 hover:border-purple-300'}`}
+                                    className={`text-xs px-3 py-1.5 rounded-full transition-all border ${activeDistrict === dist ? 'bg-gradient-to-r from-[#e65100] to-[#f57c00] text-white border-transparent shadow-xs font-bold' : 'bg-white text-slate-600 border-slate-200 hover:border-orange-300 font-medium'}`}
                                 >
                                     {dist}
                                 </button>

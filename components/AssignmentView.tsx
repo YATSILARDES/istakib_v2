@@ -303,8 +303,8 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                  {/* TOP BAR: Sadece personel adı ve personel değiştirme */}
                  <div className="bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
                       <div className="flex items-center gap-3">
-                           <div className="bg-blue-100 p-2 rounded-xl">
-                                <User className="w-5 h-5 text-blue-600" />
+                           <div className="bg-orange-100 p-2 rounded-xl">
+                                <User className="w-5 h-5 text-[#e65100]" />
                            </div>
                            <div className="flex flex-col">
                                 <select
@@ -326,19 +326,19 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                  <div className="px-4 py-3 flex gap-2 shrink-0">
                       <button 
                           onClick={() => setActivePoolModal('main')}
-                          className="flex-1 bg-white border border-blue-200 shadow-sm rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-1 hover:bg-blue-50 transition-colors"
+                          className="flex-1 bg-white border border-orange-200 shadow-xs rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-1 hover:bg-orange-50 active:scale-95 transition-all"
                       >
-                          <ClipboardList className="w-5 h-5 text-blue-500" />
+                          <ClipboardList className="w-5 h-5 text-[#e65100]" />
                           <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 text-center leading-tight">Kontrolü Yapılacaklar</span>
-                          <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">{unassignedTasks.length}</span>
+                          <span className="bg-orange-100 text-[#e65100] text-[10px] font-black px-2 py-0.5 rounded-full mt-1">{unassignedTasks.length}</span>
                       </button>
                       <button 
                           onClick={() => setActivePoolModal('routine')}
-                          className="flex-1 bg-white border border-purple-200 shadow-sm rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-1 hover:bg-purple-50 transition-colors"
+                          className="flex-1 bg-white border border-amber-200 shadow-xs rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-1 hover:bg-amber-50 active:scale-95 transition-all"
                       >
-                          <CheckSquare className="w-5 h-5 text-purple-500" />
+                          <CheckSquare className="w-5 h-5 text-amber-600" />
                           <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 text-center leading-tight">Eksikler / Notlar</span>
-                          <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">{unassignedRoutineTasks.length}</span>
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full mt-1">{unassignedRoutineTasks.length}</span>
                       </button>
                  </div>
 
@@ -387,15 +387,15 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                  <div 
                                      key={hour}
                                      onClick={() => setSelectedMobileSlot({ date: dayDate, hour })}
-                                     className={`border-b border-slate-100 min-h-[70px] relative p-2 pl-14 flex flex-col gap-2 transition-colors cursor-pointer ${isSelected ? 'bg-blue-50/80 shadow-inner' : 'hover:bg-slate-50'}`}
+                                     className={`border-b border-slate-100 min-h-[70px] relative p-2 pl-14 flex flex-col gap-2 transition-colors cursor-pointer ${isSelected ? 'bg-orange-50/90 shadow-inner' : 'hover:bg-slate-50'}`}
                                  >
-                                     <div className={`absolute top-0 bottom-0 left-0 w-12 flex items-center justify-center border-r border-slate-100 font-bold text-xs ${isSelected ? 'bg-blue-500 text-white' : 'bg-slate-50 text-slate-400'}`}>{hour}:00</div>
+                                     <div className={`absolute top-0 bottom-0 left-0 w-12 flex items-center justify-center border-r border-slate-100 font-bold text-xs ${isSelected ? 'bg-gradient-to-r from-[#e65100] to-[#f57c00] text-white font-black' : 'bg-slate-50 text-slate-400'}`}>{hour}:00</div>
                                      {allHourTasks.length === 0 && <div className="text-xs text-slate-300 italic flex items-center h-full pt-1">İş yok, boş saat</div>}
                                      {allHourTasks.map((item, idx) => {
                                          const t = item.data;
                                          if (item.type === 'routine') {
                                              return (
-                                                 <div key={idx} className="bg-white border-l-4 border-l-purple-500 border border-slate-200 p-2 rounded shadow-sm text-xs relative">
+                                                 <div key={idx} className="bg-white border-l-4 border-l-amber-500 border border-slate-200 p-2 rounded shadow-sm text-xs relative">
                                                     <div className="font-bold text-slate-700">{(t as any).customerName || 'İsimsiz'}</div>
                                                     <div className="text-slate-500 leading-tight mt-0.5">{(t as any).content}</div>
                                                     <button onClick={(e) => { e.stopPropagation(); onAssignRoutineTask(t.id, '', undefined); }} className="absolute top-1 right-1 text-red-400 p-1"><X className="w-3 h-3" /></button>
@@ -403,7 +403,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                              );
                                          } else {
                                              return (
-                                                 <div key={idx} className="bg-white border-l-4 border-l-blue-500 border border-slate-200 p-2 rounded shadow-sm text-xs relative">
+                                                 <div key={idx} className="bg-white border-l-4 border-l-[#e65100] border border-slate-200 p-2 rounded shadow-sm text-xs relative">
                                                     <div className="font-bold text-slate-700">{(t as any).title}</div>
                                                     <div className="text-slate-500 leading-tight mt-0.5 line-clamp-1">{t.address}</div>
                                                     <button onClick={(e) => { e.stopPropagation(); onAssignTask(t.id, '', undefined); }} className="absolute top-1 right-1 text-red-400 p-1"><X className="w-3 h-3" /></button>
@@ -421,23 +421,23 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                  {activePoolModal && (
                      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex flex-col animate-in slide-in-from-bottom-full duration-300">
                          <div className="bg-white flex-1 mt-12 rounded-t-3xl flex flex-col overflow-hidden shadow-2xl">
-                             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
-                                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                                      {activePoolModal === 'main' ? <ClipboardList className="w-5 h-5 text-blue-500"/> : <CheckSquare className="w-5 h-5 text-purple-500"/>}
+                             <div className="px-4 py-3.5 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white flex items-center justify-between shrink-0 shadow-md">
+                                  <h3 className="font-black text-sm text-white flex items-center gap-2 uppercase tracking-wide">
+                                      {activePoolModal === 'main' ? <ClipboardList className="w-5 h-5 text-white"/> : <CheckSquare className="w-5 h-5 text-white"/>}
                                       {activePoolModal === 'main' ? 'Kontrolü Yapılacak İşler' : 'Eksikler / Notlar'}
                                   </h3>
-                                  <button onClick={() => setActivePoolModal(null)} className="p-2 bg-slate-200 text-slate-600 rounded-full"><X className="w-5 h-5" /></button>
+                                  <button onClick={() => setActivePoolModal(null)} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all"><X className="w-5 h-5" /></button>
                              </div>
                              
                              {!selectedMobileSlot && (
-                                 <div className="bg-amber-50 text-amber-700 p-3 text-xs font-bold text-center border-b border-amber-200 flex flex-col gap-1 items-center">
+                                 <div className="bg-amber-50 text-amber-800 p-3 text-xs font-bold text-center border-b border-amber-200 flex flex-col gap-1 items-center">
                                      <span>⚠️ Takvimden saat seçilmemiş!</span>
                                      <span className="font-normal text-[10px]">Atama yapmak için listeden çıkıp önce takvime tıklayarak bir saat seçin.</span>
                                  </div>
                              )}
 
                              {selectedMobileSlot && (
-                                 <div className="bg-blue-50 text-blue-700 p-3 text-xs font-bold text-center border-b border-blue-200">
+                                 <div className="bg-orange-50 text-[#e65100] p-3 text-xs font-bold text-center border-b border-orange-200">
                                      💡 İşlerden birine tıklayarak {selectedMobileSlot.hour}:00 saatine atayabilirsiniz.
                                  </div>
                              )}
@@ -498,7 +498,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                                   onAssignTask(t.id, selectedStaffName, selectedStaffEmail, targetDate);
                                                   setActivePoolModal(null);
                                               }}
-                                              className="bg-white border-l-4 border-l-blue-500 border border-slate-200 p-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform cursor-pointer"
+                                              className="bg-white border-l-4 border-l-[#e65100] border border-slate-200 p-3 rounded-xl shadow-xs active:scale-[0.98] transition-transform cursor-pointer"
                                           >
                                                <div className="font-bold text-slate-800 text-sm">{t.title}</div>
                                                {t.district && <div className="text-xs text-slate-500 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3"/> {t.district} - {t.address}</div>}
@@ -519,7 +519,7 @@ const AssignmentView: React.FC<AssignmentViewProps> = ({
                                                   onAssignRoutineTask(t.id, selectedStaffName, selectedStaffEmail, targetDate);
                                                   setActivePoolModal(null);
                                               }}
-                                              className="bg-white border-l-4 border-l-purple-500 border border-slate-200 p-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform cursor-pointer"
+                                              className="bg-white border-l-4 border-l-amber-500 border border-slate-200 p-3 rounded-xl shadow-xs active:scale-[0.98] transition-transform cursor-pointer"
                                           >
                                                <div className="font-bold text-slate-800 text-sm">{t.customerName || 'İsimsiz'}</div>
                                                <div className="text-xs text-slate-600 mt-1">{t.content}</div>
