@@ -634,10 +634,20 @@ function App() {
       const taskRef = doc(db, 'tasks', taskId);
       const updateData: any = { assignee: assigneeName, assigneeEmail: assigneeEmail || null, lastUpdatedBy: user?.email };
 
+      const existingTask = tasks.find(t => t.id === taskId);
+      if (existingTask && (existingTask.checkStatus || existingTask.status === TaskStatus.CHECK_COMPLETED)) {
+        updateData.isReassignedForCheck = true;
+      }
+
       if (scheduledDate) {
         const d = new Date(scheduledDate);
         // Do not reset hours to 12 so we can schedule at specific times
         updateData.scheduledDate = Timestamp.fromDate(d);
+      } else {
+        if (assigneeName === '') {
+          updateData.scheduledDate = null;
+          updateData.isReassignedForCheck = false;
+        }
       }
 
       await updateDoc(taskRef, updateData);

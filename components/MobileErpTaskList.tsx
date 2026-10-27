@@ -512,6 +512,22 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
                                         {/* Action Icons */}
                                         <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                            {/* Kontrolü Onayla Butonu */}
+                                            {task.isReassignedForCheck && onTaskUpdate && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onTaskUpdate(task.id, { isReassignedForCheck: false });
+                                                    }}
+                                                    className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-xs active:scale-95 transition-all shrink-0"
+                                                    title="Kontrolü Onayla"
+                                                >
+                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    <span>Kontrolü Onayla</span>
+                                                </button>
+                                            )}
+
                                             {/* WhatsApp / Share Button */}
                                             <button
                                                 onClick={(e) => handleShare(task, e)}
