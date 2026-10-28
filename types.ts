@@ -32,6 +32,8 @@ export interface Task {
   district?: string; // İlçe (Yeni: Gruplama için)
   city?: string; // İl
   phone?: string;
+  tenantName?: string; // Kiracı Adı Soyadı
+  tenantPhone?: string; // Kiracı Telefon Numarası
   generalNote?: string; // Kişi Bilgileri içindeki not
 
   // Check Info (Kontrol Elemanı Bilgileri)

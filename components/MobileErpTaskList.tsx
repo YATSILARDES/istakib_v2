@@ -55,6 +55,57 @@ const formatSafeDate = (dateVal: any) => {
     }
 };
 
+// --- Helpers for "Kontrolü Onayla" card style (matches FieldStaffStatusModal mobile card) ---
+const getStatusBadgeForRecheck = (status: TaskStatus) => {
+    switch (status) {
+        case TaskStatus.PROJECT_TO_BE_DRAWN:
+            return { label: 'Projesi Çizilecek', bg: 'bg-orange-50', text: 'text-[#e65100]', border: 'border-orange-200', stripe: 'bg-orange-500' };
+        case TaskStatus.SERVICE_DIRECTED:
+            return { label: 'Servis Yönlendirildi', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', stripe: 'bg-blue-500' };
+        case TaskStatus.COMBI_REPLACEMENT_RENOVATION:
+            return { label: 'Kombi Değişimi', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', stripe: 'bg-indigo-500' };
+        case TaskStatus.TO_CHECK:
+            return { label: 'Kontrol Yapılacak', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', stripe: 'bg-amber-500' };
+        case TaskStatus.CHECK_COMPLETED:
+            return { label: 'Kontrol Yapıldı', bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', stripe: 'bg-teal-500' };
+        case TaskStatus.GAS_OPENED:
+            return { label: 'Gazı Açıldı', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', stripe: 'bg-rose-500' };
+        case TaskStatus.DEPOSIT_PAID:
+            return { label: 'Kapora / Avans', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', stripe: 'bg-purple-500' };
+        default:
+            return { label: StatusLabels[status] || status, bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200', stripe: 'bg-slate-400' };
+    }
+};
+
+const getRecheckTaskDate = (t: any): Date => {
+    try {
+        const source = t.scheduledDate || t.createdAt;
+        if (!source) return new Date();
+        if (source.seconds) return new Date(source.seconds * 1000);
+        if (source instanceof Date) return source;
+        if (typeof source === 'string') { const d = new Date(source); if (!isNaN(d.getTime())) return d; }
+        if (typeof source === 'number') return new Date(source);
+        return new Date();
+    } catch { return new Date(); }
+};
+
+const isRecheckToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+};
+
+const isRecheckOverdue = (date: Date) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return date < today;
+};
+
+const safeFormatRecheckDate = (date: Date) => {
+    try {
+        if (isNaN(date.getTime())) return 'Tarihsiz';
+        return date.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'numeric' });
+    } catch { return date.toDateString(); }
+};
+
 export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     title,
     tasks,
@@ -86,6 +137,18 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     const [statusModalTask, setStatusModalTask] = useState<Task | null>(null);
     const [selectedNewStatus, setSelectedNewStatus] = useState<TaskStatus>(TaskStatus.TO_CHECK);
     const [modalIsWaiting, setModalIsWaiting] = useState<boolean>(false);
+    const [callSelectTask, setCallSelectTask] = useState<Task | null>(null);
+
+    const handleCallClick = (task: Task, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (task.phone && task.tenantPhone) {
+            setCallSelectTask(task);
+        } else if (task.phone) {
+            window.location.href = `tel:${task.phone}`;
+        } else if (task.tenantPhone) {
+            window.location.href = `tel:${task.tenantPhone}`;
+        }
+    };
 
     // Get all unique districts for filter
     const allDistricts = useMemo(() => {
@@ -105,7 +168,15 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
         if (task.district) addressLine += ` / ${task.district}`;
         if (task.city) addressLine += ` / ${task.city}`;
 
-        let shareText = `👤 ${task.title || 'Müşteri'}\n📞 ${task.phone || 'Telefon Yok'}\n🏠 ${addressLine || 'Adres Yok'}`;
+        let shareText = `👤 ${task.title || 'Müşteri'}`;
+        if (task.tenantName || task.tenantPhone) {
+            shareText += `\n📞 Ev Sahibi Tel: ${task.phone || 'Yok'}`;
+            if (task.tenantName) shareText += `\n👤 Kiracı: ${task.tenantName}`;
+            if (task.tenantPhone) shareText += `\n📞 Kiracı Tel: ${task.tenantPhone}`;
+        } else {
+            shareText += `\n📞 ${task.phone || 'Telefon Yok'}`;
+        }
+        shareText += `\n🏠 ${addressLine || 'Adres Yok'}`;
 
         if (task.locationCoordinates) {
             shareText += `\n\n📍 Konum:\n${task.locationCoordinates}`;
@@ -400,6 +471,92 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                             statusColor = "text-purple-700 bg-purple-50 border-purple-200";
                         }
 
+                        // --- Kontrolü Onayla olan işler → Sadece önceden kontrol edilmişse yeni kart stili ---
+                        const isTaskRecheck = Boolean(
+                            task.isReassignedForCheck &&
+                            (task.checkStatus === "clean" || task.checkStatus === "missing" || task.status === TaskStatus.CHECK_COMPLETED)
+                        );
+                        if (isTaskRecheck) {
+                            const badge = getStatusBadgeForRecheck(task.status);
+                            const taskDate = getRecheckTaskDate(task);
+                            const taskIsToday = isRecheckToday(taskDate);
+                            const taskIsOverdue = isRecheckOverdue(taskDate);
+                            return (
+                                <div
+                                    key={task.id}
+                                    onClick={() => onTaskClick(task)}
+                                    className="px-3.5 py-2.5 bg-white border-l-4 border-emerald-400 hover:bg-emerald-50/20 active:bg-emerald-50/40 transition-colors flex items-start gap-3 cursor-pointer relative"
+                                >
+                                    {/* Left Status Stripe (color dot) */}
+                                    <div className={`w-1 h-1 rounded-full ${badge.stripe} absolute left-1.5 top-1/2 -translate-y-1/2 hidden`} />
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                        {/* Row 1: badges + date */}
+                                        <div className="flex items-center justify-between gap-1.5 mb-1">
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                                                    #{task.orderNumber}
+                                                </span>
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${badge.bg} ${badge.text} ${badge.border}`}>
+                                                    {badge.label}
+                                                </span>
+                                            </div>
+                                            <div className="shrink-0">
+                                                {taskIsToday ? (
+                                                    <span className="text-[10px] font-black text-[#e65100] bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded">Bugün</span>
+                                                ) : (
+                                                    <span className="text-[10px] text-slate-400">{safeFormatRecheckDate(taskDate)}</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Row 2: Title */}
+                                        <p className="font-extrabold text-[13px] text-slate-800 uppercase tracking-tight truncate leading-snug">
+                                            {task.title}
+                                        </p>
+
+                                        {/* Row 3: Address */}
+                                        <p className="text-[11px] font-medium text-slate-500 line-clamp-1 leading-snug">
+                                            {task.district && <span className="text-slate-600 font-bold">{task.district} · </span>}
+                                            {task.address}
+                                        </p>
+
+                                        {/* Row 4: Phone + Kontrolü Onayla */}
+                                        <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-slate-100 gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                            {(task.phone || task.tenantPhone) ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleCallClick(task, e)}
+                                                    className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md text-[10.5px] font-bold active:scale-95 transition-all shadow-2xs"
+                                                    title="Arama Yap"
+                                                >
+                                                    <Phone className="w-3 h-3" />
+                                                    <span>{task.phone || task.tenantPhone}</span>
+                                                </button>
+                                            ) : (
+                                                <span />
+                                            )}
+                                            {onTaskUpdate && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onTaskUpdate(task.id, { isReassignedForCheck: false });
+                                                    }}
+                                                    className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-xs active:scale-95 transition-all shrink-0"
+                                                >
+                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    <span>Kontrolü Onayla</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        // --- Normal işler → Eski kart stili ---
                         return (
                             <div
                                 key={task.id}
@@ -512,21 +669,6 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
                                         {/* Action Icons */}
                                         <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                            {/* Kontrolü Onayla Butonu */}
-                                            {task.isReassignedForCheck && onTaskUpdate && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onTaskUpdate(task.id, { isReassignedForCheck: false });
-                                                    }}
-                                                    className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-xs active:scale-95 transition-all shrink-0"
-                                                    title="Kontrolü Onayla"
-                                                >
-                                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                                    <span>Kontrolü Onayla</span>
-                                                </button>
-                                            )}
 
                                             {/* WhatsApp / Share Button */}
                                             <button
@@ -538,15 +680,16 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                             </button>
 
                                             {/* Phone Call Button */}
-                                            {task.phone && (
-                                                <a
-                                                    href={`tel:${task.phone}`}
+                                            {(task.phone || task.tenantPhone) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleCallClick(task, e)}
                                                     className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md text-[10.5px] font-bold active:scale-95 transition-all shadow-2xs"
-                                                    title="Müşteriyi Ara"
+                                                    title="Arama Yap"
                                                 >
                                                     <Phone className="w-3 h-3" />
                                                     <span>Ara</span>
-                                                </a>
+                                                </button>
                                             )}
 
                                             {/* Detail Arrow */}
@@ -831,6 +974,91 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 <span>Gönder</span>
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Phone Selector Modal (Ev Sahibi / Kiracı) */}
+            {callSelectTask && (
+                <div
+                    className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in duration-150"
+                    onClick={() => setCallSelectTask(null)}
+                >
+                    <div
+                        className="w-full max-w-sm bg-white rounded-2xl p-4 shadow-2xl space-y-3 animate-in slide-in-from-bottom duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-sm font-black text-slate-800">Arama Yap</h3>
+                                <p className="text-[11px] text-slate-500 font-medium truncate max-w-[240px]">
+                                    {callSelectTask.title}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setCallSelectTask(null)}
+                                className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-700 flex items-center justify-center"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {callSelectTask.phone && (
+                                <a
+                                    href={`tel:${callSelectTask.phone}`}
+                                    onClick={() => setCallSelectTask(null)}
+                                    className="flex items-center justify-between p-3 rounded-xl bg-orange-50 hover:bg-orange-100/70 border border-orange-200 transition-all active:scale-[0.98]"
+                                >
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-black uppercase text-orange-700 tracking-wider block">
+                                            🏠 Ev Sahibi
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-800 block truncate">
+                                            {callSelectTask.title}
+                                        </span>
+                                        <span className="text-xs font-semibold text-orange-950 font-mono">
+                                            {callSelectTask.phone}
+                                        </span>
+                                    </div>
+                                    <div className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                                        <Phone className="w-4 h-4" />
+                                    </div>
+                                </a>
+                            )}
+
+                            {callSelectTask.tenantPhone && (
+                                <a
+                                    href={`tel:${callSelectTask.tenantPhone}`}
+                                    onClick={() => setCallSelectTask(null)}
+                                    className="flex items-center justify-between p-3 rounded-xl bg-blue-50 hover:bg-blue-100/70 border border-blue-200 transition-all active:scale-[0.98]"
+                                >
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-black uppercase text-blue-700 tracking-wider block">
+                                            🔑 Kiracı
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-800 block truncate">
+                                            {callSelectTask.tenantName || 'Kiracı'}
+                                        </span>
+                                        <span className="text-xs font-semibold text-blue-950 font-mono">
+                                            {callSelectTask.tenantPhone}
+                                        </span>
+                                    </div>
+                                    <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                                        <Phone className="w-4 h-4" />
+                                    </div>
+                                </a>
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setCallSelectTask(null)}
+                            className="w-full py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                        >
+                            Vazgeç
+                        </button>
                     </div>
                 </div>
             )}

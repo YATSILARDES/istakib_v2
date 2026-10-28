@@ -65,6 +65,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
     city: '',
     locationCoordinates: '',
     phone: '',
+    tenantName: '',
+    tenantPhone: '',
     generalNote: '',
     teamNote: '',
     checkStatus: null,
@@ -84,6 +86,17 @@ const TaskModal: React.FC<TaskModalProps> = ({
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showPhoneSelector, setShowPhoneSelector] = useState(false);
+
+  const handleHeaderCall = () => {
+    if (formData.phone && formData.tenantPhone) {
+      setShowPhoneSelector(true);
+    } else if (formData.phone) {
+      window.location.href = `tel:${formData.phone}`;
+    } else if (formData.tenantPhone) {
+      window.location.href = `tel:${formData.tenantPhone}`;
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -110,6 +123,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
         city: '',
         locationCoordinates: '',
         phone: '',
+        tenantName: '',
+        tenantPhone: '',
         generalNote: '',
         teamNote: '',
         checkStatus: null,
@@ -209,7 +224,15 @@ const TaskModal: React.FC<TaskModalProps> = ({
     if (formData.district) addressLine += ` / ${formData.district}`;
     if (formData.city) addressLine += ` / ${formData.city}`;
 
-    let shareText = `👤 ${formData.title || 'Müşteri'}\n📞 ${formData.phone || 'Telefon Yok'}\n🏠 ${addressLine || 'Adres Yok'}`;
+    let shareText = `👤 ${formData.title || 'Müşteri'}`;
+    if (formData.tenantName || formData.tenantPhone) {
+      shareText += `\n📞 Ev Sahibi Tel: ${formData.phone || 'Yok'}`;
+      if (formData.tenantName) shareText += `\n👤 Kiracı: ${formData.tenantName}`;
+      if (formData.tenantPhone) shareText += `\n📞 Kiracı Tel: ${formData.tenantPhone}`;
+    } else {
+      shareText += `\n📞 ${formData.phone || 'Telefon Yok'}`;
+    }
+    shareText += `\n🏠 ${addressLine || 'Adres Yok'}`;
 
     if (formData.locationCoordinates) {
       shareText += `\n\n📍 Konum:\n${formData.locationCoordinates}`;
@@ -332,6 +355,16 @@ const TaskModal: React.FC<TaskModalProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                {isEdit && (formData.phone || formData.tenantPhone) && (
+                  <button
+                    type="button"
+                    onClick={handleHeaderCall}
+                    className="text-slate-400 hover:text-emerald-400 p-2 rounded-lg hover:bg-slate-700 transition-all"
+                    title="Arama Yap"
+                  >
+                    <Phone className="w-5 h-5" />
+                  </button>
+                )}
                 {isEdit && (
                   <button
                     onClick={handleShare}
@@ -396,20 +429,20 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">Adı Soyadı</label>
                         <input required type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value.toLocaleUpperCase('tr-TR') })}
-                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Ahmet Yılmaz" />
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">İşin Tanımı</label>
                         <input type="text" value={formData.jobDescription || ''} onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value.toLocaleUpperCase('tr-TR') })}
-                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Mutfak Dolabı, Vestiyer..." />
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">Telefon</label>
                         <div className="flex gap-2">
                           <input type="text" inputMode="text" value={formData.phone || ''} onChange={(e) => setFormData({ ...formData, phone: e.target.value.toLocaleUpperCase('tr-TR') })}
-                            className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="05XX XXX XX XX" />
+                            className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                           {formData.phone && (
                             <a href={`tel:${formData.phone}`} className="bg-green-600 hover:bg-green-500 text-white p-2.5 rounded-lg">
                               <PhoneCall className="w-5 h-5" />
@@ -421,7 +454,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">İşi Yapan Usta</label>
                         <input type="text" value={formData.assignee || ''} onChange={(e) => setFormData({ ...formData, assignee: e.target.value.toLocaleUpperCase('tr-TR') })}
-                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Ahmet Usta" />
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
                     </div>
 
@@ -458,12 +491,12 @@ const TaskModal: React.FC<TaskModalProps> = ({
                         <div className="flex-1 space-y-2">
                           <label className="text-sm font-medium text-slate-400">İlçe</label>
                           <input type="text" value={formData.district || ''} onChange={(e) => setFormData({ ...formData, district: e.target.value.toLocaleUpperCase('tr-TR') })}
-                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İlçe" />
+                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                         <div className="flex-1 space-y-2">
                           <label className="text-sm font-medium text-slate-400">İl</label>
                           <input type="text" value={formData.city || ''} onChange={(e) => setFormData({ ...formData, city: e.target.value.toLocaleUpperCase('tr-TR') })}
-                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İl" />
+                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                       </div>
                       {/* Konum Koordinat Gösterimi */}
@@ -490,10 +523,40 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       )}
                     </div>
 
+                    {/* Kiracı Bilgileri */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700/60">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-300">Kiracı Adı Soyadı</label>
+                        <input
+                          type="text"
+                          value={formData.tenantName || ''}
+                          onChange={(e) => setFormData({ ...formData, tenantName: e.target.value.toLocaleUpperCase('tr-TR') })}
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-300">Kiracı Telefon</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            inputMode="text"
+                            value={formData.tenantPhone || ''}
+                            onChange={(e) => setFormData({ ...formData, tenantPhone: e.target.value.toLocaleUpperCase('tr-TR') })}
+                            className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                          {formData.tenantPhone && (
+                            <a href={`tel:${formData.tenantPhone}`} className="bg-emerald-600 hover:bg-emerald-500 text-white p-2.5 rounded-lg flex items-center justify-center" title="Kiracıyı Ara">
+                              <PhoneCall className="w-5 h-5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-400">Genel Not</label>
                       <textarea rows={3} value={formData.generalNote || ''} onChange={(e) => setFormData({ ...formData, generalNote: e.target.value.toLocaleUpperCase('tr-TR') })}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Müşteri hakkında genel notlar..." />
+                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
                   </div>
                 )}
@@ -538,7 +601,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                           value={formData.gasNote || ''}
                           onChange={(e) => setFormData({ ...formData, gasNote: e.target.value.toLocaleUpperCase('tr-TR') })}
                           className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-orange-500 outline-none"
-                          placeholder="Randevu saati, eksikler vb."
                         />
                       </div>
                     </div>
@@ -557,7 +619,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             value={formData.serviceSerialNumber || ''}
                             onChange={(e) => setFormData({ ...formData, serviceSerialNumber: e.target.value.toLocaleUpperCase('tr-TR') })}
                             className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="SN-123456789"
                           />
                           <button
                             type="button"
@@ -623,7 +684,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                           value={formData.serviceNote || ''}
                           onChange={(e) => setFormData({ ...formData, serviceNote: e.target.value.toLocaleUpperCase('tr-TR') })}
                           className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="Yönlendirme notları, garanti durumu vb."
                         />
                       </div>
                     </div>
@@ -672,7 +732,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                         value={formData.teamNote || ''}
                         onChange={(e) => setFormData({ ...formData, teamNote: e.target.value })}
                         className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500/50 outline-none"
-                        placeholder="Kontrol sırasında fark edilen eksikler, kaçaklar veya diğer notlar..."
                       />
                     </div>
                   </div>
@@ -804,14 +863,15 @@ const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
-              {formData.phone && (
-                <a
-                  href={`tel:${formData.phone}`}
+              {(formData.phone || formData.tenantPhone) && (
+                <button
+                  type="button"
+                  onClick={handleHeaderCall}
                   className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs"
-                  title="Müşteriyi Ara"
+                  title="Arama Yap"
                 >
                   <Phone className="w-4 h-4" />
-                </a>
+                </button>
               )}
               <button
                 type="button"
@@ -952,7 +1012,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             setFormData({ ...formData, title: e.target.value.toLocaleUpperCase('tr-TR') })
                           }
                           className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
-                          placeholder="Örn: AHMET YILMAZ"
                         />
                       </div>
 
@@ -964,13 +1023,12 @@ const TaskModal: React.FC<TaskModalProps> = ({
                         <div className="flex gap-2">
                           <input
                             type="text"
-                            inputMode="tel"
+                            inputMode="text"
                             value={formData.phone || ''}
                             onChange={(e) =>
                               setFormData({ ...formData, phone: e.target.value.toLocaleUpperCase('tr-TR') })
                             }
                             className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
-                            placeholder="05XX XXX XX XX"
                           />
                           {formData.phone && (
                             <a
@@ -996,7 +1054,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             setFormData({ ...formData, jobDescription: e.target.value.toLocaleUpperCase('tr-TR') })
                           }
                           className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
-                          placeholder="Örn: Kombi Montajı, Tesisat, Petek vb."
                         />
                       </div>
 
@@ -1012,7 +1069,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             setFormData({ ...formData, assignee: e.target.value.toLocaleUpperCase('tr-TR') })
                           }
                           className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
-                          placeholder="Örn: MEHMET USTA"
                         />
                       </div>
                     </div>
@@ -1053,7 +1109,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             setFormData({ ...formData, address: e.target.value.toLocaleUpperCase('tr-TR') })
                           }
                           className="w-full bg-white border border-slate-300 rounded-xl pl-3.5 pr-11 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs resize-y min-h-[75px] transition-all"
-                          placeholder="Mahalle, Cadde, Sokak, No, Daire..."
                         />
                         <button
                           type="button"
@@ -1075,7 +1130,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                               setFormData({ ...formData, district: e.target.value.toLocaleUpperCase('tr-TR') })
                             }
                             className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
-                            placeholder="İlçe (Örn: ÇANKAYA)"
                           />
                         </div>
                         <div>
@@ -1086,7 +1140,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                               setFormData({ ...formData, city: e.target.value.toLocaleUpperCase('tr-TR') })
                             }
                             className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
-                            placeholder="İl (Örn: ANKARA)"
                           />
                         </div>
                       </div>
@@ -1115,6 +1168,52 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       )}
                     </div>
 
+                    {/* Kiracı Bilgileri */}
+                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-slate-700 uppercase tracking-wider">
+                        <User className="w-4 h-4 text-orange-600" />
+                        <span>Kiracı Bilgileri</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
+                          Kiracı Adı Soyadı
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.tenantName || ''}
+                          onChange={(e) =>
+                            setFormData({ ...formData, tenantName: e.target.value.toLocaleUpperCase('tr-TR') })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
+                          Kiracı Telefon
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            inputMode="text"
+                            value={formData.tenantPhone || ''}
+                            onChange={(e) =>
+                              setFormData({ ...formData, tenantPhone: e.target.value.toLocaleUpperCase('tr-TR') })
+                            }
+                            className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
+                          />
+                          {formData.tenantPhone && (
+                            <a
+                              href={`tel:${formData.tenantPhone}`}
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white p-2.5 rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-md shadow-emerald-600/20 shrink-0"
+                              title="Kiracıyı Ara"
+                            >
+                              <PhoneCall className="w-5 h-5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Genel Not */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
@@ -1127,7 +1226,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                           setFormData({ ...formData, generalNote: e.target.value.toLocaleUpperCase('tr-TR') })
                         }
                         className="w-full bg-white border border-slate-300 rounded-xl p-3.5 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
-                        placeholder="Müşteri hakkında genel hatırlatmalar..."
                       />
                     </div>
                   </div>
@@ -1207,7 +1305,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                         value={formData.teamNote || ''}
                         onChange={(e) => setFormData({ ...formData, teamNote: e.target.value })}
                         className="w-full bg-white border border-slate-300 rounded-xl p-3.5 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 shadow-xs transition-all"
-                        placeholder="Kontrol sırasında fark edilen eksikler, kaçak kontrolü veya ekibin aldığı notlar..."
                       />
                     </div>
                   </div>
@@ -1254,7 +1351,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             setFormData({ ...formData, gasNote: e.target.value.toLocaleUpperCase('tr-TR') })
                           }
                           className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
-                          placeholder="Randevu saati, gaz dağıtım şirketi notu vb."
                         />
                       </div>
                     </div>
@@ -1281,7 +1377,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                               })
                             }
                             className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-xs transition-all"
-                            placeholder="SN-123456789"
                           />
                           <button
                             type="button"
@@ -1357,7 +1452,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             setFormData({ ...formData, serviceNote: e.target.value.toLocaleUpperCase('tr-TR') })
                           }
                           className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-xs transition-all"
-                          placeholder="Yönlendirme notları, garanti durumu vb."
                         />
                       </div>
                     </div>
@@ -1547,6 +1641,91 @@ const TaskModal: React.FC<TaskModalProps> = ({
           setShowLocationModal(false);
         }}
       />
+
+      {/* Phone Selector Modal */}
+      {showPhoneSelector && (
+        <div
+          className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in duration-150"
+          onClick={() => setShowPhoneSelector(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-2xl p-4 shadow-2xl space-y-3 animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-black text-slate-800">Arama Yap</h3>
+                <p className="text-[11px] text-slate-500 font-medium truncate max-w-[240px]">
+                  {formData.title || 'Müşteri'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPhoneSelector(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-700 flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {formData.phone && (
+                <a
+                  href={`tel:${formData.phone}`}
+                  onClick={() => setShowPhoneSelector(false)}
+                  className="flex items-center justify-between p-3 rounded-xl bg-orange-50 hover:bg-orange-100/70 border border-orange-200 transition-all active:scale-[0.98]"
+                >
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase text-orange-700 tracking-wider block">
+                      🏠 Ev Sahibi
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 block truncate">
+                      {formData.title || 'Ev Sahibi'}
+                    </span>
+                    <span className="text-xs font-semibold text-orange-950 font-mono">
+                      {formData.phone}
+                    </span>
+                  </div>
+                  <div className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                </a>
+              )}
+
+              {formData.tenantPhone && (
+                <a
+                  href={`tel:${formData.tenantPhone}`}
+                  onClick={() => setShowPhoneSelector(false)}
+                  className="flex items-center justify-between p-3 rounded-xl bg-blue-50 hover:bg-blue-100/70 border border-blue-200 transition-all active:scale-[0.98]"
+                >
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase text-blue-700 tracking-wider block">
+                      🔑 Kiracı
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 block truncate">
+                      {formData.tenantName || 'Kiracı'}
+                    </span>
+                    <span className="text-xs font-semibold text-blue-950 font-mono">
+                      {formData.tenantPhone}
+                    </span>
+                  </div>
+                  <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                </a>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowPhoneSelector(false)}
+              className="w-full py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              Vazgeç
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

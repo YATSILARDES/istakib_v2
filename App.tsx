@@ -438,6 +438,14 @@ function App() {
       }
 
       if (selectedTask) {
+        // Personel tamamen boşaltıldıysa kontrol bayrağını temizle, aksi halde mevcut durumu koru
+        if (!dataToSave.assignee || dataToSave.assignee.trim() === '') {
+          dataToSave.isReassignedForCheck = false;
+        } else {
+          // Kart içinden düzenleme yapıldığında mevcut bayrağı birebir koru (ne silinsin ne de sahte oluşsun)
+          dataToSave.isReassignedForCheck = selectedTask.isReassignedForCheck ?? false;
+        }
+
         const taskRef = doc(db, 'tasks', selectedTask.id);
         await updateDoc(taskRef, { ...dataToSave, lastUpdatedBy: user?.email });
       } else {
@@ -635,8 +643,19 @@ function App() {
       const updateData: any = { assignee: assigneeName, assigneeEmail: assigneeEmail || null, lastUpdatedBy: user?.email };
 
       const existingTask = tasks.find(t => t.id === taskId);
-      if (existingTask && (existingTask.checkStatus || existingTask.status === TaskStatus.CHECK_COMPLETED)) {
-        updateData.isReassignedForCheck = true;
+      if (existingTask) {
+        // Kontrolü onayla sadece daha önceden kontrol yapılmış (temiz/eksik var) veya kontrolü tamamlanmış işlerde gelmeli
+        const wasPreviouslyChecked = Boolean(
+          existingTask.checkStatus === 'clean' ||
+          existingTask.checkStatus === 'missing' ||
+          existingTask.status === TaskStatus.CHECK_COMPLETED
+        );
+
+        if (assigneeName && assigneeName.trim() !== '' && wasPreviouslyChecked) {
+          updateData.isReassignedForCheck = true;
+        } else {
+          updateData.isReassignedForCheck = false;
+        }
       }
 
       if (scheduledDate) {

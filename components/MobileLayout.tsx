@@ -460,7 +460,15 @@ export default function MobileLayout({
         if (task.district) addressLine += ` / ${task.district}`;
         if (task.city) addressLine += ` / ${task.city}`;
 
-        let shareText = `👤 ${task.title}\n📞 ${task.phone || 'Telefon Yok'}\n🏠 ${addressLine || 'Adres Yok'}`;
+        let shareText = `👤 ${task.title}`;
+        if (task.tenantName || task.tenantPhone) {
+            shareText += `\n📞 Ev Sahibi Tel: ${task.phone || 'Yok'}`;
+            if (task.tenantName) shareText += `\n👤 Kiracı: ${task.tenantName}`;
+            if (task.tenantPhone) shareText += `\n📞 Kiracı Tel: ${task.tenantPhone}`;
+        } else {
+            shareText += `\n📞 ${task.phone || 'Telefon Yok'}`;
+        }
+        shareText += `\n🏠 ${addressLine || 'Adres Yok'}`;
 
         if (task.locationCoordinates) {
             shareText += `\n\n📍 Konum:\n${task.locationCoordinates}`;
@@ -1076,7 +1084,7 @@ export default function MobileLayout({
                                                                 </div>
 
                                                                 <div className="flex items-center gap-3">
-                                                                    {task.isReassignedForCheck && onTaskUpdate && (
+                                                                    {Boolean(task.isReassignedForCheck && (task.checkStatus === "clean" || task.checkStatus === "missing" || task.status === TaskStatus.CHECK_COMPLETED)) && onTaskUpdate && (
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();

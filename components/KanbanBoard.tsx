@@ -170,8 +170,17 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             scheduledDate: targetDate
           };
 
-          if ((assignTargetTask.task as Task).checkStatus) {
+          const targetTask = assignTargetTask.task as Task;
+          const wasPreviouslyChecked = Boolean(
+            targetTask.checkStatus === 'clean' ||
+            targetTask.checkStatus === 'missing' ||
+            targetTask.status === TaskStatus.CHECK_COMPLETED
+          );
+
+          if (wasPreviouslyChecked) {
             updates.isReassignedForCheck = true;
+          } else {
+            updates.isReassignedForCheck = false;
           }
 
           onTaskUpdate(assignTargetTask.task.id, updates);
