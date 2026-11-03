@@ -385,7 +385,9 @@ function App() {
           isEngineer: true,
           canAccessQuotations: true,
           canAccessStock: true,
-          canAccessPaintingTasks: true
+          canAccessPaintingTasks: true,
+          canViewPaintingTasks: true,
+          canEditPaintingTasks: true
         });
         setPermissionsLoading(false);
       } else {
@@ -402,7 +404,9 @@ function App() {
               allowedColumns: [],
               canAccessRoutineTasks: false,
               canAccessAssignment: false,
-              canAccessPaintingTasks: false
+              canAccessPaintingTasks: false,
+              canViewPaintingTasks: false,
+              canEditPaintingTasks: false
             });
           }
           setPermissionsLoading(false);

@@ -72,7 +72,9 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                     isEngineer: data.isEngineer || false,
                     canAccessQuotations: data.canAccessQuotations || false,
                     canAccessStock: data.canAccessStock || false,
-                    canAccessPaintingTasks: data.canAccessPaintingTasks || false
+                    canAccessPaintingTasks: data.canAccessPaintingTasks || false,
+                    canViewPaintingTasks: data.canViewPaintingTasks ?? data.canAccessPaintingTasks ?? false,
+                    canEditPaintingTasks: data.canEditPaintingTasks || false
                 });
             });
             setAllPermissions(perms);
@@ -102,7 +104,9 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                 isEngineer: false,
                 canAccessQuotations: false,
                 canAccessStock: false,
-                canAccessPaintingTasks: false
+                canAccessPaintingTasks: false,
+                canViewPaintingTasks: false,
+                canEditPaintingTasks: false
             };
             await setDoc(doc(db, 'permissions', emailLower), newPerm);
             await loadPermissions();
@@ -455,6 +459,8 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                                         canAccessQuotations: true,
                                         canAccessStock: true,
                                         canAccessPaintingTasks: true,
+                                        canViewPaintingTasks: true,
+                                        canEditPaintingTasks: true,
                                         allowedColumns: Object.values(TaskStatus)
                                     })
                                 }}
@@ -475,7 +481,8 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                                 { key: 'isEngineer',            label: 'Mühendis (Teklif Hazırlama)', desc: 'Teklif hazırlayıp klasörüne erişebilir.', color: 'bg-orange-600' },
                                 { key: 'canAccessQuotations',   label: 'Teklif Yönetimi', desc: 'Teklifler sekmesine erişebilir.',        color: 'bg-amber-600' },
                                 { key: 'canAccessStock',        label: 'Stok Listesi',    desc: 'Stok takip ekranını görüntüleyebilir.', color: 'bg-cyan-600' },
-                                { key: 'canAccessPaintingTasks', label: 'Boya İşleri',     desc: 'Boya işleri ve canlı haritaya erişebilir.', color: 'bg-orange-600' },
+                                { key: 'canViewPaintingTasks', label: 'Boya İşleri (Görüntüleme)', desc: 'Boya listesini ve haritayı görüntüleyebilir.', color: 'bg-amber-600' },
+                                { key: 'canEditPaintingTasks', label: 'Boya İşleri (Düzenleme)', desc: 'Kişi ekleyip çıkarabilir, not yazabilir ve WhatsApp ile gönderebilir.', color: 'bg-orange-600' },
                             ] as { key: string; label: string; desc: string; color: string }[]).map(item => (
                                 <label key={item.key} className="flex items-center justify-between px-4 py-3.5 cursor-pointer active:bg-slate-700/30 transition-colors">
                                     <div className="flex-1 pr-4">

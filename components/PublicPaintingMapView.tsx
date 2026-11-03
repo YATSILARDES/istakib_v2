@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Phone, Navigation, ChevronUp, ChevronDown, List, Layers, CheckCircle2 } from 'lucide-react';
+import { MapPin, Phone, Navigation, ChevronUp, ChevronDown, List, Layers, CheckCircle2, X } from 'lucide-react';
 
 export interface PublicMapCustomer {
     id: string;
@@ -13,6 +13,11 @@ export interface PublicMapCustomer {
     m?: string; // painter note
     lat: number;
     lng: number;
+}
+
+export interface PublicPaintingMapViewProps {
+    initialCustomers?: PublicMapCustomer[];
+    onClose?: () => void;
 }
 
 // Custom Marker Icon with Permanent Name & Phone Badge
@@ -64,8 +69,8 @@ const MapController: React.FC<{
     return null;
 };
 
-export const PublicPaintingMapView: React.FC = () => {
-    const [customers, setCustomers] = useState<PublicMapCustomer[]>([]);
+export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ initialCustomers, onClose }) => {
+    const [customers, setCustomers] = useState<PublicMapCustomer[]>(initialCustomers || []);
     const [focusedCustomer, setFocusedCustomer] = useState<PublicMapCustomer | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
     const [completedIds, setCompletedIds] = useState<string[]>(() => {
@@ -87,8 +92,12 @@ export const PublicPaintingMapView: React.FC = () => {
         });
     };
 
-    // Parse data from URL query parameter
+    // Parse data from URL query parameter or initialCustomers prop
     useEffect(() => {
+        if (initialCustomers && initialCustomers.length > 0) {
+            setCustomers(initialCustomers);
+            return;
+        }
         try {
             const params = new URLSearchParams(window.location.search);
             const dataParam = params.get('data');
@@ -107,7 +116,7 @@ export const PublicPaintingMapView: React.FC = () => {
         } catch (e) {
             console.error('Failed to parse public map data from url', e);
         }
-    }, []);
+    }, [initialCustomers]);
 
     const initialCenter = useMemo(() => {
         if (customers.length === 0) return { lat: 37.2153, lng: 28.3636 };
@@ -150,6 +159,17 @@ export const PublicPaintingMapView: React.FC = () => {
                         <List className="w-4 h-4" />
                         <span className="text-[11px]">{isDrawerOpen ? 'Haritayı Büyüt' : 'Listeyi Aç'}</span>
                     </button>
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-xs ml-1"
+                            title="Kapat"
+                        >
+                            <X className="w-4 h-4" />
+                            <span>Kapat</span>
+                        </button>
+                    )}
                 </div>
             </header>
 

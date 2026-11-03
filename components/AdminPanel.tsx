@@ -70,7 +70,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                     isEngineer: data.isEngineer || false,
                     canAccessQuotations: data.canAccessQuotations || false,
                     canAccessStock: data.canAccessStock || false,
-                    canAccessPaintingTasks: data.canAccessPaintingTasks || false
+                    canAccessPaintingTasks: data.canAccessPaintingTasks || false,
+                    canViewPaintingTasks: data.canViewPaintingTasks ?? data.canAccessPaintingTasks ?? false,
+                    canEditPaintingTasks: data.canEditPaintingTasks || false
                 });
             });
             setAllPermissions(perms);
@@ -102,7 +104,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                 isEngineer: false,
                 canAccessQuotations: false,
                 canAccessStock: false,
-                canAccessPaintingTasks: false
+                canAccessPaintingTasks: false,
+                canViewPaintingTasks: false,
+                canEditPaintingTasks: false
             };
 
             await setDoc(doc(db, 'permissions', emailLower), newPerm);
@@ -682,6 +686,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                                         canAccessQuotations: true,
                                                                         canAccessStock: true,
                                                                         canAccessPaintingTasks: true,
+                                                                        canViewPaintingTasks: true,
+                                                                        canEditPaintingTasks: true,
                                                                         allowedColumns: Object.values(TaskStatus)
                                                                     })
                                                                 }}
@@ -758,13 +764,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                             onChange: () => handleUpdatePermission({ ...selectedPerm, canAccessStock: !selectedPerm.canAccessStock })
                                                         },
                                                         {
-                                                            key: 'canAccessPaintingTasks' as const,
+                                                            key: 'canViewPaintingTasks' as const,
+                                                            icon: <Eye className="w-5 h-5" />,
+                                                            color: 'amber',
+                                                            label: 'Boya İşleri (Görüntüleme)',
+                                                            desc: 'Boya işleri listesini ve haritayı görüntüleyebilir.',
+                                                            value: selectedPerm.canViewPaintingTasks || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canViewPaintingTasks: !selectedPerm.canViewPaintingTasks })
+                                                        },
+                                                        {
+                                                            key: 'canEditPaintingTasks' as const,
                                                             icon: <Paintbrush className="w-5 h-5" />,
                                                             color: 'orange',
-                                                            label: 'Boya İşleri',
-                                                            desc: 'Boya işleri listesine ve canlı haritaya erişebilir.',
-                                                            value: selectedPerm.canAccessPaintingTasks || false,
-                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canAccessPaintingTasks: !selectedPerm.canAccessPaintingTasks })
+                                                            label: 'Boya İşleri (Düzenleme)',
+                                                            desc: 'Müşteri ekleyip çıkarabilir, not düzenleyebilir ve WhatsApp ile gönderebilir.',
+                                                            value: selectedPerm.canEditPaintingTasks || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canEditPaintingTasks: !selectedPerm.canEditPaintingTasks })
                                                         },
                                                     ] as { key: string; icon: React.ReactNode; color: string; label: string; desc: string; value: boolean; onChange: () => void }[]).map(item => {
                                                         const colorMap: Record<string, { active: string; toggle: string; icon: string }> = {

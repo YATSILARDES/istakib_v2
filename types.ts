@@ -106,7 +106,9 @@ export interface UserPermission {
   isEngineer?: boolean;            // Mühendis (Teklif Klasörü) yetkisi
   canAccessQuotations?: boolean;   // Teklif Yönetimi erişimi
   canAccessStock?: boolean;        // Stok Listesi erişimi
-  canAccessPaintingTasks?: boolean; // Boya İşleri erişimi
+  canAccessPaintingTasks?: boolean; // Boya İşleri erişimi (Eski uyumluluk)
+  canViewPaintingTasks?: boolean;   // Boya İşleri Görme Yetkisi
+  canEditPaintingTasks?: boolean;   // Boya İşleri Düzenleme Yetkisi
 }
 
 export interface RoutineTask {

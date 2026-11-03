@@ -142,7 +142,7 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
     const canSeeStock = userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessStock;
     const canSeeQuotations = userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessQuotations || userPermissions?.isEngineer;
     const isAdmin = userPermissions?.role === 'admin' || userPermissions?.role === 'manager';
-    const canSeePaintingTasks = isAdmin || userPermissions?.canAccessPaintingTasks === true;
+    const canSeePaintingTasks = isAdmin || userPermissions?.canViewPaintingTasks === true || userPermissions?.canEditPaintingTasks === true || userPermissions?.canAccessPaintingTasks === true;
     const canAddTasks = isAdmin || !!userPermissions?.canAddCustomers;
     const canAccessAssignment = isAdmin || !!userPermissions?.canAccessAssignment;
     const canAccessRoutinePool = isAdmin || !!userPermissions?.canAccessRoutineTasks;

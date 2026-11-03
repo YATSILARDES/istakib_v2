@@ -587,7 +587,7 @@ export default function MobileLayout({
         }
 
         if (diaSubView === 'painting_tasks') {
-            const canSeePainting = userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessPaintingTasks === true;
+            const canSeePainting = userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canViewPaintingTasks === true || userPermissions?.canEditPaintingTasks === true || userPermissions?.canAccessPaintingTasks === true;
             if (!canSeePainting) {
                 setDiaSubView('menu');
                 return null;

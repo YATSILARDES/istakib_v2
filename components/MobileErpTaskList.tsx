@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Task, TaskStatus, StatusLabels, UserPermission, RoutineTask } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
-import { PaintingMultiMapView } from './PaintingMultiMapView';
+import { PublicPaintingMapView, PublicMapCustomer } from './PublicPaintingMapView';
 
 interface MobileErpTaskListProps {
     title: string;
@@ -154,31 +154,12 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     const [selectorSelectedIds, setSelectorSelectedIds] = useState<string[]>([]);
     const [paintNoteModalTask, setPaintNoteModalTask] = useState<Task | null>(null);
     const [paintNoteInput, setPaintNoteInput] = useState<string>('');
-    const [showPaintingMapView, setShowPaintingMapView] = useState<boolean>(false);
-    const [googleMapsListUrl, setGoogleMapsListUrl] = useState<string>(() => {
-        try {
-            return localStorage.getItem('painting_google_maps_list_url') || '';
-        } catch {
-            return '';
-        }
-    });
-    const [showGoogleMapsListModal, setShowGoogleMapsListModal] = useState<boolean>(false);
-    const [googleMapsListInput, setGoogleMapsListInput] = useState<string>('');
+    const [showPublicMapModal, setShowPublicMapModal] = useState<boolean>(false);
 
-    const handleSaveGoogleMapsListUrl = (url: string) => {
-        const trimmed = url.trim();
-        setGoogleMapsListUrl(trimmed);
-        try {
-            if (trimmed) {
-                localStorage.setItem('painting_google_maps_list_url', trimmed);
-            } else {
-                localStorage.removeItem('painting_google_maps_list_url');
-            }
-        } catch (e) {
-            console.error('Failed to save Google Maps list url', e);
-        }
-        setShowGoogleMapsListModal(false);
-    };
+    // Permission checks for Painting Mode
+    const isAdmin = userPermissions?.role === 'admin' || userPermissions?.role === 'manager';
+    const canEditPainting = isAdmin || userPermissions?.canEditPaintingTasks === true;
+    const canViewPainting = isAdmin || userPermissions?.canViewPaintingTasks === true || canEditPainting || userPermissions?.canAccessPaintingTasks === true;
 
     // Synchronize selected painting task IDs: Automatically select all tasks in painting mode including new additions
     React.useEffect(() => {
@@ -282,42 +263,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
         return filtered.length > 0 ? filtered : tasks;
     };
 
-    // Helper: Generate standalone public map URL for painter
-    const generatePublicMapUrl = (activeTasks: Task[]): string => {
-        const payload = activeTasks.map((t) => {
-            const coords = extractCoords(t.locationCoordinates);
-            if (!coords) return null;
-            return {
-                id: t.id,
-                n: t.title || 'Müşteri',
-                p: t.tenantPhone || t.phone || '',
-                a: t.address || '',
-                d: t.district || '',
-                m: t.paintNote || '',
-                lat: coords.lat,
-                lng: coords.lng
-            };
-        }).filter(Boolean);
-
-        if (payload.length === 0) return '';
-
-        try {
-            const jsonStr = JSON.stringify(payload);
-            const bytes = new TextEncoder().encode(jsonStr);
-            let binString = '';
-            for (let i = 0; i < bytes.length; i++) {
-                binString += String.fromCharCode(bytes[i]);
-            }
-            const b64 = btoa(binString);
-            const origin = window.location.origin;
-            return `${origin}/?view=boya_harita&data=${encodeURIComponent(b64)}`;
-        } catch (e) {
-            console.error('Failed to generate public map url', e);
-            return '';
-        }
-    };
-
-    // Helper: Build WhatsApp customer list with direct Google Maps location pins (No forced route)
+    // Helper: Build WhatsApp customer list with direct Google Maps location pins (No forced bulk route)
     const buildPaintingRoute = (activeTasks: Task[]) => {
         let stopsText = '';
         let withCoordsCount = 0;
@@ -349,46 +295,10 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
         });
 
         const todayStr = new Date().toLocaleDateString('tr-TR');
-        const publicMapUrl = generatePublicMapUrl(activeTasks);
 
-        let fullMsg = `🎨 *BOYACI GÜNLÜK İŞ & KONUM LİSTESİ* 🎨\n📅 Tarih: ${todayStr}\n📍 Toplam ${activeTasks.length} Müşteri (${withCoordsCount} Harita Konumlu)\n`;
-
-        if (publicMapUrl) {
-            fullMsg += `──────────────────\n🗺️ *İSİMLİ CANLI HARİTA LİNKİ:*\n👉 ${publicMapUrl}\n*(Tüm müşterileri isimleri ve telefonlarıyla tek canlı haritada görüp rota olmadan gezmek için yukarıdaki linke dokunun)*\n`;
-        }
-
-        if (googleMapsListUrl) {
-            fullMsg += `──────────────────\n📍 *Google Haritalar Listesi:*\n👉 ${googleMapsListUrl}\n`;
-        }
-
-        fullMsg += `──────────────────${stopsText}\n\n💡 *Bilgi:* En üstteki "Canlı Harita Linki"ne dokunarak tüm evleri tek haritada görebilir, dilediğiniz müşteriye tıklayıp yol tarifi alabilirsiniz.`;
+        const fullMsg = `🎨 *BOYACI GÜNLÜK İŞ & KONUM LİSTESİ* 🎨\n📅 Tarih: ${todayStr}\n📍 Toplam ${activeTasks.length} Müşteri (${withCoordsCount} Harita Konumlu)\n───────────────${stopsText}\n\n💡 *Bilgi:* Hangi müşteriye gitmek istiyorsanız altındaki mavi "Konum Linki"ne dokunarak Google Haritalar navigasyonunu açabilirsiniz.`;
 
         return { fullMsg, withCoordsCount };
-    };
-
-    const handleCopyPublicMapUrl = async () => {
-        const activeTasks = getActivePaintingTasks();
-        const url = generatePublicMapUrl(activeTasks);
-        if (!url) {
-            alert('Harita linki oluşturulacak konumlu müşteri bulunamadı.');
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(url);
-            alert('Boyacı Canlı Harita bağlantısı panoya kopyalandı!');
-        } catch {
-            prompt('Harita bağlantısını kopyalayın:', url);
-        }
-    };
-
-    const handleOpenPublicMapInNewTab = () => {
-        const activeTasks = getActivePaintingTasks();
-        const url = generatePublicMapUrl(activeTasks);
-        if (!url) {
-            alert('Harita açılacak konumlu müşteri bulunamadı.');
-            return;
-        }
-        window.open(url, '_blank');
     };
 
     const handleSendToPainterWhatsApp = () => {
@@ -720,118 +630,88 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Paintbrush className="w-5 h-5 text-amber-200" />
-                            <h3 className="font-black text-xs uppercase tracking-wider text-amber-100">Boyacı Rota & Harita Paylaşımı</h3>
+                            <h3 className="font-black text-xs uppercase tracking-wider text-amber-100">Boyacı Rota & Harita Listesi</h3>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (selectedPaintingIds.length === tasks.length) {
-                                        setSelectedPaintingIds([]);
-                                    } else {
-                                        setSelectedPaintingIds(tasks.map(t => t.id));
-                                    }
-                                }}
-                                className="text-[11px] font-bold bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded-md transition-colors"
-                            >
-                                {selectedPaintingIds.length === tasks.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
-                            </button>
+                        {canEditPainting ? (
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (selectedPaintingIds.length === tasks.length) {
+                                            setSelectedPaintingIds([]);
+                                        } else {
+                                            setSelectedPaintingIds(tasks.map(t => t.id));
+                                        }
+                                    }}
+                                    className="text-[11px] font-bold bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded-md transition-colors"
+                                >
+                                    {selectedPaintingIds.length === tasks.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
+                                </button>
+                                <span className="text-[11px] font-bold bg-black/30 px-2 py-0.5 rounded-md">
+                                    {getActivePaintingTasks().length} / {tasks.length} Seçili
+                                </span>
+                            </div>
+                        ) : (
                             <span className="text-[11px] font-bold bg-black/30 px-2 py-0.5 rounded-md">
-                                {getActivePaintingTasks().length} / {tasks.length} Seçili
+                                Toplam {tasks.length} Müşteri
                             </span>
-                        </div>
+                        )}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className={canEditPainting ? "grid grid-cols-2 gap-2" : "w-full"}>
                         <button
                             type="button"
-                            onClick={handleSendToPainterWhatsApp}
-                            className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow-md shadow-emerald-900/30 flex items-center justify-center gap-1.5 transition-all"
-                        >
-                            <Send className="w-4 h-4 shrink-0" />
-                            <span>WhatsApp İle Gönder</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setShowPaintingMapView(true)}
-                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all border border-amber-300/40"
+                            onClick={() => setShowPublicMapModal(true)}
+                            className={`bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all border border-amber-300/40 ${canEditPainting ? '' : 'w-full py-3 text-sm'}`}
                         >
                             <Map className="w-4 h-4 text-amber-100 shrink-0" />
-                            <span>İsimli Canlı Harita</span>
+                            <span>Harita & Müşteri Listesini Aç</span>
                         </button>
+                        {canEditPainting && (
+                            <button
+                                type="button"
+                                onClick={handleSendToPainterWhatsApp}
+                                className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow-md shadow-emerald-900/30 flex items-center justify-center gap-1.5 transition-all"
+                            >
+                                <Send className="w-4 h-4 shrink-0" />
+                                <span>WhatsApp İle Gönder</span>
+                            </button>
+                        )}
                     </div>
 
-                    {/* Boyacı Canlı Harita Linki Barı (Sıfır Giriş, Tam Otomatik) */}
-                    <div className="bg-white/15 backdrop-blur-xs rounded-xl p-2.5 border border-white/25 flex items-center justify-between gap-2 shadow-xs">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500/30 border border-emerald-300/40 flex items-center justify-center shrink-0">
-                                <ExternalLink className="w-4 h-4 text-emerald-200" />
+                    {/* Editor Toolbar (Only for canEditPainting) */}
+                    {canEditPainting && (
+                        <div className="flex items-center justify-between pt-1 border-t border-white/15 text-[11px] text-amber-100 flex-wrap gap-y-1.5">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPaintingSearchQuery('');
+                                    setSelectorSelectedIds([]);
+                                    setShowPaintingSelectorModal(true);
+                                }}
+                                className="flex items-center gap-1 hover:text-white font-bold bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition-colors"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>+ Kişi Kartı Ekle</span>
+                            </button>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleCopyRouteText}
+                                    className="flex items-center gap-1 hover:text-white underline font-semibold text-[11px]"
+                                >
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>Listeyi Kopyala</span>
+                                </button>
+                                <span>•</span>
+                                <span className="font-semibold text-[10.5px]">
+                                    {getActivePaintingTasks().filter(t => extractCoords(t.locationCoordinates)).length} Konum Haritada
+                                </span>
                             </div>
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-black text-white">Boyacı Canlı Harita Linki</span>
-                                    <span className="text-[9px] bg-emerald-500 text-white px-1.5 py-0.2 rounded font-black tracking-wider uppercase">
-                                        Otomatik
-                                    </span>
-                                </div>
-                                <p className="text-[10px] text-amber-100/90 truncate">
-                                    Seçili {getActivePaintingTasks().filter(t => extractCoords(t.locationCoordinates)).length} evin konumunu boyacıya canlı harita linki olarak atar.
-                                </p>
-                            </div>
                         </div>
-
-                        <div className="flex items-center gap-1 shrink-0">
-                            <button
-                                type="button"
-                                onClick={handleOpenPublicMapInNewTab}
-                                className="bg-white/20 hover:bg-white/30 active:scale-95 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all"
-                                title="Haritayı Önizle / Yeni Sekmede Aç"
-                            >
-                                <Eye className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Önizle</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleCopyPublicMapUrl}
-                                className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-[11px] font-black px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-xs transition-all"
-                                title="Bağlantıyı Kopyala"
-                            >
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>Linki Kopyala</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1 border-t border-white/15 text-[11px] text-amber-100 flex-wrap gap-y-1.5">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setPaintingSearchQuery('');
-                                setSelectorSelectedIds([]);
-                                setShowPaintingSelectorModal(true);
-                            }}
-                            className="flex items-center gap-1 hover:text-white font-bold bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition-colors"
-                        >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>+ Kişi Kartı Ekle</span>
-                        </button>
-
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={handleCopyRouteText}
-                                className="flex items-center gap-1 hover:text-white underline font-semibold text-[11px]"
-                            >
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>Listeyi Kopyala</span>
-                            </button>
-                            <span>•</span>
-                            <span className="font-semibold text-[10.5px]">
-                                {getActivePaintingTasks().filter(t => extractCoords(t.locationCoordinates)).length} Konum Haritada
-                            </span>
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
 
@@ -971,7 +851,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 className="px-3.5 py-3 hover:bg-orange-50/30 active:bg-orange-50/60 transition-colors flex items-start gap-3 cursor-pointer group relative"
                             >
                                 {/* Painting Checkbox in Painting Mode */}
-                                {isPaintingMode && (
+                                {isPaintingMode && canEditPainting && (
                                     <button
                                         type="button"
                                         onClick={(e) => {
@@ -1000,9 +880,13 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                         type="button"
                                         onClick={(e) => {
                                             e.stopPropagation();
+                                            if (isPaintingMode && !canEditPainting) return;
                                             onTaskUpdate && onTaskUpdate(task.id, { isPriority: !task.isPriority });
                                         }}
-                                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-slate-200 shadow-2xs flex items-center justify-center transition-all active:scale-125 z-10"
+                                        disabled={isPaintingMode && !canEditPainting}
+                                        className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-slate-200 shadow-2xs flex items-center justify-center transition-all ${
+                                            isPaintingMode && !canEditPainting ? 'cursor-default pointer-events-none' : 'active:scale-125'
+                                        } z-10`}
                                         title={task.isPriority ? "Önceliği Kaldır" : "Öncelikli İş Yap"}
                                     >
                                         <Star className={`w-3 h-3 ${task.isPriority ? 'fill-amber-400 text-amber-500' : 'text-slate-300 hover:text-amber-400'}`} />
@@ -1054,17 +938,19 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                             <span className="truncate">
                                                 <strong className="font-bold text-amber-800">Boyacı Notu:</strong> {task.paintNote || 'Özel not yok'}
                                             </span>
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setPaintNoteModalTask(task);
-                                                    setPaintNoteInput(task.paintNote || '');
-                                                }}
-                                                className="text-amber-700 hover:text-amber-900 underline font-bold shrink-0 text-[10px]"
-                                            >
-                                                {task.paintNote ? 'Düzenle' : '+ Not Ekle'}
-                                            </button>
+                                            {canEditPainting && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPaintNoteModalTask(task);
+                                                        setPaintNoteInput(task.paintNote || '');
+                                                    }}
+                                                    className="text-amber-700 hover:text-amber-900 underline font-bold shrink-0 text-[10px]"
+                                                >
+                                                    {task.paintNote ? 'Düzenle' : '+ Not Ekle'}
+                                                </button>
+                                            )}
                                         </div>
                                     )}
 
@@ -1089,15 +975,21 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                             <button
                                                 type="button"
                                                 onClick={() => {
+                                                    if (isPaintingMode && !canEditPainting) return;
                                                     setStatusModalTask(task);
                                                     setSelectedNewStatus(task.status);
                                                     setModalIsWaiting(task.isWaiting || false);
                                                 }}
-                                                className={`px-2 py-0.5 rounded-lg text-[10px] font-black border flex items-center gap-1 max-w-full truncate active:scale-95 transition-all shadow-2xs hover:brightness-95 ${statusColor}`}
-                                                title="Aşamayı Değiştir / Gönder"
+                                                disabled={isPaintingMode && !canEditPainting}
+                                                className={`px-2 py-0.5 rounded-lg text-[10px] font-black border flex items-center gap-1 max-w-full truncate transition-all shadow-2xs ${
+                                                    isPaintingMode && !canEditPainting ? 'cursor-default pointer-events-none' : 'active:scale-95 hover:brightness-95'
+                                                } ${statusColor}`}
+                                                title={isPaintingMode && !canEditPainting ? undefined : "Aşamayı Değiştir / Gönder"}
                                             >
                                                 <span className="truncate">{statusLabel}</span>
-                                                <ChevronDown className="w-3 h-3 shrink-0 opacity-70" />
+                                                {(!isPaintingMode || canEditPainting) && (
+                                                    <ChevronDown className="w-3 h-3 shrink-0 opacity-70" />
+                                                )}
                                             </button>
 
                                             {/* Beklet / Beklemede Butonu (Gaz Açıldı aşamasındaysa) */}
@@ -1124,17 +1016,19 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                         {/* Action Icons */}
                                         <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
 
-                                            {/* WhatsApp / Share Button */}
-                                            <button
-                                                onClick={(e) => handleShare(task, e)}
-                                                className="p-1 rounded-md text-slate-400 hover:text-orange-600 hover:bg-orange-50 active:scale-95 transition-all"
-                                                title="Paylaş"
-                                            >
-                                                <Share2 className="w-3.5 h-3.5" />
-                                            </button>
+                                            {/* WhatsApp / Share Button (Boya modunda sadece düzenleme yetkisi olan görür) */}
+                                            {(!isPaintingMode || canEditPainting) && (
+                                                <button
+                                                    onClick={(e) => handleShare(task, e)}
+                                                    className="p-1 rounded-md text-slate-400 hover:text-orange-600 hover:bg-orange-50 active:scale-95 transition-all"
+                                                    title="Paylaş"
+                                                >
+                                                    <Share2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
 
-                                            {/* Boya Listesinden Çıkar Butonu (Sadece Boya İşleri Modunda Görünür) */}
-                                            {isPaintingMode && onTaskUpdate && (
+                                            {/* Boya Listesinden Çıkar Butonu (Sadece Boya İşleri Modunda ve Düzenleme Yetkisi Varsa Görünür) */}
+                                            {isPaintingMode && canEditPainting && onTaskUpdate && (
                                                 <button
                                                     type="button"
                                                     onClick={(e) => {
@@ -2205,98 +2099,26 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                 </div>
             )}
 
-            {/* In-App Live Interactive Map with Customer Name & Phone on Markers */}
-            <PaintingMultiMapView
-                isOpen={showPaintingMapView}
-                onClose={() => setShowPaintingMapView(false)}
-                tasks={getActivePaintingTasks()}
-                extractCoords={extractCoords}
-                googleMapsListUrl={googleMapsListUrl}
-            />
-
-            {/* Google Maps Paylaşılan Liste Bağlantı Modal */}
-            {showGoogleMapsListModal && (
-                <div className="fixed inset-0 z-[320] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-                    <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-                        {/* Header */}
-                        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white p-4 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-2">
-                                <Bookmark className="w-5 h-5 text-blue-200" />
-                                <h3 className="font-black text-sm">Google Haritalar Paylaşılan Liste</h3>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setShowGoogleMapsListModal(false)}
-                                className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        {/* Content & Guide */}
-                        <div className="p-4 space-y-3.5 text-slate-700 text-xs overflow-y-auto custom-scrollbar">
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 text-blue-900">
-                                <p className="font-extrabold text-[12px] text-blue-950 flex items-center gap-1.5">
-                                    <span>💡</span>
-                                    <span>Google Haritalar'da Liste Nasıl Oluşturulur?</span>
-                                </p>
-                                <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-blue-900/90 leading-relaxed pl-1">
-                                    <li>Telefonunuzda <strong>Google Haritalar (Google Maps)</strong> uygulamasını açın.</li>
-                                    <li>Alttaki menüden <strong>'Kaydedilenler' (veya 'Siz')</strong> sekmesine dokunun.</li>
-                                    <li><strong>'+ Yeni Liste'</strong> butonuna basıp listenize isim verin (Örn: <em>Boya İşleri</em>).</li>
-                                    <li>Listenin sağ üstündeki <strong>'Paylaş'</strong> simgesine dokunup <strong>'Bağlantıyı Kopyala'</strong> deyin.</li>
-                                    <li>Kopyaladığınız linki aşağıdaki alana yapıştırın.</li>
-                                </ol>
-                            </div>
-
-                            <div>
-                                <label className="block font-bold text-slate-700 mb-1 text-xs">
-                                    Google Maps Paylaşılan Liste Linki:
-                                </label>
-                                <input
-                                    type="url"
-                                    value={googleMapsListInput}
-                                    onChange={(e) => setGoogleMapsListInput(e.target.value)}
-                                    placeholder="https://maps.app.goo.gl/..."
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
-                                />
-                            </div>
-
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 leading-normal">
-                                <strong>📌 Ne Sağlar?</strong> Bu link bir kez kaydedilir. Boyacıya WhatsApp ile liste gönderdiğinizde bu bağlantı mesaja otomatik eklenir. Boyacı tıkladığında tüm müşterileri Google Haritalar'da tek haritada ve liste olarak görür; rota çizgisi olmadan dilediğine gidebilir.
-                            </div>
-                        </div>
-
-                        {/* Footer Buttons */}
-                        <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0">
-                            {googleMapsListUrl ? (
-                                <button
-                                    type="button"
-                                    onClick={() => handleSaveGoogleMapsListUrl('')}
-                                    className="text-rose-600 hover:text-rose-700 font-bold text-xs"
-                                >
-                                    Linki Kaldır
-                                </button>
-                            ) : <span />}
-
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowGoogleMapsListModal(false)}
-                                    className="px-3 py-2 text-slate-600 hover:bg-slate-200 rounded-xl font-bold text-xs transition-colors"
-                                >
-                                    Vazgeç
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleSaveGoogleMapsListUrl(googleMapsListInput)}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl font-black text-xs shadow-md shadow-blue-600/30 transition-all"
-                                >
-                                    Kaydet ve Bağla
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            {/* Public Painting Map & List Modal */}
+            {showPublicMapModal && (
+                <div className="fixed inset-0 z-[280]">
+                    <PublicPaintingMapView
+                        initialCustomers={getActivePaintingTasks().map(t => {
+                            const coords = extractCoords(t.locationCoordinates);
+                            if (!coords) return null;
+                            return {
+                                id: t.id,
+                                n: t.title || 'Müşteri',
+                                p: t.tenantPhone || t.phone || '',
+                                a: t.address || '',
+                                d: t.district || '',
+                                m: t.paintNote || '',
+                                lat: coords.lat,
+                                lng: coords.lng
+                            };
+                        }).filter(Boolean) as PublicMapCustomer[]}
+                        onClose={() => setShowPublicMapModal(false)}
+                    />
                 </div>
             )}
 
