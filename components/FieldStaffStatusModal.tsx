@@ -99,7 +99,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
             case TaskStatus.GAS_OPENED:
                 return { label: 'Gazı Açıldı', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', stripe: 'bg-rose-500' };
             case TaskStatus.DEPOSIT_PAID:
-                return { label: 'Kapora / Avans', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', stripe: 'bg-purple-500' };
+                return { label: StatusLabels[TaskStatus.DEPOSIT_PAID] || 'Depozito Yatırıldı', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', stripe: 'bg-purple-500' };
             default:
                 return { label: StatusLabels[status] || status, bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200', stripe: 'bg-slate-400' };
         }
@@ -546,7 +546,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                                 <span className="text-[9px] font-bold bg-white border border-slate-100 px-1 rounded text-slate-500">#{t.orderNumber}</span>
                                                             </div>
                                                             <div className="flex items-center gap-2">
-                                                                {Boolean(t.isReassignedForCheck && (t.checkStatus === "clean" || t.checkStatus === "missing" || t.status === TaskStatus.CHECK_COMPLETED)) && onTaskUpdate && (
+                                                                {Boolean(t.isReassignedForCheck && (t.checkStatus === "clean" || t.checkStatus === "missing")) && onTaskUpdate && (
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
@@ -698,7 +698,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                                                 <span className="text-xs font-bold text-slate-700">{t.title}</span>
                                                                             </div>
                                                                             <div className="flex items-center gap-2">
-                                                                                {Boolean(t.isReassignedForCheck && (t.checkStatus === "clean" || t.checkStatus === "missing" || t.status === TaskStatus.CHECK_COMPLETED)) && onTaskUpdate && (
+                                                                                {Boolean(t.isReassignedForCheck && (t.checkStatus === "clean" || t.checkStatus === "missing")) && onTaskUpdate && (
                                                                                     <button
                                                                                         onClick={(e) => {
                                                                                             e.stopPropagation();
@@ -958,7 +958,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                     )}
 
                                                     {/* Reassigned for check action */}
-                                                    {Boolean(t.isReassignedForCheck && (t.checkStatus === "clean" || t.checkStatus === "missing" || t.status === TaskStatus.CHECK_COMPLETED)) && onTaskUpdate && (
+                                                    {Boolean(t.isReassignedForCheck && (t.checkStatus === "clean" || t.checkStatus === "missing")) && onTaskUpdate && (
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

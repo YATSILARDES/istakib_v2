@@ -39,10 +39,13 @@ export interface Task {
   // Check Info (Kontrol Elemanı Bilgileri)
   teamNote?: string; // Kontrol Ekibi Notu
   checkStatus?: 'missing' | 'clean' | null; // Kontrol Durumu (Eksik Var / Eksik Yok)
+  isGlazierDirected?: boolean | null; // Camcı Yönlendirildi mi? (Evet / Hayır)
+  isElectricianDirected?: boolean | null; // Elektrikçi Yönlendirildi mi? (Evet / Hayır)
 
   // Gas Opening Info (Gaz Açım Bilgileri)
   gasOpeningDate?: string;
   gasNote?: string;
+  hasFuse?: boolean | null; // Sigorta Var mı? (Evet / Hayır)
 
   // Service Info (Servis Bilgileri)
   serviceSerialNumber?: string;
@@ -59,6 +62,10 @@ export interface Task {
   isWaiting?: boolean; // Beklemede Durumu (Mavi kart için)
   isPriority?: boolean; // Öncelikli (Yıldızlı) İş
   isReassignedForCheck?: boolean; // Kontrol sonrası tekrar atanan iş
+  isPaintingTask?: boolean; // Boya İşleri Listesinde mi?
+  paintStatus?: 'pending' | 'completed'; // Boya Durumu (Beklemede / Tamamlandı)
+  paintNote?: string; // Boyacı için özel not
+  paintDate?: string; // Boya Rota / İş Tarihi
 }
 
 export interface AudioConfig {

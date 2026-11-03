@@ -173,8 +173,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           const targetTask = assignTargetTask.task as Task;
           const wasPreviouslyChecked = Boolean(
             targetTask.checkStatus === 'clean' ||
-            targetTask.checkStatus === 'missing' ||
-            targetTask.status === TaskStatus.CHECK_COMPLETED
+            targetTask.checkStatus === 'missing'
           );
 
           if (wasPreviouslyChecked) {

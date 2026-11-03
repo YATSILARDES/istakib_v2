@@ -161,7 +161,7 @@ export default function MobileLayout({
     };
 
     // Sub-view inside DIA mode: 'menu' (main DIA accordion grid) vs active sub-view
-    const [diaSubView, setDiaSubView] = useState<'menu' | 'task_list' | 'my_tasks' | 'priority_tasks' | 'stock' | 'quotations' | 'profile'>('menu');
+    const [diaSubView, setDiaSubView] = useState<'menu' | 'task_list' | 'my_tasks' | 'priority_tasks' | 'painting_tasks' | 'stock' | 'quotations' | 'profile'>('menu');
     const [taskSearchQuery, setTaskSearchQuery] = useState<string>('');
 
     const [activeTab, setActiveTab] = useState<'home' | 'tasks' | 'profile' | 'stock' | 'quotations'>('home');
@@ -531,6 +531,10 @@ export default function MobileLayout({
                         setTaskSearchQuery(initialSearch || '');
                         setDiaSubView('priority_tasks');
                     }}
+                    onSelectPaintingTasks={(initialSearch) => {
+                        setTaskSearchQuery(initialSearch || '');
+                        setDiaSubView('painting_tasks');
+                    }}
                     onSelectStockCategory={(cat) => {
                         setStockCategory(cat);
                         setActiveTab('stock');
@@ -578,6 +582,28 @@ export default function MobileLayout({
                     onTaskUpdate={onTaskUpdate}
                     onSwitchToClassic={() => setAndPersistMenuStyle('classic')}
                     currentFilterStatus="ALL"
+                />
+            );
+        }
+
+        if (diaSubView === 'painting_tasks') {
+            const paintingTasks = tasks.filter(t => t.isPaintingTask);
+
+            return (
+                <MobileErpTaskList
+                    title="Boya İşleri"
+                    tasks={paintingTasks}
+                    allTasksForPaintingSelector={tasks}
+                    initialSearchQuery={taskSearchQuery}
+                    user={user}
+                    userPermissions={userPermissions}
+                    onBackToMenu={() => setDiaSubView('menu')}
+                    onTaskClick={onTaskClick}
+                    onAddTask={onAddTask}
+                    onTaskUpdate={onTaskUpdate}
+                    onSwitchToClassic={() => setAndPersistMenuStyle('classic')}
+                    currentFilterStatus="ALL"
+                    isPaintingMode={true}
                 />
             );
         }
@@ -1084,7 +1110,7 @@ export default function MobileLayout({
                                                                 </div>
 
                                                                 <div className="flex items-center gap-3">
-                                                                    {Boolean(task.isReassignedForCheck && (task.checkStatus === "clean" || task.checkStatus === "missing" || task.status === TaskStatus.CHECK_COMPLETED)) && onTaskUpdate && (
+                                                                    {Boolean(task.isReassignedForCheck && (task.checkStatus === "clean" || task.checkStatus === "missing")) && onTaskUpdate && (
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();

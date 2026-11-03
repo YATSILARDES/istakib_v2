@@ -24,7 +24,10 @@ import {
   ChevronLeft,
   ChevronDown,
   Check,
-  Navigation
+  Navigation,
+  Users,
+  Lock,
+  Paintbrush
 } from 'lucide-react';
 import { Scanner } from './Scanner';
 import CameraCapture from './CameraCapture';
@@ -70,23 +73,34 @@ const TaskModal: React.FC<TaskModalProps> = ({
     generalNote: '',
     teamNote: '',
     checkStatus: null,
+    isGlazierDirected: null,
+    isElectricianDirected: null,
     gasOpeningDate: '',
     gasNote: '',
     serviceSerialNumber: '',
     serialNumberImage: '',
     serviceNote: '',
-    isProjectDrawn: false
+    isProjectDrawn: false,
+    isPaintingTask: false,
+    paintNote: ''
   });
 
-  const [selectedStatus, setSelectedStatus] = useState<TaskStatus>(TaskStatus.TO_CHECK);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPhoneSelector, setShowPhoneSelector] = useState(false);
+  const [forceDirectEdit, setForceDirectEdit] = useState(false);
+
+  // İş daha önce kontrol edilmiş mi kontrolü (Sadece Eksik Var veya Eksik Yok işaretliyse kontrol edilmiş sayılır)
+  const isAlreadyChecked = Boolean(
+    task?.checkStatus === 'clean' ||
+    task?.checkStatus === 'missing' ||
+    formData.checkStatus === 'clean' ||
+    formData.checkStatus === 'missing'
+  );
 
   const handleHeaderCall = () => {
     if (formData.phone && formData.tenantPhone) {
@@ -108,14 +122,16 @@ const TaskModal: React.FC<TaskModalProps> = ({
     setShowImagePreview(false);
 
     if (task) {
-      setFormData({ ...task });
-      setSelectedStatus(task.status || TaskStatus.TO_CHECK);
+      setFormData({
+        ...task,
+        isPaintingTask: task.isPaintingTask || false,
+        paintNote: task.paintNote || ''
+      });
     } else {
-      const initialStatus = TaskStatus.TO_CHECK;
       setFormData({
         title: '',
         jobDescription: '',
-        status: initialStatus,
+        status: TaskStatus.TO_CHECK,
         assignee: '',
         date: new Date().toISOString().split('T')[0],
         address: '',
@@ -128,15 +144,18 @@ const TaskModal: React.FC<TaskModalProps> = ({
         generalNote: '',
         teamNote: '',
         checkStatus: null,
+        isGlazierDirected: null,
+        isElectricianDirected: null,
         orderNumber: nextOrderNumber,
         gasOpeningDate: '',
         gasNote: '',
         serviceSerialNumber: '',
         serialNumberImage: '',
         serviceNote: '',
-        isProjectDrawn: false
+        isProjectDrawn: false,
+        isPaintingTask: false,
+        paintNote: ''
       });
-      setSelectedStatus(initialStatus);
     }
   }, [task, isOpen]);
 
@@ -170,35 +189,11 @@ const TaskModal: React.FC<TaskModalProps> = ({
       }
     }
 
-    const dataToSave = { ...formData, status: selectedStatus };
-    if (selectedStatus === TaskStatus.GAS_OPENED && !dataToSave.gasOpeningDate) {
+    const dataToSave = { ...formData, status: formData.status || task?.status || TaskStatus.TO_CHECK };
+    if (dataToSave.status === TaskStatus.GAS_OPENED && !dataToSave.gasOpeningDate) {
       dataToSave.gasOpeningDate = new Date().toISOString().split('T')[0];
     }
     onSave(dataToSave);
-    onClose();
-  };
-
-  // Quick "Gönder" button handler
-  const handleSendStatus = () => {
-    if (formData.title) {
-      const duplicate = existingTasks.find(
-        (t) =>
-          t.title.trim().toLowerCase() === formData.title?.trim().toLowerCase() &&
-          t.id !== task?.id
-      );
-
-      if (duplicate) {
-        if (!confirm('Aynı isimde kayıtlı kişi bulunmaktadır. Yine de gönderilsin mi?')) {
-          return;
-        }
-      }
-    }
-
-    const updated = { ...formData, status: selectedStatus };
-    if (selectedStatus === TaskStatus.GAS_OPENED && !updated.gasOpeningDate) {
-      updated.gasOpeningDate = new Date().toISOString().split('T')[0];
-    }
-    onSave(updated);
     onClose();
   };
 
@@ -286,11 +281,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
   // Responsive check for Mobile vs Desktop (PC)
   const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+    typeof window !== 'undefined'
+      ? (window.innerWidth < 768 || window.location.search.includes('mobile'))
+      : false
   );
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () =>
+      setIsMobile(window.innerWidth < 768 || (typeof window !== 'undefined' && window.location.search.includes('mobile')));
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -551,6 +549,46 @@ const TaskModal: React.FC<TaskModalProps> = ({
                           )}
                         </div>
                       </div>
+                    </div>
+
+                    {/* Boya Listesi (Boyacı Rota Listesi) */}
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                          <Paintbrush className="w-4 h-4 text-amber-400" />
+                          <span>Boya Listesi (Boyacı Rota & Harita Listesi)</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(formData.isPaintingTask)}
+                            onChange={(e) => setFormData(prev => ({ ...prev, isPaintingTask: e.target.checked }))}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                        </label>
+                      </div>
+                      {formData.isPaintingTask && (
+                        <div className="space-y-2 pt-2 border-t border-amber-500/20">
+                          <label className="text-xs font-semibold text-slate-300">Boyacıya Özel Not (Opsiyonel)</label>
+                          <input
+                            type="text"
+                            placeholder="Örn: Sadece mutfak ve balkon boruları boyanacak"
+                            value={formData.paintNote || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, paintNote: e.target.value.toLocaleUpperCase('tr-TR') }))}
+                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                          />
+                          {formData.locationCoordinates ? (
+                            <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
+                              <Check className="w-3.5 h-3.5" /> GPS Konumu mevcut. Boyacıya haritada otomatik durak olarak iletilecektir.
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-amber-300 flex items-center gap-1">
+                              <AlertTriangle className="w-3.5 h-3.5" /> Bu kartta henüz GPS konumu kayıtlı değil. Yukarıdaki 'Konum Ekle' butonundan konum ekleyebilirsiniz.
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -856,7 +894,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 <h2 className="text-sm font-black tracking-tight text-white uppercase truncate">
                   {isEdit ? (formData.title || 'Kişi Kartı') : 'Yeni Müşteri Kartı'}
                 </h2>
-                <p className="text-[11px] text-orange-100 font-medium truncate">
+                <p className="text-[11px] text-orange-100 font-medium truncate mt-0.5">
                   Sıra #{formData.orderNumber || nextOrderNumber} {formData.district ? `• ${formData.district}` : ''}
                 </p>
               </div>
@@ -1214,6 +1252,50 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       </div>
                     </div>
 
+                    {/* Boya Listesi (Boyacı Rota Listesi) */}
+                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-xs font-black text-amber-900 uppercase tracking-wider">
+                          <Paintbrush className="w-4 h-4 text-amber-600" />
+                          <span>Boya Listesi (Boyacı Rota)</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(formData.isPaintingTask)}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, isPaintingTask: e.target.checked }))}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                        </label>
+                      </div>
+                      {formData.isPaintingTask && (
+                        <div className="space-y-2 pt-2 border-t border-amber-200">
+                          <label className="text-xs font-bold text-amber-900 uppercase tracking-wider block">
+                            Boyacıya Özel Not (Opsiyonel)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Örn: Balkon borusu ve sayaç boyanacak"
+                            value={formData.paintNote || ''}
+                            onChange={(e) =>
+                              setFormData({ ...formData, paintNote: e.target.value.toLocaleUpperCase('tr-TR') })
+                            }
+                            className="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 shadow-xs transition-all"
+                          />
+                          {formData.locationCoordinates ? (
+                            <p className="text-[11px] text-emerald-700 flex items-center gap-1 font-semibold">
+                              <Check className="w-3.5 h-3.5 text-emerald-600" /> GPS Konumu mevcut (Haritada durak olacak).
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-amber-800 flex items-center gap-1 font-semibold">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Bu kartta GPS konumu yok. Yukarıdaki 'Konum Ekle' ile ekleyebilirsiniz.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Genel Not */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
@@ -1243,70 +1325,285 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       <h3 className="font-black text-slate-800 text-sm md:text-base">Kontrol Ekibi İşlemleri</h3>
                     </div>
 
-                    {/* Eksik Var / Eksik Yok Butonları */}
-                    <div className="grid grid-cols-2 gap-3 pt-1">
-                      {/* Eksik Var */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            checkStatus: formData.checkStatus === 'missing' ? null : 'missing'
-                          })
-                        }
-                        className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2.5 transition-all active:scale-95 ${
-                          formData.checkStatus === 'missing'
-                            ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-md shadow-orange-500/20 ring-2 ring-orange-400/40'
-                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 shadow-xs'
-                        }`}
-                      >
-                        <AlertTriangle
-                          className={`w-9 h-9 ${
-                            formData.checkStatus === 'missing' ? 'text-orange-500 animate-bounce' : 'text-slate-400'
-                          }`}
-                        />
-                        <span className="font-black text-sm">Eksik Var</span>
-                        <span className="text-[10px] text-slate-400">Tadilat / düzeltme gerekli</span>
-                      </button>
+                    {/* --- DURUM 1: İLK KEZ KONTROL EDİLECEK İŞ (BİLGİLER KAPALI / KİLİTLİ GÖRÜNSÜN) --- */}
+                    {!isAlreadyChecked && !forceDirectEdit ? (
+                      <div className="space-y-4">
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center space-y-2 shadow-2xs">
+                          <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center mx-auto">
+                            <Lock className="w-5 h-5 text-slate-600" />
+                          </div>
+                          <div className="space-y-0.5">
+                            <h4 className="text-xs font-black text-slate-700 uppercase tracking-tight">
+                              Kontrol Bilgileri Kapalı
+                            </h4>
+                            <p className="text-[11.5px] text-slate-500 max-w-sm mx-auto leading-relaxed">
+                              Bu müşterinin ilk kontrolü henüz yapılmamıştır. İlk kontrol işlemi, kart üzerindeki durum değiştirme panelinden <strong>Kontrol Edildi</strong> seçilerek başlatılır.
+                            </p>
+                          </div>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => setForceDirectEdit(true)}
+                              className="text-[10.5px] text-orange-600 hover:text-orange-700 underline font-bold pt-1 cursor-pointer"
+                            >
+                              Yönetici olarak kilidi aç
+                            </button>
+                          )}
+                        </div>
 
-                      {/* Eksik Yok */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            checkStatus: formData.checkStatus === 'clean' ? null : 'clean'
-                          })
-                        }
-                        className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2.5 transition-all active:scale-95 ${
-                          formData.checkStatus === 'clean'
-                            ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/40'
-                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 shadow-xs'
-                        }`}
-                      >
-                        <CheckCircle2
-                          className={`w-9 h-9 ${
-                            formData.checkStatus === 'clean' ? 'text-emerald-500' : 'text-slate-400'
-                          }`}
-                        />
-                        <span className="font-black text-sm">Eksik Yok (Temiz)</span>
-                        <span className="text-[10px] text-slate-400">Kontrol onaylandı</span>
-                      </button>
-                    </div>
+                        {/* Bilgilerin Kapalı / Kilitli Görünümü */}
+                        <div className="space-y-4 opacity-40 pointer-events-none select-none grayscale-[40%]">
+                          {/* Camcı ve Elektrikçi Bilgi Tablosu (Kapalı) */}
+                          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+                            <div className="bg-slate-50 px-3.5 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                              <span className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <Users className="w-4 h-4 text-slate-400" />
+                                Camcı & Elektrikçi Bilgi Tablosu
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                Kilitli
+                              </span>
+                            </div>
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase">
+                                  <th className="py-2 px-3">Hizmet / Usta</th>
+                                  <th className="py-2 px-3">Durum</th>
+                                  <th className="py-2 px-3 text-right">Seçim</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 text-xs">
+                                <tr>
+                                  <td className="py-2.5 px-3 font-bold text-slate-600">🪟 Camcı</td>
+                                  <td className="py-2.5 px-3">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                      Belirtilmedi
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right">
+                                    <span className="text-[10px] text-slate-400 font-medium">Kapalı</span>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2.5 px-3 font-bold text-slate-600">⚡ Elektrikçi</td>
+                                  <td className="py-2.5 px-3">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                      Belirtilmedi
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right">
+                                    <span className="text-[10px] text-slate-400 font-medium">Kapalı</span>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
 
-                    {/* Kontrol Ekibi Notu */}
-                    <div className="space-y-1.5 pt-2">
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <FileText className="w-4 h-4 text-emerald-600" />
-                        Kontrol Ekibi Notu & Eksikler Listesi
-                      </label>
-                      <textarea
-                        rows={6}
-                        value={formData.teamNote || ''}
-                        onChange={(e) => setFormData({ ...formData, teamNote: e.target.value })}
-                        className="w-full bg-white border border-slate-300 rounded-xl p-3.5 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 shadow-xs transition-all"
-                      />
-                    </div>
+                          {/* Not Alanı (Kapalı) */}
+                          <div className="space-y-1.5 pt-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                              <FileText className="w-4 h-4 text-slate-400" />
+                              Kontrol Ekibi Notu & Eksikler Listesi
+                            </label>
+                            <textarea
+                              disabled
+                              rows={4}
+                              value=""
+                              placeholder="İlk kontrol yapıldıktan sonra aktif olur..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-slate-400 text-sm font-medium cursor-not-allowed shadow-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* --- DURUM 2: DAHA ÖNCE KONTROL EDİLMİŞ İŞ (BİLGİ TABLOSU VE NOT GÜNCELLEME) --- */
+                      <div className="space-y-4">
+                        {/* Camcı ve Elektrikçi Bilgi Tablosu */}
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+                          <div className="bg-slate-50 px-3.5 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                              <Users className="w-4 h-4 text-emerald-600" />
+                              Camcı & Elektrikçi Bilgi Tablosu
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                              Yönlendirme Durumu
+                            </span>
+                          </div>
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase">
+                                <th className="py-2 px-3">Hizmet / Usta</th>
+                                <th className="py-2 px-3">Durum</th>
+                                <th className="py-2 px-3 text-right">Seçim</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-xs">
+                              {/* Camcı Satırı */}
+                              <tr>
+                                <td className="py-2.5 px-3 font-bold text-slate-800">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-base">🪟</span>
+                                    <span>Camcı</span>
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  {formData.isGlazierDirected ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                      <Check className="w-3 h-3 stroke-[3]" /> Yönlendirildi
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-500 border border-slate-200 inline-flex items-center gap-1">
+                                      <X className="w-3 h-3 stroke-[3]" /> Yönlendirilmedi
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 text-right">
+                                  <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 gap-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormData({ ...formData, isGlazierDirected: true })}
+                                      className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                        formData.isGlazierDirected
+                                          ? 'bg-emerald-600 text-white shadow-xs'
+                                          : 'text-slate-600 hover:text-slate-900'
+                                      }`}
+                                    >
+                                      Evet
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormData({ ...formData, isGlazierDirected: false })}
+                                      className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                        formData.isGlazierDirected === false
+                                          ? 'bg-slate-700 text-white shadow-xs'
+                                          : 'text-slate-600 hover:text-slate-900'
+                                      }`}
+                                    >
+                                      Hayır
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                              {/* Elektrikçi Satırı */}
+                              <tr>
+                                <td className="py-2.5 px-3 font-bold text-slate-800">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-base">⚡</span>
+                                    <span>Elektrikçi</span>
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  {formData.isElectricianDirected ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                      <Check className="w-3 h-3 stroke-[3]" /> Yönlendirildi
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-500 border border-slate-200 inline-flex items-center gap-1">
+                                      <X className="w-3 h-3 stroke-[3]" /> Yönlendirilmedi
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 text-right">
+                                  <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 gap-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormData({ ...formData, isElectricianDirected: true })}
+                                      className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                        formData.isElectricianDirected
+                                          ? 'bg-emerald-600 text-white shadow-xs'
+                                          : 'text-slate-600 hover:text-slate-900'
+                                      }`}
+                                    >
+                                      Evet
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormData({ ...formData, isElectricianDirected: false })}
+                                      className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                        formData.isElectricianDirected === false
+                                          ? 'bg-slate-700 text-white shadow-xs'
+                                          : 'text-slate-600 hover:text-slate-900'
+                                      }`}
+                                    >
+                                      Hayır
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Eksik Var / Eksik Yok Butonları */}
+                        <div className="grid grid-cols-2 gap-3 pt-1">
+                          {/* Eksik Var */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                checkStatus: formData.checkStatus === 'missing' ? null : 'missing'
+                              })
+                            }
+                            className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2.5 transition-all active:scale-95 cursor-pointer ${
+                              formData.checkStatus === 'missing'
+                                ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-md shadow-orange-500/20 ring-2 ring-orange-400/40'
+                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 shadow-xs'
+                            }`}
+                          >
+                            <AlertTriangle
+                              className={`w-9 h-9 ${
+                                formData.checkStatus === 'missing' ? 'text-orange-500 animate-bounce' : 'text-slate-400'
+                              }`}
+                            />
+                            <span className="font-black text-sm">Eksik Var</span>
+                            <span className="text-[10px] text-slate-400">Tadilat / düzeltme gerekli</span>
+                          </button>
+
+                          {/* Eksik Yok */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                checkStatus: formData.checkStatus === 'clean' ? null : 'clean'
+                              })
+                            }
+                            className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2.5 transition-all active:scale-95 cursor-pointer ${
+                              formData.checkStatus === 'clean'
+                                ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/40'
+                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 shadow-xs'
+                            }`}
+                          >
+                            <CheckCircle2
+                              className={`w-9 h-9 ${
+                                formData.checkStatus === 'clean' ? 'text-emerald-500' : 'text-slate-400'
+                              }`}
+                            />
+                            <span className="font-black text-sm">Eksik Yok (Temiz)</span>
+                            <span className="text-[10px] text-slate-400">Kontrol onaylandı</span>
+                          </button>
+                        </div>
+
+                        {/* Kontrol Ekibi Notu & Eksikler Listesi */}
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                              <FileText className="w-4 h-4 text-emerald-600" />
+                              Kontrol Ekibi Notu & Eksikler Listesi
+                            </label>
+                            
+                          </div>
+                          <textarea
+                            rows={5}
+                            value={formData.teamNote || ''}
+                            onChange={(e) => setFormData({ ...formData, teamNote: e.target.value })}
+                            placeholder="Görülen eksiklikleri ve kontrol notlarını buraya yazın..."
+                            className="w-full bg-white border border-slate-300 rounded-xl p-3.5 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 shadow-xs transition-all"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1524,113 +1821,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
         </div>
       </div>
 
-      {/* STATUS CHANGER MODAL / BOTTOM SHEET WITH GÖNDER BUTTON */}
-      {showStatusModal && (
-        <div
-          className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn"
-          onClick={() => setShowStatusModal(false)}
-        >
-          <div
-            className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-scaleIn font-sans"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="px-5 py-3.5 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white flex items-center justify-between shadow-xs shrink-0">
-              <div className="min-w-0">
-                <h3 className="font-black text-sm uppercase tracking-tight">İş Durumunu Değiştir</h3>
-                <p className="text-[11px] text-orange-100 font-medium truncate">
-                  {formData.title || 'Müşteri'} • #{formData.orderNumber || nextOrderNumber}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowStatusModal(false)}
-                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {/* Status Options */}
-            <div className="p-4 overflow-y-auto space-y-2 flex-1">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                Aktarılacak Aşamayı Seçin:
-              </span>
-              {Object.entries(StatusLabels).map(([key, label]) => {
-                const isSelected = selectedStatus === key;
-                return (
-                  <div
-                    key={key}
-                    onClick={() => {
-                      const newStatus = key as TaskStatus;
-                      setSelectedStatus(newStatus);
-                      setFormData((prev) => {
-                        const next = { ...prev, status: newStatus };
-                        if (newStatus === TaskStatus.GAS_OPENED && !next.gasOpeningDate) {
-                          next.gasOpeningDate = new Date().toISOString().split('T')[0];
-                        }
-                        return next;
-                      });
-                    }}
-                    className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] ${
-                      isSelected
-                        ? 'bg-orange-50 border-orange-500 shadow-xs ring-2 ring-orange-500/20'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          isSelected
-                            ? 'border-orange-500 bg-orange-500 text-white'
-                            : 'border-slate-300 bg-white'
-                        }`}
-                      >
-                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                      </div>
-                      <span
-                        className={`text-xs font-bold truncate ${
-                          isSelected ? 'text-orange-950 font-black' : 'text-slate-700'
-                        }`}
-                      >
-                        {label}
-                      </span>
-                    </div>
-
-                    {task?.status === key && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 shrink-0">
-                        Mevcut
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Footer with GÖNDER button */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowStatusModal(false)}
-                className="flex-1 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition-all"
-              >
-                Vazgeç
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowStatusModal(false);
-                  handleSendStatus();
-                }}
-                className="flex-1 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white font-black text-xs rounded-xl shadow-md shadow-orange-500/30 flex items-center justify-center gap-1.5 transition-all"
-              >
-                <Send className="w-4 h-4" />
-                <span>Gönder</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Location Modal */}
       <LocationPreviewModal
@@ -1726,7 +1917,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
           </div>
         </div>
       )}
-    </>
+
+      </>
   );
 };
 

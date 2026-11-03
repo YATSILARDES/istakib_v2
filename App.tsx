@@ -25,6 +25,7 @@ import StockGenericView from './components/StockGenericView';
 import ServiceRedirectDropdown from './components/ServiceRedirectDropdown';
 import QuotationsListView from './components/QuotationsListView';
 import { QuotationApp } from './teklif_app/QuotationApp';
+import { PublicPaintingMapView } from './components/PublicPaintingMapView';
 
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember, Quotation } from './types';
 
@@ -48,8 +49,12 @@ function App() {
   const [permissionsLoading, setPermissionsLoading] = useState(true);
 
   // UI State
-  const [forceMobile, setForceMobile] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768 || forceMobile);
+  const [forceMobile, setForceMobile] = useState(() => {
+    return typeof window !== 'undefined' && window.location.search.includes('mobile');
+  });
+  const [isMobile, setIsMobile] = useState(() => {
+    return typeof window !== 'undefined' ? (window.innerWidth < 768 || window.location.search.includes('mobile')) : false;
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -145,7 +150,7 @@ function App() {
 
   // Handle Resize & Force Mobile
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768 || forceMobile);
+    const handleResize = () => setIsMobile(window.innerWidth < 768 || forceMobile || (typeof window !== 'undefined' && window.location.search.includes('mobile')));
 
     // Initial check
     handleResize();
@@ -438,8 +443,8 @@ function App() {
       }
 
       if (selectedTask) {
-        // Personel tamamen boşaltıldıysa kontrol bayrağını temizle, aksi halde mevcut durumu koru
-        if (!dataToSave.assignee || dataToSave.assignee.trim() === '') {
+        // Personel tamamen boşaltıldıysa veya gaz açıldıysa kontrol bayrağını temizle, aksi halde mevcut durumu koru
+        if (!dataToSave.assignee || dataToSave.assignee.trim() === '' || dataToSave.status === TaskStatus.GAS_OPENED) {
           dataToSave.isReassignedForCheck = false;
         } else {
           // Kart içinden düzenleme yapıldığında mevcut bayrağı birebir koru (ne silinsin ne de sahte oluşsun)
@@ -491,8 +496,11 @@ function App() {
   const handleQuickUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
       const dataUpdates = { ...updates };
-      if (dataUpdates.status === TaskStatus.GAS_OPENED && !dataUpdates.gasOpeningDate) {
-        dataUpdates.gasOpeningDate = new Date().toISOString().split('T')[0];
+      if (dataUpdates.status === TaskStatus.GAS_OPENED) {
+        if (!dataUpdates.gasOpeningDate) {
+          dataUpdates.gasOpeningDate = new Date().toISOString().split('T')[0];
+        }
+        dataUpdates.isReassignedForCheck = false;
       }
       const taskRef = doc(db, 'tasks', taskId);
       await updateDoc(taskRef, {
@@ -644,11 +652,10 @@ function App() {
 
       const existingTask = tasks.find(t => t.id === taskId);
       if (existingTask) {
-        // Kontrolü onayla sadece daha önceden kontrol yapılmış (temiz/eksik var) veya kontrolü tamamlanmış işlerde gelmeli
+        // Kontrolü onayla sadece daha önceden kontrol yapılmış (temiz/eksik var) işlerde gelmeli
         const wasPreviouslyChecked = Boolean(
           existingTask.checkStatus === 'clean' ||
-          existingTask.checkStatus === 'missing' ||
-          existingTask.status === TaskStatus.CHECK_COMPLETED
+          existingTask.checkStatus === 'missing'
         );
 
         if (assigneeName && assigneeName.trim() !== '' && wasPreviouslyChecked) {
@@ -755,6 +762,12 @@ function App() {
   const handleSignOut = () => signOut(auth);
 
   // --- Render ---
+
+  // Standalone Public Painting Map for Painter / Field Staff (No auth required)
+  const isPublicPaintingMap = typeof window !== 'undefined' && window.location.search.includes('view=boya_harita');
+  if (isPublicPaintingMap) {
+    return <PublicPaintingMapView />;
+  }
 
   if (loading) return <div className="h-screen bg-slate-900 flex items-center justify-center text-white">Yükleniyor...</div>;
   if (!user) return <Login />;

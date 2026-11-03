@@ -6,7 +6,7 @@ import {
     Droplets, Wind, Power, Gauge, Users, AlertCircle, 
     PlusCircle, MapPin, ShieldCheck, User, KeyRound, LogOut, 
     Calendar, Search, ChevronDown, ChevronUp, ChevronRight, MessageSquare,
-    Compass, Sparkles, X, SlidersHorizontal
+    Compass, Sparkles, X, SlidersHorizontal, Paintbrush
 } from 'lucide-react';
 import { Task, TaskStatus, StatusLabels, RoutineTask, UserPermission, StaffMember } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
@@ -17,7 +17,7 @@ export interface DiaMenuItem {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     badge?: number | string;
-    actionType: 'task_filter' | 'my_tasks' | 'priority_tasks' | 'all_tasks' | 'stock_category' | 'quotation_sub' | 'quick_action' | 'profile';
+    actionType: 'task_filter' | 'my_tasks' | 'priority_tasks' | 'all_tasks' | 'painting_tasks' | 'stock_category' | 'quotation_sub' | 'quick_action' | 'profile';
     filterStatus?: TaskStatus | 'ALL';
     stockCategory?: 'combis' | 'radiators' | 'heatpumps' | 'thermosiphons' | 'acs' | 'electric_combis' | 'instant_heaters' | 'others';
     quotationSubView?: 'prepare' | 'list';
@@ -33,6 +33,7 @@ interface MobileDiaMenuProps {
     onSelectTaskFilter: (status: TaskStatus | 'ALL', initialSearch?: string) => void;
     onSelectMyTasks: (initialSearch?: string) => void;
     onSelectPriorityTasks?: (initialSearch?: string) => void;
+    onSelectPaintingTasks?: (initialSearch?: string) => void;
     onSelectStockCategory: (category: 'combis' | 'radiators' | 'heatpumps' | 'thermosiphons' | 'acs' | 'electric_combis' | 'instant_heaters' | 'others') => void;
     onSelectQuotationSubView: (view: 'prepare' | 'list') => void;
     onOpenAssignmentModal: () => void;
@@ -58,6 +59,7 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
     onSelectTaskFilter,
     onSelectMyTasks,
     onSelectPriorityTasks,
+    onSelectPaintingTasks,
     onSelectStockCategory,
     onSelectQuotationSubView,
     onOpenAssignmentModal,
@@ -238,6 +240,7 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
             total: permittedTasks.length,
             my: myActiveMainTasksCount + myActiveRoutineCount,
             priority: priorityCount,
+            painting: tasks.filter(t => t.isPaintingTask).length,
             routine_incomplete: routineTasks.filter(r => !r.isCompleted).length
         };
         tasks.forEach(t => {
@@ -276,6 +279,14 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
                 icon: Star,
                 badge: taskCounts.priority > 0 ? taskCounts.priority : undefined,
                 actionType: 'priority_tasks'
+            },
+            {
+                id: 'painting_tasks',
+                sectionId: 'tasks',
+                label: 'Boya İşleri',
+                icon: Paintbrush,
+                badge: taskCounts.painting > 0 ? taskCounts.painting : undefined,
+                actionType: 'painting_tasks'
             },
             ...(isStatusAllowed(TaskStatus.PROJECT_TO_BE_DRAWN) ? [{
                 id: `task_${TaskStatus.PROJECT_TO_BE_DRAWN}`,
@@ -524,6 +535,9 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
             case 'priority_tasks':
                 if (onSelectPriorityTasks) onSelectPriorityTasks(queryToPass);
                 else onSelectTaskFilter('ALL', queryToPass);
+                break;
+            case 'painting_tasks':
+                if (onSelectPaintingTasks) onSelectPaintingTasks(queryToPass);
                 break;
             case 'all_tasks':
                 onSelectTaskFilter('ALL', queryToPass);
