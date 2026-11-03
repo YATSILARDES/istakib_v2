@@ -142,6 +142,7 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
     const canSeeStock = userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessStock;
     const canSeeQuotations = userPermissions?.role === 'admin' || userPermissions?.role === 'manager' || userPermissions?.canAccessQuotations || userPermissions?.isEngineer;
     const isAdmin = userPermissions?.role === 'admin' || userPermissions?.role === 'manager';
+    const canSeePaintingTasks = isAdmin || userPermissions?.canAccessPaintingTasks === true;
     const canAddTasks = isAdmin || !!userPermissions?.canAddCustomers;
     const canAccessAssignment = isAdmin || !!userPermissions?.canAccessAssignment;
     const canAccessRoutinePool = isAdmin || !!userPermissions?.canAccessRoutineTasks;
@@ -280,14 +281,14 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
                 badge: taskCounts.priority > 0 ? taskCounts.priority : undefined,
                 actionType: 'priority_tasks'
             },
-            {
+            ...(canSeePaintingTasks ? [{
                 id: 'painting_tasks',
-                sectionId: 'tasks',
+                sectionId: 'tasks' as const,
                 label: 'Boya İşleri',
                 icon: Paintbrush,
                 badge: taskCounts.painting > 0 ? taskCounts.painting : undefined,
-                actionType: 'painting_tasks'
-            },
+                actionType: 'painting_tasks' as const
+            }] : []),
             ...(isStatusAllowed(TaskStatus.PROJECT_TO_BE_DRAWN) ? [{
                 id: `task_${TaskStatus.PROJECT_TO_BE_DRAWN}`,
                 sectionId: 'tasks' as const,

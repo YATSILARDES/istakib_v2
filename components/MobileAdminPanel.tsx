@@ -71,7 +71,8 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                     canAddCustomers: data.canAddCustomers || false,
                     isEngineer: data.isEngineer || false,
                     canAccessQuotations: data.canAccessQuotations || false,
-                    canAccessStock: data.canAccessStock || false
+                    canAccessStock: data.canAccessStock || false,
+                    canAccessPaintingTasks: data.canAccessPaintingTasks || false
                 });
             });
             setAllPermissions(perms);
@@ -100,7 +101,8 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                 canAddCustomers: false,
                 isEngineer: false,
                 canAccessQuotations: false,
-                canAccessStock: false
+                canAccessStock: false,
+                canAccessPaintingTasks: false
             };
             await setDoc(doc(db, 'permissions', emailLower), newPerm);
             await loadPermissions();
@@ -452,6 +454,7 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                                         isEngineer: true,
                                         canAccessQuotations: true,
                                         canAccessStock: true,
+                                        canAccessPaintingTasks: true,
                                         allowedColumns: Object.values(TaskStatus)
                                     })
                                 }}
@@ -472,6 +475,7 @@ const MobileAdminPanel: React.FC<MobileAdminPanelProps> = ({ isOpen, onClose, on
                                 { key: 'isEngineer',            label: 'Mühendis (Teklif Hazırlama)', desc: 'Teklif hazırlayıp klasörüne erişebilir.', color: 'bg-orange-600' },
                                 { key: 'canAccessQuotations',   label: 'Teklif Yönetimi', desc: 'Teklifler sekmesine erişebilir.',        color: 'bg-amber-600' },
                                 { key: 'canAccessStock',        label: 'Stok Listesi',    desc: 'Stok takip ekranını görüntüleyebilir.', color: 'bg-cyan-600' },
+                                { key: 'canAccessPaintingTasks', label: 'Boya İşleri',     desc: 'Boya işleri ve canlı haritaya erişebilir.', color: 'bg-orange-600' },
                             ] as { key: string; label: string; desc: string; color: string }[]).map(item => (
                                 <label key={item.key} className="flex items-center justify-between px-4 py-3.5 cursor-pointer active:bg-slate-700/30 transition-colors">
                                     <div className="flex-1 pr-4">

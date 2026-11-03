@@ -384,7 +384,8 @@ function App() {
           canAddCustomers: true,
           isEngineer: true,
           canAccessQuotations: true,
-          canAccessStock: true
+          canAccessStock: true,
+          canAccessPaintingTasks: true
         });
         setPermissionsLoading(false);
       } else {
@@ -400,7 +401,8 @@ function App() {
               role: 'staff',
               allowedColumns: [],
               canAccessRoutineTasks: false,
-              canAccessAssignment: false
+              canAccessAssignment: false,
+              canAccessPaintingTasks: false
             });
           }
           setPermissionsLoading(false);

@@ -3,7 +3,7 @@ import { db } from '@/src/firebase';
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
 import { UserPermission, AppSettings, Task, RoutineTask, TaskStatus, StatusLabels } from '../types';
 import * as XLSX from 'xlsx';
-import { User, Database, Bell, Download, Upload, Check, Plus, Trash2, Shield, Lock, Eye, AlertCircle, Save, X, Users, Loader2 } from 'lucide-react';
+import { User, Database, Bell, Download, Upload, Check, Plus, Trash2, Shield, Lock, Eye, AlertCircle, Save, X, Users, Loader2, Paintbrush } from 'lucide-react';
 
 interface AdminPanelProps {
     isOpen: boolean;
@@ -69,7 +69,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                     canAddCustomers: data.canAddCustomers || false,
                     isEngineer: data.isEngineer || false,
                     canAccessQuotations: data.canAccessQuotations || false,
-                    canAccessStock: data.canAccessStock || false
+                    canAccessStock: data.canAccessStock || false,
+                    canAccessPaintingTasks: data.canAccessPaintingTasks || false
                 });
             });
             setAllPermissions(perms);
@@ -100,7 +101,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                 canAddCustomers: false,
                 isEngineer: false,
                 canAccessQuotations: false,
-                canAccessStock: false
+                canAccessStock: false,
+                canAccessPaintingTasks: false
             };
 
             await setDoc(doc(db, 'permissions', emailLower), newPerm);
@@ -679,6 +681,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                                         isEngineer: true,
                                                                         canAccessQuotations: true,
                                                                         canAccessStock: true,
+                                                                        canAccessPaintingTasks: true,
                                                                         allowedColumns: Object.values(TaskStatus)
                                                                     })
                                                                 }}
@@ -753,6 +756,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
                                                             desc: 'Stok takip ekranını görüntüleyebilir.',
                                                             value: selectedPerm.canAccessStock || false,
                                                             onChange: () => handleUpdatePermission({ ...selectedPerm, canAccessStock: !selectedPerm.canAccessStock })
+                                                        },
+                                                        {
+                                                            key: 'canAccessPaintingTasks' as const,
+                                                            icon: <Paintbrush className="w-5 h-5" />,
+                                                            color: 'orange',
+                                                            label: 'Boya İşleri',
+                                                            desc: 'Boya işleri listesine ve canlı haritaya erişebilir.',
+                                                            value: selectedPerm.canAccessPaintingTasks || false,
+                                                            onChange: () => handleUpdatePermission({ ...selectedPerm, canAccessPaintingTasks: !selectedPerm.canAccessPaintingTasks })
                                                         },
                                                     ] as { key: string; icon: React.ReactNode; color: string; label: string; desc: string; value: boolean; onChange: () => void }[]).map(item => {
                                                         const colorMap: Record<string, { active: string; toggle: string; icon: string }> = {
