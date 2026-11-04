@@ -1032,7 +1032,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     onClick={() => setIsSortMenuOpen(prev => !prev)}
                     className={`p-2 rounded-lg border transition-all ${
                         sortBy !== 'order_asc' 
-                            ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-xs' 
+                            ? (isDesktopView ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-xs' : 'bg-orange-50 text-orange-600 border-orange-200 shadow-xs') 
                             : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                     }`}
                     title="Sıralama"
@@ -1045,14 +1045,14 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     onClick={() => setIsFilterModalOpen(true)}
                     className={`p-2 rounded-lg border transition-all relative ${
                         selectedDistrict 
-                            ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-xs' 
+                            ? (isDesktopView ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-xs' : 'bg-orange-50 text-orange-600 border-orange-200 shadow-xs') 
                             : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                     }`}
                     title="İlçe Filtresi"
                 >
                     <Filter className="w-4 h-4" />
                     {selectedDistrict && (
-                        <span className="w-2 h-2 rounded-full bg-orange-600 absolute top-1 right-1" />
+                        <span className={`w-2 h-2 rounded-full ${isDesktopView ? "bg-blue-600" : "bg-orange-600"} absolute top-1 right-1`} />
                     )}
                 </button>
             </div>
@@ -1065,7 +1065,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                             onClick={() => setTabFilter('all')}
                             className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
                                 tabFilter === 'all'
-                                    ? 'bg-orange-500 text-white shadow-xs'
+                                    ? (isDesktopView ? 'bg-blue-600 text-white shadow-xs' : 'bg-orange-500 text-white shadow-xs')
                                     : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
                             }`}
                         >
@@ -1075,7 +1075,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                             onClick={() => setTabFilter('main')}
                             className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
                                 tabFilter === 'main'
-                                    ? 'bg-orange-500 text-white shadow-xs'
+                                    ? (isDesktopView ? 'bg-blue-600 text-white shadow-xs' : 'bg-orange-500 text-white shadow-xs')
                                     : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
                             }`}
                         >
@@ -1085,7 +1085,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                             onClick={() => setTabFilter('routine')}
                             className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
                                 tabFilter === 'routine'
-                                    ? 'bg-orange-500 text-white shadow-xs'
+                                    ? (isDesktopView ? 'bg-blue-600 text-white shadow-xs' : 'bg-orange-500 text-white shadow-xs')
                                     : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
                             }`}
                         >
@@ -1094,13 +1094,13 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     </div>
                 ) : (
                     <span className="text-[11px] font-semibold text-slate-300">
-                        Toplam <strong className="text-orange-400 font-bold">{filteredTasks.length}</strong> İş Kaydı
+                        Toplam <strong className={`${isDesktopView ? "text-blue-400" : "text-orange-400"} font-bold`}>{filteredTasks.length}</strong> İş Kaydı
                     </span>
                 )}
 
                 <div className="flex items-center gap-2">
                     {selectedDistrict && (
-                        <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded text-[10px] font-bold">
+                        <div className={`flex items-center gap-1 px-2 py-0.5 ${isDesktopView ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" : "bg-orange-500/20 text-orange-300 border border-orange-500/30"} rounded text-[10px] font-bold`}>
                             <span>{selectedDistrict}</span>
                             <button onClick={() => setSelectedDistrict('')}><X className="w-3 h-3" /></button>
                         </div>
@@ -1243,7 +1243,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                     setSearchQuery('');
                                     setSelectedDistrict('');
                                 }}
-                                className="mt-2 text-xs text-orange-600 font-bold underline"
+                                className={`mt-2 text-xs ${isDesktopView ? "text-blue-600" : "text-orange-600"} font-bold underline`}
                             >
                                 Filtreleri Temizle
                             </button>
@@ -1287,7 +1287,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                             <button
                                 onClick={() => { setSelectedDistrict(''); setIsFilterModalOpen(false); }}
                                 className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                                    selectedDistrict === '' ? 'bg-orange-50 text-orange-600 font-bold' : 'text-slate-700 hover:bg-slate-50'
+                                    selectedDistrict === '' ? (isDesktopView ? 'bg-blue-50 text-blue-600 font-bold' : 'bg-orange-50 text-orange-600 font-bold') : 'text-slate-700 hover:bg-slate-50'
                                 }`}
                             >
                                 Tüm İlçeler ({tasks.length})
@@ -1300,7 +1300,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                         key={dist}
                                         onClick={() => { setSelectedDistrict(dist); setIsFilterModalOpen(false); }}
                                         className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition-colors ${
-                                            selectedDistrict === dist ? 'bg-orange-50 text-orange-600 font-bold' : 'text-slate-700 hover:bg-slate-50'
+                                            selectedDistrict === dist ? (isDesktopView ? 'bg-blue-50 text-blue-600 font-bold' : 'bg-orange-50 text-orange-600 font-bold') : 'text-slate-700 hover:bg-slate-50'
                                         }`}
                                     >
                                         <span>{dist}</span>
@@ -1324,10 +1324,10 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="px-5 py-3.5 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white flex items-center justify-between shadow-xs shrink-0">
+                        <div className={`px-5 py-3.5 ${isDesktopView ? "bg-slate-900 border-b border-slate-800" : "bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00]"} text-white flex items-center justify-between shadow-xs shrink-0`}>
                             <div className="min-w-0">
                                 <h3 className="font-black text-sm uppercase tracking-tight">İş Durumunu Değiştir</h3>
-                                <p className="text-[11px] text-orange-100 font-medium truncate">
+                                <p className={`text-[11px] ${isDesktopView ? "text-slate-400" : "text-orange-100"} font-medium truncate`}>
                                     {statusModalTask.title} • #{statusModalTask.orderNumber || 0}
                                 </p>
                             </div>
@@ -1361,7 +1361,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                         onClick={() => setSelectedNewStatus(key as TaskStatus)}
                                         className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] ${
                                             isSelected
-                                                ? 'bg-orange-50 border-orange-500 shadow-xs ring-2 ring-orange-500/20'
+                                                ? (isDesktopView ? 'bg-blue-50 border-blue-500 shadow-xs ring-2 ring-blue-500/20' : 'bg-orange-50 border-orange-500 shadow-xs ring-2 ring-orange-500/20')
                                                 : 'bg-white border-slate-200 hover:border-slate-300'
                                         }`}
                                     >
@@ -1369,13 +1369,13 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                             <div
                                                 className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
                                                     isSelected
-                                                        ? 'border-orange-500 bg-orange-500 text-white'
+                                                        ? (isDesktopView ? 'border-blue-500 bg-blue-500 text-white' : 'border-orange-500 bg-orange-500 text-white')
                                                         : 'border-slate-300 bg-white'
                                                 }`}
                                             >
                                                 {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                                             </div>
-                                            <span className={`text-xs font-bold truncate ${isSelected ? 'text-orange-950 font-black' : 'text-slate-700'}`}>
+                                            <span className={`text-xs font-bold truncate ${isSelected ? (isDesktopView ? 'text-blue-950 font-black' : 'text-orange-950 font-black') : 'text-slate-700'}`}>
                                                 {label}
                                             </span>
                                         </div>

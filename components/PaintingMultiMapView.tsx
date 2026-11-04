@@ -90,14 +90,14 @@ export const PaintingMultiMapView: React.FC<PaintingMultiMapViewProps> = ({
     return (
         <div className="fixed inset-0 z-[280] bg-black/70 backdrop-blur-xs flex flex-col animate-in fade-in duration-150">
             {/* Header */}
-            <div className="bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 text-white p-3.5 flex items-center justify-between shrink-0 shadow-md">
+            <div className="bg-slate-900 border-b border-slate-800 text-white p-3.5 flex items-center justify-between shrink-0 shadow-md">
                 <div className="flex items-center gap-2 min-w-0">
                     <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
                         <MapPin className="w-4 h-4 text-white" />
                     </div>
                     <div className="min-w-0">
                         <h3 className="font-black text-sm truncate">Boyacı Müşteri Konumları (Canlı Harita)</h3>
-                        <p className="text-[11px] text-amber-100 truncate">
+                        <p className="text-[11px] text-slate-400 truncate">
                             {validTasksWithCoords.length} Adres Haritada İşaretli
                         </p>
                     </div>
@@ -160,7 +160,7 @@ export const PaintingMultiMapView: React.FC<PaintingMultiMapViewProps> = ({
                                     <Popup className="custom-popup" closeButton={true}>
                                         <div className="p-1 space-y-1.5 max-w-[240px]">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="bg-orange-500 text-white font-black text-[10px] px-1.5 py-0.5 rounded-full">
+                                                <span className="bg-blue-600 text-white font-black text-[10px] px-1.5 py-0.5 rounded-full">
                                                     #{stopNumber}
                                                 </span>
                                                 <h4 className="font-extrabold text-xs text-slate-900 truncate">
@@ -174,7 +174,7 @@ export const PaintingMultiMapView: React.FC<PaintingMultiMapViewProps> = ({
                                             </p>
 
                                             {task.paintNote && (
-                                                <div className="bg-amber-50 border border-amber-200 rounded p-1.5 text-[10.5px] text-amber-900">
+                                                <div className="bg-slate-50 border border-slate-200 rounded p-1.5 text-[10.5px] text-slate-700">
                                                     <strong>Boyacı Notu:</strong> {task.paintNote}
                                                 </div>
                                             )}

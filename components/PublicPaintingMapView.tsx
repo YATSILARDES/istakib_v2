@@ -46,7 +46,7 @@ const createCustomMarkerIcon = (
             ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
             : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
 
-    const stemColor = isDone ? '#059669' : (isFocused ? '#d97706' : '#ea580c');
+    const stemColor = isDone ? '#059669' : (isFocused ? '#1d4ed8' : '#2563eb');
     const dotColor = isDone ? '#047857' : (isFocused ? '#b45309' : '#c2410c');
 
     const focusStyles = isFocused
@@ -284,7 +284,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
     return (
         <div className="fixed inset-0 w-screen h-screen bg-slate-900 flex flex-col overflow-hidden font-sans select-none">
             {/* Top Bar */}
-            <header className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white px-4 py-3 shadow-lg z-[1000] flex items-center justify-between shrink-0">
+            <header className="bg-slate-900 border-b border-slate-800 text-white px-4 py-3 shadow-lg z-[1000] flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 shadow-xs">
                         <MapPin className="w-5 h-5 text-white" />
@@ -293,7 +293,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                         <h1 className="font-black text-sm tracking-tight truncate">
                             Boyacı Günlük İş & Konum Haritası
                         </h1>
-                        <p className="text-[11px] text-amber-100 truncate font-medium">
+                        <p className="text-[11px] text-slate-400 truncate font-medium">
                             {todayStr} · <strong>{customers.length}</strong> Müşteri Haritada
                         </p>
                     </div>
@@ -326,7 +326,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
             <main className="flex-1 relative w-full h-full bg-slate-100">
                 {customers.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-500 z-10 bg-white">
-                        <MapPin className="w-16 h-16 text-orange-400 mb-3 animate-bounce" />
+                        <MapPin className="w-16 h-16 text-blue-500 mb-3 animate-bounce" />
                         <h2 className="font-black text-lg text-slate-800">Haritada Konum Bulunamadı</h2>
                         <p className="text-xs text-slate-500 max-w-sm mt-1 leading-relaxed">
                             Bağlantıdaki konum verisi okunamadı veya henüz hiçbir müşteri konumu eklenmemiş. Lütfen yöneticinizden güncel listeyi tekrar isteyin.
@@ -354,7 +354,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                                             [c.displayLat, c.displayLng]
                                         ]}
                                         pathOptions={{
-                                            color: '#ea580c',
+                                            color: '#2563eb',
                                             weight: 2,
                                             dashArray: '4, 4',
                                             opacity: 0.7
@@ -364,7 +364,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                                         center={[c.lat, c.lng]}
                                         radius={4}
                                         pathOptions={{
-                                            fillColor: '#ea580c',
+                                            fillColor: '#2563eb',
                                             fillOpacity: 0.9,
                                             color: '#ffffff',
                                             weight: 1.5
@@ -407,7 +407,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                                     >
                                         <div className="p-1 space-y-2 max-w-[260px] text-slate-800">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="bg-orange-600 text-white font-black text-[10.5px] px-2 py-0.5 rounded-full shrink-0">
+                                                <span className="bg-blue-600 text-white font-black text-[10.5px] px-2 py-0.5 rounded-full shrink-0">
                                                     #{idx + 1}
                                                 </span>
                                                 <h3 className="font-extrabold text-[13px] text-slate-900 truncate">
@@ -421,8 +421,8 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                                             </p>
 
                                             {c.m && (
-                                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-[11px] text-amber-950">
-                                                    <strong className="text-amber-800">Boyacı Notu:</strong> {c.m}
+                                                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-[11px] text-slate-800">
+                                                    <strong className="text-slate-700">Boyacı Notu:</strong> {c.m}
                                                 </div>
                                             )}
 
@@ -487,7 +487,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                         className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between border-b border-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition-colors"
                     >
                         <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+                            <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
                             <span>Müşteri & Adres Listesi ({customers.length} Müşteri)</span>
                             {completedIds.length > 0 && (
                                 <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-black">
@@ -513,13 +513,13 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                                         className={`p-3 rounded-xl border transition-all cursor-pointer ${
                                             isDone 
                                                 ? 'bg-emerald-50/70 border-emerald-300 opacity-80' 
-                                                : 'bg-white border-slate-200 hover:border-orange-300 shadow-xs'
+                                                : 'bg-white border-slate-200 hover:border-blue-300 shadow-xs'
                                         }`}
                                     >
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="flex items-start gap-2.5 flex-1 min-w-0 pr-1">
                                                 <span className={`w-6 h-6 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs ${
-                                                    isDone ? 'bg-emerald-600' : 'bg-orange-600'
+                                                    isDone ? 'bg-emerald-600' : 'bg-blue-600'
                                                 }`}>
                                                     {isDone ? '✓' : idx + 1}
                                                 </span>
@@ -559,7 +559,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                                         </div>
 
                                         {c.m && (
-                                            <div className="mt-2 text-[10.5px] bg-amber-50 text-amber-900 border border-amber-200 rounded px-2 py-1">
+                                            <div className="mt-2 text-[10.5px] bg-slate-50 text-slate-700 border border-slate-200 rounded px-2 py-1">
                                                 <strong>Not:</strong> {c.m}
                                             </div>
                                         )}

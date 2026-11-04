@@ -1047,7 +1047,7 @@ function App() {
 
       {activeTab === 'routine_pool' && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col">
-          <div className="sticky top-0 z-30 px-4 py-3 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white flex items-center justify-between shadow-md shrink-0">
+          <div className="sticky top-0 z-30 px-4 py-3 bg-slate-900 border-b border-slate-800 text-white flex items-center justify-between shadow-md shrink-0">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setActiveTab('dashboard')}
@@ -1058,7 +1058,7 @@ function App() {
               </button>
               <div>
                 <h2 className="text-sm font-black tracking-tight text-white uppercase">Eksikler Havuzu</h2>
-                <span className="text-[11px] text-orange-100 font-medium">Hızlı İşlemler • Rutin Görevler & Notlar</span>
+                <span className="text-[11px] text-slate-400 font-medium">Hızlı İşlemler • Rutin Görevler & Notlar</span>
               </div>
             </div>
           </div>
@@ -1078,7 +1078,7 @@ function App() {
 
       {activeTab === 'assignment' && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col">
-          <div className="sticky top-0 z-30 px-4 py-3 bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white flex items-center justify-between shadow-md shrink-0">
+          <div className="sticky top-0 z-30 px-4 py-3 bg-slate-900 border-b border-slate-800 text-white flex items-center justify-between shadow-md shrink-0">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setActiveTab('dashboard')}
@@ -1089,7 +1089,7 @@ function App() {
               </button>
               <div>
                 <h2 className="text-sm font-black tracking-tight text-white uppercase">Görev Dağıtımı</h2>
-                <span className="text-[11px] text-orange-100 font-medium">Hızlı İşlemler • Saha Personeli Planlama</span>
+                <span className="text-[11px] text-slate-400 font-medium">Hızlı İşlemler • Saha Personeli Planlama</span>
               </div>
             </div>
           </div>
