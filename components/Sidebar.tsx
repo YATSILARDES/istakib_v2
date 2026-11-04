@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Settings, BarChart2, FolderOpen, LogOut, Package, ChevronDown, ChevronRight, Circle, FileText, Users } from 'lucide-react';
+import { Home, Settings, BarChart2, FolderOpen, LogOut, Package, ChevronDown, ChevronRight, Circle, FileText, Users, Paintbrush } from 'lucide-react';
 import { UserPermission } from '../types';
 
 interface SidebarProps {
@@ -31,6 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
     // İzin kontrolleri
     const canSeeStock = isAdmin || userPermissions?.role === 'manager' || userPermissions?.canAccessStock === true;
     const canSeeQuotations = isAdmin || userPermissions?.role === 'manager' || userPermissions?.canAccessQuotations === true || userPermissions?.isEngineer === true;
+    const canSeePaintingTasks = isAdmin || userPermissions?.role === 'manager' || userPermissions?.canViewPaintingTasks === true || userPermissions?.canEditPaintingTasks === true || userPermissions?.canAccessPaintingTasks === true;
 
     const menuItems: MenuItem[] = [
         { id: 'dashboard', label: 'Panel', icon: Home },
@@ -55,6 +56,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
             id: 'quotations',
             label: 'Teklif Yönetimi',
             icon: FileText,
+        }] : []),
+        ...(canSeePaintingTasks ? [{
+            id: 'painting',
+            label: 'Boya İşleri',
+            icon: Paintbrush,
         }] : []),
         { id: 'field_staff', label: 'Sahadaki Personel', icon: Users },
     ];

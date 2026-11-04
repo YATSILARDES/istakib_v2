@@ -26,6 +26,7 @@ import ServiceRedirectDropdown from './components/ServiceRedirectDropdown';
 import QuotationsListView from './components/QuotationsListView';
 import { QuotationApp } from './teklif_app/QuotationApp';
 import { PublicPaintingMapView } from './components/PublicPaintingMapView';
+import { MobileErpTaskList } from './components/MobileErpTaskList';
 
 import { Task, TaskStatus, AppSettings, StatusLabels, RoutineTask, UserPermission, StaffMember, Quotation } from './types';
 
@@ -1148,7 +1149,7 @@ function App() {
 
 
         <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-transparent relative">
-          {((activeTab as string) === 'assignment' || (activeTab as string) === 'routine_pool' || (activeTab as string).startsWith('stock_') || activeTab === 'quotations') ? (
+          {((activeTab as string) === 'assignment' || (activeTab as string) === 'routine_pool' || (activeTab as string) === 'painting' || (activeTab as string).startsWith('stock_') || activeTab === 'quotations') ? (
             <>
               {activeTab === 'assignment' && (
                 <div className="relative h-full bg-white">
@@ -1179,6 +1180,33 @@ function App() {
                     onDeleteTask={handleDeleteRoutineTask}
                     onConvertTask={handleConvertRoutineTask}
                     onUpdateTask={handleUpdateRoutineTask}
+                  />
+                </div>
+              )}
+              {activeTab === 'painting' && (
+                <div className="relative h-full bg-white flex flex-col">
+                  <button
+                    onClick={() => setActiveTab('dashboard' as any)}
+                    className="absolute top-3.5 right-4 z-50 p-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors flex items-center gap-1 text-xs font-bold"
+                    title="Panele Dön"
+                  >
+                    <X className="w-5 h-5" />
+                    <span className="hidden sm:inline">Kapat</span>
+                  </button>
+                  <MobileErpTaskList
+                    title="Boya İşleri"
+                    tasks={tasks.filter(t => t.isPaintingTask)}
+                    allTasksForPaintingSelector={tasks}
+                    user={user}
+                    userPermissions={userPermissions}
+                    onBackToMenu={() => setActiveTab('dashboard' as any)}
+                    onTaskClick={handleTaskClick}
+                    onAddTask={handleAddTaskClick}
+                    onTaskUpdate={handleQuickUpdateTask}
+                    onSwitchToClassic={() => setActiveTab('dashboard' as any)}
+                    currentFilterStatus="ALL"
+                    isPaintingMode={true}
+                    isDesktopView={true}
                   />
                 </div>
               )}
@@ -1257,16 +1285,16 @@ function App() {
                           {/* Hazırla Kartı - Orta Boy */}
                           <button 
                             onClick={() => setQuotationSubView('prepare')}
-                            className="group bg-white p-6 w-80 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300 text-left flex flex-col gap-4"
+                            className="group bg-white p-6 w-80 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300 text-left flex flex-col gap-4"
                           >
-                            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
                               <FileText className="w-6 h-6" />
                             </div>
                             <div>
                               <h3 className="text-lg font-bold text-slate-800">Yeni Teklif Hazırla</h3>
                               <p className="text-slate-500 text-xs leading-relaxed mt-1">Hızlıca profesyonel bir teklif oluşturun.</p>
                             </div>
-                            <div className="mt-2 flex items-center text-orange-600 text-xs font-bold gap-2">
+                            <div className="mt-2 flex items-center text-blue-600 text-xs font-bold gap-2">
                               Başlat <ChevronRight className="w-4 h-4" />
                             </div>
                           </button>
@@ -1495,6 +1523,7 @@ function App() {
                   onOpenFieldStaffModal={() => setIsFieldStaffModalOpen(true)}
                   onOpenQuotationPrep={() => { setEditingQuotation(null); setActiveTab('quotations' as any); }}
                   onOpenQuotationList={() => setActiveTab('quotations' as any)}
+                  onOpenPainting={() => setActiveTab('painting' as any)}
                   currentUser={userPermissions ? { name: userPermissions.name, email: userPermissions.email } : undefined}
                   userRole={hasAdminAccess ? 'admin' : userPermissions?.role}
                   userPermissions={userPermissions}

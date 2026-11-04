@@ -27,7 +27,8 @@ import {
   Navigation,
   Users,
   Lock,
-  Paintbrush
+  Paintbrush,
+  Zap
 } from 'lucide-react';
 import { Scanner } from './Scanner';
 import CameraCapture from './CameraCapture';
@@ -75,6 +76,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
     checkStatus: null,
     isGlazierDirected: null,
     isElectricianDirected: null,
+    hasFuse: null,
     gasOpeningDate: '',
     gasNote: '',
     serviceSerialNumber: '',
@@ -124,6 +126,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
     if (task) {
       setFormData({
         ...task,
+        hasFuse: task.hasFuse ?? null,
         isPaintingTask: task.isPaintingTask || false,
         paintNote: task.paintNote || ''
       });
@@ -146,6 +149,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
         checkStatus: null,
         isGlazierDirected: null,
         isElectricianDirected: null,
+        hasFuse: null,
         orderNumber: nextOrderNumber,
         gasOpeningDate: '',
         gasNote: '',
@@ -551,46 +555,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Boya Listesi (Boyacı Rota Listesi) */}
-                    <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-                          <Paintbrush className="w-4 h-4 text-amber-400" />
-                          <span>Boya Listesi (Boyacı Rota & Harita Listesi)</span>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={Boolean(formData.isPaintingTask)}
-                            onChange={(e) => setFormData(prev => ({ ...prev, isPaintingTask: e.target.checked }))}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-                        </label>
-                      </div>
-                      {formData.isPaintingTask && (
-                        <div className="space-y-2 pt-2 border-t border-amber-500/20">
-                          <label className="text-xs font-semibold text-slate-300">Boyacıya Özel Not (Opsiyonel)</label>
-                          <input
-                            type="text"
-                            placeholder="Örn: Sadece mutfak ve balkon boruları boyanacak"
-                            value={formData.paintNote || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, paintNote: e.target.value.toLocaleUpperCase('tr-TR') }))}
-                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-amber-500 outline-none"
-                          />
-                          {formData.locationCoordinates ? (
-                            <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
-                              <Check className="w-3.5 h-3.5" /> GPS Konumu mevcut. Boyacıya haritada otomatik durak olarak iletilecektir.
-                            </p>
-                          ) : (
-                            <p className="text-[11px] text-amber-300 flex items-center gap-1">
-                              <AlertTriangle className="w-3.5 h-3.5" /> Bu kartta henüz GPS konumu kayıtlı değil. Yukarıdaki 'Konum Ekle' butonundan konum ekleyebilirsiniz.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-400">Genel Not</label>
                       <textarea rows={3} value={formData.generalNote || ''} onChange={(e) => setFormData({ ...formData, generalNote: e.target.value.toLocaleUpperCase('tr-TR') })}
@@ -611,7 +575,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     {/* Gaz Açım Bölümü */}
                     <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 space-y-4">
                       <div className="flex items-center justify-between border-b border-slate-700/50 pb-2">
-                        <div className="flex items-center gap-2 text-orange-400 font-medium">
+                        <div className="flex items-center gap-2 text-blue-400 font-medium">
                           <Flame className="w-4 h-4" /> Gaz Açım Detayları
                         </div>
                         {/* DemirDöküm Button */}
@@ -627,8 +591,70 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             type="date"
                             value={formData.gasOpeningDate || ''}
                             onChange={(e) => setFormData({ ...formData, gasOpeningDate: e.target.value })}
-                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-orange-500 outline-none"
+                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                           />
+                        </div>
+                      </div>
+
+                      {/* Kombi Elektrik Sigortası */}
+                      <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60 flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-blue-400" />
+                          <div>
+                            <span className="text-xs font-bold text-slate-200 block">Kombi Elektrik Sigortası</span>
+                            <span className="text-[11px] text-slate-400">Gaz açımında sigorta takılı mı kontrolü</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {formData.hasFuse === true ? (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1.5">
+                              <Check className="w-3.5 h-3.5 stroke-[3]" /> Takılı (Evet)
+                            </span>
+                          ) : formData.hasFuse === false ? (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-flex items-center gap-1.5">
+                              <X className="w-3.5 h-3.5 stroke-[3]" /> Takılı Değil (Hayır)
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                              Belirtilmedi
+                            </span>
+                          )}
+
+                          <div className="inline-flex rounded-lg border border-slate-600 p-0.5 bg-slate-900 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, hasFuse: true }))}
+                              className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                                formData.hasFuse === true
+                                  ? 'bg-emerald-600 text-white shadow-sm'
+                                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                              }`}
+                            >
+                              Evet
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, hasFuse: false }))}
+                              className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                                formData.hasFuse === false
+                                  ? 'bg-rose-600 text-white shadow-sm'
+                                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                              }`}
+                            >
+                              Hayır
+                            </button>
+                            {formData.hasFuse !== null && formData.hasFuse !== undefined && (
+                              <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, hasFuse: null }))}
+                                className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                                title="Temizle"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -638,7 +664,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                           rows={2}
                           value={formData.gasNote || ''}
                           onChange={(e) => setFormData({ ...formData, gasNote: e.target.value.toLocaleUpperCase('tr-TR') })}
-                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-orange-500 outline-none"
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                     </div>
@@ -740,11 +766,11 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       <div
                         onClick={() => setFormData({ ...formData, checkStatus: formData.checkStatus === 'missing' ? null : 'missing' })}
                         className={`p-4 rounded-xl border flex flex-col items-center gap-2 cursor-pointer transition-all ${formData.checkStatus === 'missing'
-                          ? 'bg-orange-600/20 border-orange-500 text-orange-400'
+                          ? 'bg-rose-600/20 border-rose-500 text-rose-400'
                           : 'bg-slate-700/30 border-slate-700 text-slate-400 hover:bg-slate-700/50'
                           }`}
                       >
-                        <AlertTriangle className={`w-8 h-8 ${formData.checkStatus === 'missing' ? 'text-orange-500' : 'text-slate-500'}`} />
+                        <AlertTriangle className={`w-8 h-8 ${formData.checkStatus === 'missing' ? 'text-rose-500' : 'text-slate-500'}`} />
                         <span className="font-medium">Eksik Var</span>
                       </div>
 
@@ -759,6 +785,151 @@ const TaskModal: React.FC<TaskModalProps> = ({
                         <CheckCircle2 className={`w-8 h-8 ${formData.checkStatus === 'clean' ? 'text-emerald-500' : 'text-slate-500'}`} />
                         <span className="font-medium">Eksik Yok</span>
                       </div>
+                    </div>
+
+                    {/* Camcı ve Elektrikçi Bilgi Tablosu */}
+                    <div className="bg-slate-800/80 rounded-xl border border-slate-700 overflow-hidden shadow-xs">
+                      <div className="bg-slate-700/50 px-4 py-2.5 border-b border-slate-700 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                          <Users className="w-4 h-4 text-emerald-400" />
+                          Camcı & Elektrikçi Yönlendirme Durumu
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          Usta Bilgileri
+                        </span>
+                      </div>
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-700/60 bg-slate-800/40 text-[11px] font-bold text-slate-400 uppercase">
+                            <th className="py-2.5 px-4">Hizmet / Usta</th>
+                            <th className="py-2.5 px-4">Durum</th>
+                            <th className="py-2.5 px-4 text-right">Seçim / Güncelle</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700/40 text-sm">
+                          {/* Camcı Satırı */}
+                          <tr>
+                            <td className="py-3 px-4 font-bold text-slate-200">
+                              <div className="flex items-center gap-2">
+                                <span className="text-base">🪟</span>
+                                <span>Camcı</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              {formData.isGlazierDirected === true ? (
+                                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1.5">
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" /> Yönlendirildi
+                                </span>
+                              ) : formData.isGlazierDirected === false ? (
+                                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-300 border border-slate-600 inline-flex items-center gap-1.5">
+                                  <X className="w-3.5 h-3.5 stroke-[3]" /> Yönlendirilmedi
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 inline-flex items-center gap-1.5">
+                                  Belirtilmedi
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="inline-flex rounded-lg border border-slate-600 p-0.5 bg-slate-900/60 gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, isGlazierDirected: true }))}
+                                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                                    formData.isGlazierDirected === true
+                                      ? 'bg-emerald-600 text-white shadow-sm'
+                                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                  }`}
+                                >
+                                  Evet
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, isGlazierDirected: false }))}
+                                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                                    formData.isGlazierDirected === false
+                                      ? 'bg-rose-600 text-white shadow-sm'
+                                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                  }`}
+                                >
+                                  Hayır
+                                </button>
+                                {formData.isGlazierDirected !== null && formData.isGlazierDirected !== undefined && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, isGlazierDirected: null }))}
+                                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                                    title="Temizle"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* Elektrikçi Satırı */}
+                          <tr>
+                            <td className="py-3 px-4 font-bold text-slate-200">
+                              <div className="flex items-center gap-2">
+                                <span className="text-base">⚡</span>
+                                <span>Elektrikçi</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              {formData.isElectricianDirected === true ? (
+                                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1.5">
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" /> Yönlendirildi
+                                </span>
+                              ) : formData.isElectricianDirected === false ? (
+                                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-300 border border-slate-600 inline-flex items-center gap-1.5">
+                                  <X className="w-3.5 h-3.5 stroke-[3]" /> Yönlendirilmedi
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 inline-flex items-center gap-1.5">
+                                  Belirtilmedi
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="inline-flex rounded-lg border border-slate-600 p-0.5 bg-slate-900/60 gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, isElectricianDirected: true }))}
+                                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                                    formData.isElectricianDirected === true
+                                      ? 'bg-emerald-600 text-white shadow-sm'
+                                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                  }`}
+                                >
+                                  Evet
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, isElectricianDirected: false }))}
+                                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                                    formData.isElectricianDirected === false
+                                      ? 'bg-rose-600 text-white shadow-sm'
+                                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                  }`}
+                                >
+                                  Hayır
+                                </button>
+                                {formData.isElectricianDirected !== null && formData.isElectricianDirected !== undefined && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, isElectricianDirected: null }))}
+                                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                                    title="Temizle"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
 
                     <div className="space-y-2">
@@ -1252,50 +1423,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Boya Listesi (Boyacı Rota Listesi) */}
-                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs font-black text-amber-900 uppercase tracking-wider">
-                          <Paintbrush className="w-4 h-4 text-amber-600" />
-                          <span>Boya Listesi (Boyacı Rota)</span>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={Boolean(formData.isPaintingTask)}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, isPaintingTask: e.target.checked }))}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
-                        </label>
-                      </div>
-                      {formData.isPaintingTask && (
-                        <div className="space-y-2 pt-2 border-t border-amber-200">
-                          <label className="text-xs font-bold text-amber-900 uppercase tracking-wider block">
-                            Boyacıya Özel Not (Opsiyonel)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Örn: Balkon borusu ve sayaç boyanacak"
-                            value={formData.paintNote || ''}
-                            onChange={(e) =>
-                              setFormData({ ...formData, paintNote: e.target.value.toLocaleUpperCase('tr-TR') })
-                            }
-                            className="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 shadow-xs transition-all"
-                          />
-                          {formData.locationCoordinates ? (
-                            <p className="text-[11px] text-emerald-700 flex items-center gap-1 font-semibold">
-                              <Check className="w-3.5 h-3.5 text-emerald-600" /> GPS Konumu mevcut (Haritada durak olacak).
-                            </p>
-                          ) : (
-                            <p className="text-[11px] text-amber-800 flex items-center gap-1 font-semibold">
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Bu kartta GPS konumu yok. Yukarıdaki 'Konum Ekle' ile ekleyebilirsiniz.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
                     {/* Genel Not */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
@@ -1635,6 +1762,56 @@ const TaskModal: React.FC<TaskModalProps> = ({
                           onChange={(e) => setFormData({ ...formData, gasOpeningDate: e.target.value })}
                           className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 shadow-xs transition-all"
                         />
+                      </div>
+
+                      {/* Sigorta Durumu */}
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-amber-500" />
+                          <div>
+                            <span className="text-xs font-bold text-slate-800 block">Kombi Elektrik Sigortası</span>
+                            <span className="text-[10.5px] text-slate-500">Gaz açımında sigorta takılı mı?</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {formData.hasFuse === true ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                              <Check className="w-3 h-3 stroke-[3]" /> Takılı (Evet)
+                            </span>
+                          ) : formData.hasFuse === false ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 inline-flex items-center gap-1">
+                              <X className="w-3 h-3 stroke-[3]" /> Takılı Değil (Hayır)
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                              Belirtilmedi
+                            </span>
+                          )}
+                          <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-white gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, hasFuse: true }))}
+                              className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                formData.hasFuse === true
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900'
+                              }`}
+                            >
+                              Evet
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, hasFuse: false }))}
+                              className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                formData.hasFuse === false
+                                  ? 'bg-rose-600 text-white shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900'
+                              }`}
+                            >
+                              Hayır
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-1.5">

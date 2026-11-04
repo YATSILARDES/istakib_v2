@@ -27,6 +27,7 @@ interface MobileErpTaskListProps {
     initialSearchQuery?: string;
     allTasksForPaintingSelector?: Task[];
     isPaintingMode?: boolean;
+    isDesktopView?: boolean;
 }
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -128,7 +129,8 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     currentFilterStatus,
     initialSearchQuery,
     allTasksForPaintingSelector,
-    isPaintingMode
+    isPaintingMode,
+    isDesktopView = false
 }) => {
     const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
 
@@ -662,7 +664,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 className={`px-3.5 py-3 transition-colors flex items-start gap-3 group relative ${
                                     isPaintingMode && !canEditPainting
                                         ? 'cursor-default'
-                                        : 'cursor-pointer hover:bg-orange-50/30 active:bg-orange-50/60'
+                                        : isDesktopView ? 'cursor-pointer hover:bg-slate-50 active:bg-slate-100' : 'cursor-pointer hover:bg-orange-50/30 active:bg-orange-50/60'
                                 }`}
                             >
                                 {/* Painting Checkbox in Painting Mode */}
@@ -678,7 +680,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                         className="pt-2 text-slate-400 hover:text-orange-600 transition-colors shrink-0"
                                     >
                                         {stopIdx !== -1 ? (
-                                            <CheckSquare className="w-5 h-5 text-orange-600" />
+                                            <CheckSquare className={`w-5 h-5 ${isDesktopView ? "text-blue-600" : "text-orange-600"}`} />
                                         ) : (
                                             <Square className="w-5 h-5 text-slate-300" />
                                         )}
@@ -686,7 +688,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 )}
 
                                 {/* Left: Circle Thumbnail / Order Number */}
-                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/60 border border-orange-200 flex flex-col items-center justify-center shrink-0 text-orange-700 shadow-xs relative">
+                                <div className={`w-11 h-11 rounded-xl ${isDesktopView ? "bg-slate-100 border border-slate-200 text-slate-700" : "bg-gradient-to-br from-orange-50 to-orange-100/60 border border-orange-200 text-orange-700"} flex flex-col items-center justify-center shrink-0 shadow-xs relative`}>
                                     <span className="text-[10px] font-bold text-slate-500 leading-none">NO</span>
                                     <span className="text-xs font-black leading-none mt-0.5">#{task.orderNumber || 0}</span>
                                     
@@ -716,13 +718,13 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                         <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                                             {/* Stop Badge in Painting Mode */}
                                             {isPaintingMode && stopIdx !== -1 && (
-                                                <span className="bg-amber-600 text-white font-black px-1.5 py-0.5 rounded text-[10px] tracking-tight shrink-0 shadow-2xs">
+                                                <span className={`${isDesktopView ? "bg-blue-600" : "bg-amber-600"} text-white font-black px-1.5 py-0.5 rounded text-[10px] tracking-tight shrink-0 shadow-2xs`}>
                                                     #{stopIdx + 1}
                                                 </span>
                                             )}
 
                                             {/* Customer Name in Bold Orange (Screenshot Style) */}
-                                            <span className="font-extrabold text-[13px] text-[#e65100] uppercase tracking-tight truncate">
+                                            <span className={`font-extrabold text-[13px] ${isDesktopView ? "text-slate-800" : "text-[#e65100]"} uppercase tracking-tight truncate`}>
                                                 {task.title}
                                             </span>
 
@@ -973,12 +975,12 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
         <div className="flex flex-col h-full bg-[#f3f4f6] font-sans overflow-hidden select-none">
 
             {/* --- TOP HEADER (MATCHING SCREENSHOT) --- */}
-            <div className="bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white pt-3 pb-3.5 px-4 shadow-md shrink-0 flex items-center justify-between z-20">
+            <div className={`${isDesktopView ? 'bg-slate-900 border-b border-slate-800' : 'bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00]'} text-white pt-3 pb-3.5 px-4 shadow-md shrink-0 flex items-center justify-between z-20`}>
                 {/* Left: Circular Back Button */}
                 <button
                     onClick={onBackToMenu}
-                    className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center text-white transition-all shadow-xs"
-                    title="Menüye Dön"
+                    className={`w-9 h-9 rounded-full ${isDesktopView ? 'bg-slate-800 hover:bg-slate-700' : 'bg-white/20 hover:bg-white/30'} active:scale-95 flex items-center justify-center text-white transition-all shadow-xs`}
+                    title="Panele Dön"
                 >
                     <ChevronLeft className="w-6 h-6 stroke-[2.5] -ml-0.5" />
                 </button>
@@ -988,7 +990,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     <h1 className="font-bold text-[16px] text-white tracking-tight truncate max-w-[220px] text-center drop-shadow-xs">
                         {title}
                     </h1>
-                    <span className="text-[11px] text-orange-100 font-medium">
+                    <span className={`text-[11px] ${isDesktopView ? 'text-slate-400' : 'text-orange-100'} font-medium`}>
                         {filteredTasks.length + filteredRoutineTasks.length} Kayıt Listeleniyor
                     </span>
                 </div>
@@ -996,10 +998,10 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                 {/* Right: Switch to classic or menu */}
                 <button
                     onClick={onSwitchToClassic}
-                    className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[10px] font-bold border border-white/30 active:scale-95 transition-all"
-                    title="Klasik Görünüme Geç"
+                    className={`px-2.5 py-1 ${isDesktopView ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700' : 'bg-white/20 hover:bg-white/30 text-white border-white/30'} rounded-lg text-[10px] font-bold border active:scale-95 transition-all`}
+                    title="Kapat"
                 >
-                    Klasik
+                    Kapat
                 </button>
             </div>
 
@@ -1013,7 +1015,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                         placeholder="Arama yap..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition-all"
+                        className={`w-full bg-[#f8fafc] border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${isDesktopView ? "focus:ring-blue-500/30 focus:border-blue-400" : "focus:ring-orange-500/30 focus:border-orange-400"} transition-all`}
                     />
                     {searchQuery && (
                         <button
@@ -1143,7 +1145,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                 <div className="bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 text-white p-3 shadow-md space-y-2.5 shrink-0">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Paintbrush className="w-5 h-5 text-amber-200" />
+                            <Paintbrush className={`w-5 h-5 ${isDesktopView ? "text-blue-400" : "text-amber-200"}`} />
                             <h3 className="font-black text-xs uppercase tracking-wider text-amber-100">Boyacı Rota & Harita Listesi</h3>
                         </div>
                         {canEditPainting ? (
@@ -2023,12 +2025,12 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white p-4 flex items-center justify-between shrink-0">
+                        <div className={`${isDesktopView ? "bg-slate-900" : "bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700"} text-white p-4 flex items-center justify-between shrink-0`}>
                             <div className="flex items-center gap-2">
                                 <Paintbrush className="w-5 h-5 text-amber-200" />
                                 <div>
                                     <h3 className="font-black text-sm">Boya Listesine Müşteri Ekle</h3>
-                                    <p className="text-[11px] text-amber-100">Kişi kartlarını seçip listeye dahil edin</p>
+                                    <p className={`text-[11px] ${isDesktopView ? "text-slate-400" : "text-amber-100"}`}>Kişi kartlarını seçip listeye dahil edin</p>
                                 </div>
                             </div>
                             <button
@@ -2074,12 +2076,12 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                                 );
                                             }}
                                             className={`p-3 rounded-xl flex items-start gap-3 cursor-pointer transition-all ${
-                                                isSelected ? 'bg-orange-50/80 border border-orange-200' : 'hover:bg-slate-50'
+                                                isSelected ? (isDesktopView ? 'bg-blue-50 border border-blue-300' : 'bg-orange-50/80 border border-orange-200') : 'hover:bg-slate-50'
                                             }`}
                                         >
                                             <div className="pt-0.5 shrink-0">
                                                 {isSelected ? (
-                                                    <CheckSquare className="w-5 h-5 text-orange-600" />
+                                                    <CheckSquare className={`w-5 h-5 ${isDesktopView ? "text-blue-600" : "text-orange-600"}`} />
                                                 ) : (
                                                     <Square className="w-5 h-5 text-slate-300" />
                                                 )}
@@ -2141,7 +2143,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 }}
                                 className={`px-4 py-2 text-xs font-black rounded-xl transition-all shadow-sm ${
                                     selectorSelectedIds.length > 0
-                                        ? 'bg-orange-600 hover:bg-orange-500 text-white active:scale-95'
+                                        ? (isDesktopView ? 'bg-blue-600 hover:bg-blue-500 text-white active:scale-95' : 'bg-orange-600 hover:bg-orange-500 text-white active:scale-95')
                                         : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                                 }`}
                             >
@@ -2164,7 +2166,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     >
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                             <div className="flex items-center gap-2">
-                                <Paintbrush className="w-4 h-4 text-amber-600" />
+                                <Paintbrush className={`w-4 h-4 ${isDesktopView ? "text-blue-600" : "text-amber-600"}`} />
                                 <h3 className="font-bold text-xs text-slate-800">Boyacıya Özel Not</h3>
                             </div>
                             <button
@@ -2183,7 +2185,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                             placeholder="Örn: Sadece balkon borusu ve sayaç boyanacak..."
                             value={paintNoteInput}
                             onChange={(e) => setPaintNoteInput(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                            className={`w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 ${isDesktopView ? "focus:ring-blue-500/30 focus:border-blue-400" : "focus:ring-orange-500/30"}`}
                         />
                         <div className="flex justify-end gap-2 pt-1">
                             <button
@@ -2201,7 +2203,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                     }
                                     setPaintNoteModalTask(null);
                                 }}
-                                className="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-black rounded-lg shadow-xs active:scale-95"
+                                className={`px-4 py-1.5 ${isDesktopView ? "bg-blue-600 hover:bg-blue-500" : "bg-orange-600 hover:bg-orange-500"} text-white text-xs font-black rounded-lg shadow-xs active:scale-95`}
                             >
                                 Kaydet
                             </button>

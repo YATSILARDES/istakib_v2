@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task, TaskStatus, StatusLabels, StaffMember, RoutineTask, UserPermission } from '@/types';
-import { ChevronRight, ChevronLeft, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal, FileText, FolderOpen, AlertTriangle, Star } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Home, Activity, Clock, Plus, Users, Bell, Map as MapIcon, MoreHorizontal, FileText, FolderOpen, AlertTriangle, Star, Paintbrush } from 'lucide-react';
 import PersonalNotes from './PersonalNotes';
 import CalendarWidget from './CalendarWidget';
 // import InteractiveMap from './InteractiveMap'; // Later integration
@@ -19,6 +19,7 @@ interface DashboardProps {
     onOpenFieldStaffModal: () => void;
     onOpenQuotationPrep?: () => void;
     onOpenQuotationList?: () => void;
+    onOpenPainting?: () => void;
     currentUser?: { name: string; email: string };
     userRole?: 'admin' | 'staff' | 'manager';
     userPermissions?: UserPermission;
@@ -39,6 +40,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     onOpenFieldStaffModal,
     onOpenQuotationPrep,
     onOpenQuotationList,
+    onOpenPainting,
     currentUser,
     userRole,
     userPermissions,
@@ -359,12 +361,23 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 </button>
                             )}
 
-                            <button className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all border group justify-start ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 shadow-lg hover:shadow-xl backdrop-blur-sm' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'}`}>
-                                <div className={`${isDarkMode ? 'bg-white/10' : 'bg-white shadow-sm'} p-2 rounded-full group-hover:scale-110 transition-transform shrink-0`}>
-                                    <MoreHorizontal className={`w-5 h-5 ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`} />
-                                </div>
-                                <span className={`font-bold text-xs text-left ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>Diğer İşlemler</span>
-                            </button>
+                            {/* Conditionally render Painting Button */}
+                            {Boolean(userRole === 'admin' || userRole === 'manager' || userPermissions?.canViewPaintingTasks || userPermissions?.canEditPaintingTasks || userPermissions?.canAccessPaintingTasks) && (
+                                <button onClick={onOpenPainting} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all border group relative justify-start ${isDarkMode ? 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border-indigo-500/20 shadow-lg hover:shadow-xl backdrop-blur-sm' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'}`}>
+                                    <div className={`${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'} p-2 rounded-full group-hover:scale-110 transition-transform shrink-0`}>
+                                        <Paintbrush className={`w-5 h-5 ${isDarkMode ? 'text-indigo-300' : 'text-indigo-600'}`} />
+                                    </div>
+                                    <span className={`font-bold text-xs text-left ${isDarkMode ? 'text-indigo-100' : 'text-indigo-800'}`}>Boya İşleri</span>
+                                    {(() => {
+                                        const count = tasks.filter(t => t.isPaintingTask).length;
+                                        return count > 0 ? (
+                                            <span className="absolute top-2 right-2 bg-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                                                {count}
+                                            </span>
+                                        ) : null;
+                                    })()}
+                                </button>
+                            )}
                         </div>
                     </div>
 
