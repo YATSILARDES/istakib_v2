@@ -456,287 +456,94 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     const canAddTasks = userPermissions?.canAddCustomers || userPermissions?.role === 'admin';
     const displayName = userPermissions?.name || user?.displayName || user?.email?.split('@')[0] || 'Kullanıcı';
 
-    return (
-        <div className="flex flex-col h-full bg-[#f3f4f6] font-sans overflow-hidden select-none">
+    type UnifiedTaskItem = { type: 'main'; data: Task } | { type: 'routine'; data: RoutineTask };
 
-            {/* --- TOP HEADER (MATCHING SCREENSHOT) --- */}
-            <div className="bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white pt-3 pb-3.5 px-4 shadow-md shrink-0 flex items-center justify-between z-20">
-                {/* Left: Circular Back Button */}
-                <button
-                    onClick={onBackToMenu}
-                    className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center text-white transition-all shadow-xs"
-                    title="Menüye Dön"
-                >
-                    <ChevronLeft className="w-6 h-6 stroke-[2.5] -ml-0.5" />
-                </button>
+    // Unified Tasks and Routine Tasks Sorted by Assignment Order (dailyOrder & scheduled hour)
+    const unifiedTaskList = useMemo<UnifiedTaskItem[]>(() => {
+        let list: UnifiedTaskItem[] = [];
 
-                {/* Center: Title */}
-                <div className="flex flex-col items-center flex-1 px-2">
-                    <h1 className="font-bold text-[16px] text-white tracking-tight truncate max-w-[220px] text-center drop-shadow-xs">
-                        {title}
-                    </h1>
-                    <span className="text-[11px] text-orange-100 font-medium">
-                        {filteredTasks.length + filteredRoutineTasks.length} Kayıt Listeleniyor
-                    </span>
-                </div>
+        if (!routineTasks || routineTasks.length === 0) {
+            return filteredTasks.map(t => ({ type: 'main' as const, data: t }));
+        }
 
-                {/* Right: Switch to classic or menu */}
-                <button
-                    onClick={onSwitchToClassic}
-                    className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[10px] font-bold border border-white/30 active:scale-95 transition-all"
-                    title="Klasik Görünüme Geç"
-                >
-                    Klasik
-                </button>
-            </div>
+        if (tabFilter === 'all' || tabFilter === 'main') {
+            filteredTasks.forEach(t => list.push({ type: 'main', data: t }));
+        }
+        if (tabFilter === 'all' || tabFilter === 'routine') {
+            filteredRoutineTasks.forEach(rt => list.push({ type: 'routine', data: rt }));
+        }
 
-            {/* --- SEARCH & ACTIONS ROW (WHITE BACKGROUND) --- */}
-            <div className="bg-white px-3 py-2 border-b border-slate-200 flex items-center gap-2 shrink-0 z-10 shadow-xs">
-                {/* Search Input */}
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Arama yap..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition-all"
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
-                        >
-                            <X className="w-3.5 h-3.5" />
-                        </button>
-                    )}
-                </div>
+        const getTime = (item: UnifiedTaskItem) => {
+            if (item.type === 'main') {
+                const t = item.data;
+                if (t.scheduledDate?.seconds) return t.scheduledDate.seconds * 1000;
+                if (t.scheduledDate) { const d = new Date(t.scheduledDate); if (!isNaN(d.getTime())) return d.getTime(); }
+                if (t.date) { const d = new Date(t.date); if (!isNaN(d.getTime())) return d.getTime(); }
+                return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+            } else {
+                const rt = item.data;
+                if (rt.scheduledDate?.seconds) return rt.scheduledDate.seconds * 1000;
+                if (rt.scheduledDate) { const d = new Date(rt.scheduledDate); if (!isNaN(d.getTime())) return d.getTime(); }
+                return rt.createdAt?.seconds ? rt.createdAt.seconds * 1000 : 0;
+            }
+        };
 
-                {/* Sort Button */}
-                <button
-                    onClick={() => setIsSortMenuOpen(prev => !prev)}
-                    className={`p-2 rounded-lg border transition-all ${
-                        sortBy !== 'order_asc' 
-                            ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-xs' 
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}
-                    title="Sıralama"
-                >
-                    <ArrowUpDown className="w-4 h-4" />
-                </button>
+        return list.sort((a, b) => {
+            if (sortBy === 'order_asc') {
+                // 1. Explicit dailyOrder set in Görev Dağıtımı
+                const orderA = a.data.dailyOrder || 0;
+                const orderB = b.data.dailyOrder || 0;
+                if (orderA !== 0 && orderB !== 0) {
+                    if (orderA !== orderB) return orderA - orderB;
+                } else if (orderA !== 0) {
+                    return -1;
+                } else if (orderB !== 0) {
+                    return 1;
+                }
 
-                {/* Filter Funnel Button (District Filter) */}
-                <button
-                    onClick={() => setIsFilterModalOpen(true)}
-                    className={`p-2 rounded-lg border transition-all relative ${
-                        selectedDistrict 
-                            ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-xs' 
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}
-                    title="İlçe Filtresi"
-                >
-                    <Filter className="w-4 h-4" />
-                    {selectedDistrict && (
-                        <span className="w-2 h-2 rounded-full bg-orange-600 absolute top-1 right-1" />
-                    )}
-                </button>
-            </div>
+                // 2. Scheduled Time / Hour from AssignmentView
+                const timeA = getTime(a);
+                const timeB = getTime(b);
+                if (timeA !== timeB && timeA > 0 && timeB > 0) {
+                    return timeA - timeB;
+                }
 
-            {/* --- SUB-TOOLBAR ROW (DARK SLATE #1e293b - CLEAN DESIGN, NO ÖNCELİKLİ/BEKLEYEN/BARKOD) --- */}
-            <div className="bg-[#1e293b] text-white px-3 py-2 flex items-center justify-between shrink-0 shadow-xs">
-                {routineTasks && routineTasks.length > 0 ? (
-                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                        <button
-                            onClick={() => setTabFilter('all')}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
-                                tabFilter === 'all'
-                                    ? 'bg-orange-500 text-white shadow-xs'
-                                    : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
-                            }`}
-                        >
-                            Tümü ({tasks.length + routineTasks.length})
-                        </button>
-                        <button
-                            onClick={() => setTabFilter('main')}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
-                                tabFilter === 'main'
-                                    ? 'bg-orange-500 text-white shadow-xs'
-                                    : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
-                            }`}
-                        >
-                            İşler ({tasks.length})
-                        </button>
-                        <button
-                            onClick={() => setTabFilter('routine')}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
-                                tabFilter === 'routine'
-                                    ? 'bg-orange-500 text-white shadow-xs'
-                                    : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
-                            }`}
-                        >
-                            Eksikler ({routineTasks.length})
-                        </button>
-                    </div>
-                ) : (
-                    <span className="text-[11px] font-semibold text-slate-300">
-                        Toplam <strong className="text-orange-400 font-bold">{filteredTasks.length}</strong> İş Kaydı
-                    </span>
-                )}
+                // 3. Priority
+                if (a.data.isPriority !== b.data.isPriority) {
+                    return a.data.isPriority ? -1 : 1;
+                }
 
-                <div className="flex items-center gap-2">
-                    {selectedDistrict && (
-                        <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded text-[10px] font-bold">
-                            <span>{selectedDistrict}</span>
-                            <button onClick={() => setSelectedDistrict('')}><X className="w-3 h-3" /></button>
-                        </div>
-                    )}
-                    {routineTasks && routineTasks.length > 0 && (
-                        <span className="text-[11px] font-semibold text-slate-300">
-                            {filteredTasks.length + filteredRoutineTasks.length} Kayıt
-                        </span>
-                    )}
-                </div>
-            </div>
+                // 4. Fallback orderNumber
+                const numA = (a.data as any).orderNumber || 0;
+                const numB = (b.data as any).orderNumber || 0;
+                if (numA !== numB && numA > 0 && numB > 0) {
+                    return numA - numB;
+                }
 
-            {/* --- SORT MENU DROPDOWN (IF OPEN) --- */}
-            {isSortMenuOpen && (
-                <div className="bg-white border-b border-slate-200 px-4 py-2 shadow-md flex items-center justify-between text-xs z-20 animate-in fade-in duration-150">
-                    <span className="font-bold text-slate-600 text-[11px]">Sıralama:</span>
-                    <div className="flex gap-1.5 overflow-x-auto py-1">
-                        {[
-                            { id: 'order_asc', label: 'Sıra No (Artan)' },
-                            { id: 'order_desc', label: 'Sıra No (Azalan)' },
-                            { id: 'date_desc', label: 'En Yeni' },
-                            { id: 'title_asc', label: 'İsim (A-Z)' }
-                        ].map(s => (
-                            <button
-                                key={s.id}
-                                onClick={() => { setSortBy(s.id as any); setIsSortMenuOpen(false); }}
-                                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                                    sortBy === s.id 
-                                        ? 'bg-orange-500 text-white font-bold shadow-xs' 
-                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                }`}
-                            >
-                                {s.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+                return 0;
+            }
 
-            {/* --- PAINTING MODE ACTION BANNER --- */}
-            {isPaintingMode && (
-                <div className="bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 text-white p-3 shadow-md space-y-2.5 shrink-0">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Paintbrush className="w-5 h-5 text-amber-200" />
-                            <h3 className="font-black text-xs uppercase tracking-wider text-amber-100">Boyacı Rota & Harita Listesi</h3>
-                        </div>
-                        {canEditPainting ? (
-                            <div className="flex items-center gap-1.5">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (selectedPaintingIds.length === tasks.length) {
-                                            setSelectedPaintingIds([]);
-                                        } else {
-                                            setSelectedPaintingIds(tasks.map(t => t.id));
-                                        }
-                                    }}
-                                    className="text-[11px] font-bold bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded-md transition-colors"
-                                >
-                                    {selectedPaintingIds.length === tasks.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
-                                </button>
-                                <span className="text-[11px] font-bold bg-black/30 px-2 py-0.5 rounded-md">
-                                    {getActivePaintingTasks().length} / {tasks.length} Seçili
-                                </span>
-                            </div>
-                        ) : (
-                            <span className="text-[11px] font-bold bg-black/30 px-2 py-0.5 rounded-md">
-                                Toplam {tasks.length} Müşteri
-                            </span>
-                        )}
-                    </div>
+            if (sortBy === 'order_desc') {
+                const numA = (a.data as any).orderNumber || 0;
+                const numB = (b.data as any).orderNumber || 0;
+                return numB - numA;
+            }
 
-                    {/* Action Buttons */}
-                    <div className={canEditPainting ? "grid grid-cols-2 gap-2" : "w-full"}>
-                        <button
-                            type="button"
-                            onClick={() => setShowPublicMapModal(true)}
-                            className={`bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all border border-amber-300/40 ${canEditPainting ? '' : 'w-full py-3 text-sm'}`}
-                        >
-                            <Map className="w-4 h-4 text-amber-100 shrink-0" />
-                            <span>Harita & Müşteri Listesini Aç</span>
-                        </button>
-                        {canEditPainting && (
-                            <button
-                                type="button"
-                                onClick={handleSendToPainterWhatsApp}
-                                className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow-md shadow-emerald-900/30 flex items-center justify-center gap-1.5 transition-all"
-                            >
-                                <Send className="w-4 h-4 shrink-0" />
-                                <span>WhatsApp İle Gönder</span>
-                            </button>
-                        )}
-                    </div>
+            if (sortBy === 'title_asc') {
+                const titleA = a.type === 'main' ? (a.data.title || '') : (a.data.customerName || '');
+                const titleB = b.type === 'main' ? (b.data.title || '') : (b.data.customerName || '');
+                return titleA.localeCompare(titleB, 'tr-TR');
+            }
 
-                    {/* Editor Toolbar (Only for canEditPainting) */}
-                    {canEditPainting && (
-                        <div className="flex items-center justify-between pt-1 border-t border-white/15 text-[11px] text-amber-100 flex-wrap gap-y-1.5">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setPaintingSearchQuery('');
-                                    setSelectorSelectedIds([]);
-                                    setShowPaintingSelectorModal(true);
-                                }}
-                                className="flex items-center gap-1 hover:text-white font-bold bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition-colors"
-                            >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span>+ Kişi Kartı Ekle</span>
-                            </button>
+            if (sortBy === 'date_desc') {
+                return getTime(b) - getTime(a);
+            }
 
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleCopyRouteText}
-                                    className="flex items-center gap-1 hover:text-white underline font-semibold text-[11px]"
-                                >
-                                    <Copy className="w-3.5 h-3.5" />
-                                    <span>Listeyi Kopyala</span>
-                                </button>
-                                <span>•</span>
-                                <span className="font-semibold text-[10.5px]">
-                                    {getActivePaintingTasks().filter(t => extractCoords(t.locationCoordinates)).length} Konum Haritada
-                                </span>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
+            return 0;
+        });
+    }, [filteredTasks, filteredRoutineTasks, routineTasks, tabFilter, sortBy]);
 
-            {/* --- LIST CONTENT AREA (MATCHING THE SCREENSHOT ERP ROWS) --- */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-200 bg-white custom-scrollbar pb-24">
-                {filteredTasks.length === 0 && filteredRoutineTasks.length === 0 ? (
-                    <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-                        <Search className="w-8 h-8 opacity-30 text-slate-400" />
-                        <span className="text-xs font-medium">Bu kriterlere uygun iş kaydı bulunamadı.</span>
-                        {(searchQuery || selectedDistrict) && (
-                            <button
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setSelectedDistrict('');
-                                }}
-                                className="mt-2 text-xs text-orange-600 font-bold underline"
-                            >
-                                Filtreleri Temizle
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <>
-                    {filteredTasks.map(task => {
+    const renderMainTask = (task: Task) => {
                         const statusLabel = StatusLabels[task.status] || task.status;
                         const dateText = formatSafeDate(task.scheduledDate || task.date || task.createdAt);
                         const isClean = task.checkStatus === 'clean';
@@ -1086,10 +893,9 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 </div>
                             </div>
                         );
-                    })}
+    };
 
-                    {/* Routine Tasks (For Bana Atananlar / Eksiklerden Atananlar) */}
-                    {filteredRoutineTasks.map(rt => {
+    const renderRoutineTask = (rt: RoutineTask) => {
                         const rtDate = formatSafeDate(rt.scheduledDate || rt.createdAt);
                         return (
                             <div
@@ -1161,8 +967,295 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 </div>
                             </div>
                         );
-                    })}
-                </>
+    };
+
+    return (
+        <div className="flex flex-col h-full bg-[#f3f4f6] font-sans overflow-hidden select-none">
+
+            {/* --- TOP HEADER (MATCHING SCREENSHOT) --- */}
+            <div className="bg-gradient-to-r from-[#e65100] via-[#f57c00] to-[#fb8c00] text-white pt-3 pb-3.5 px-4 shadow-md shrink-0 flex items-center justify-between z-20">
+                {/* Left: Circular Back Button */}
+                <button
+                    onClick={onBackToMenu}
+                    className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 flex items-center justify-center text-white transition-all shadow-xs"
+                    title="Menüye Dön"
+                >
+                    <ChevronLeft className="w-6 h-6 stroke-[2.5] -ml-0.5" />
+                </button>
+
+                {/* Center: Title */}
+                <div className="flex flex-col items-center flex-1 px-2">
+                    <h1 className="font-bold text-[16px] text-white tracking-tight truncate max-w-[220px] text-center drop-shadow-xs">
+                        {title}
+                    </h1>
+                    <span className="text-[11px] text-orange-100 font-medium">
+                        {filteredTasks.length + filteredRoutineTasks.length} Kayıt Listeleniyor
+                    </span>
+                </div>
+
+                {/* Right: Switch to classic or menu */}
+                <button
+                    onClick={onSwitchToClassic}
+                    className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[10px] font-bold border border-white/30 active:scale-95 transition-all"
+                    title="Klasik Görünüme Geç"
+                >
+                    Klasik
+                </button>
+            </div>
+
+            {/* --- SEARCH & ACTIONS ROW (WHITE BACKGROUND) --- */}
+            <div className="bg-white px-3 py-2 border-b border-slate-200 flex items-center gap-2 shrink-0 z-10 shadow-xs">
+                {/* Search Input */}
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Arama yap..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition-all"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Sort Button */}
+                <button
+                    onClick={() => setIsSortMenuOpen(prev => !prev)}
+                    className={`p-2 rounded-lg border transition-all ${
+                        sortBy !== 'order_asc' 
+                            ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-xs' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                    title="Sıralama"
+                >
+                    <ArrowUpDown className="w-4 h-4" />
+                </button>
+
+                {/* Filter Funnel Button (District Filter) */}
+                <button
+                    onClick={() => setIsFilterModalOpen(true)}
+                    className={`p-2 rounded-lg border transition-all relative ${
+                        selectedDistrict 
+                            ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-xs' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                    title="İlçe Filtresi"
+                >
+                    <Filter className="w-4 h-4" />
+                    {selectedDistrict && (
+                        <span className="w-2 h-2 rounded-full bg-orange-600 absolute top-1 right-1" />
+                    )}
+                </button>
+            </div>
+
+            {/* --- SUB-TOOLBAR ROW (DARK SLATE #1e293b - CLEAN DESIGN, NO ÖNCELİKLİ/BEKLEYEN/BARKOD) --- */}
+            <div className="bg-[#1e293b] text-white px-3 py-2 flex items-center justify-between shrink-0 shadow-xs">
+                {routineTasks && routineTasks.length > 0 ? (
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                        <button
+                            onClick={() => setTabFilter('all')}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                                tabFilter === 'all'
+                                    ? 'bg-orange-500 text-white shadow-xs'
+                                    : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                            }`}
+                        >
+                            Tümü ({tasks.length + routineTasks.length})
+                        </button>
+                        <button
+                            onClick={() => setTabFilter('main')}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                                tabFilter === 'main'
+                                    ? 'bg-orange-500 text-white shadow-xs'
+                                    : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                            }`}
+                        >
+                            İşler ({tasks.length})
+                        </button>
+                        <button
+                            onClick={() => setTabFilter('routine')}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                                tabFilter === 'routine'
+                                    ? 'bg-orange-500 text-white shadow-xs'
+                                    : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                            }`}
+                        >
+                            Eksikler ({routineTasks.length})
+                        </button>
+                    </div>
+                ) : (
+                    <span className="text-[11px] font-semibold text-slate-300">
+                        Toplam <strong className="text-orange-400 font-bold">{filteredTasks.length}</strong> İş Kaydı
+                    </span>
+                )}
+
+                <div className="flex items-center gap-2">
+                    {selectedDistrict && (
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded text-[10px] font-bold">
+                            <span>{selectedDistrict}</span>
+                            <button onClick={() => setSelectedDistrict('')}><X className="w-3 h-3" /></button>
+                        </div>
+                    )}
+                    {routineTasks && routineTasks.length > 0 && (
+                        <span className="text-[11px] font-semibold text-slate-300">
+                            {filteredTasks.length + filteredRoutineTasks.length} Kayıt
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            {/* --- SORT MENU DROPDOWN (IF OPEN) --- */}
+            {isSortMenuOpen && (
+                <div className="bg-white border-b border-slate-200 px-4 py-2 shadow-md flex items-center justify-between text-xs z-20 animate-in fade-in duration-150">
+                    <span className="font-bold text-slate-600 text-[11px]">Sıralama:</span>
+                    <div className="flex gap-1.5 overflow-x-auto py-1">
+                        {[
+                            { id: 'order_asc', label: (routineTasks && routineTasks.length > 0) ? 'Görev Dağıtım Sırası' : 'Sıra No (Artan)' },
+                            { id: 'order_desc', label: 'Sıra No (Azalan)' },
+                            { id: 'date_desc', label: 'En Yeni' },
+                            { id: 'title_asc', label: 'İsim (A-Z)' }
+                        ].map(s => (
+                            <button
+                                key={s.id}
+                                onClick={() => { setSortBy(s.id as any); setIsSortMenuOpen(false); }}
+                                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                                    sortBy === s.id 
+                                        ? 'bg-orange-500 text-white font-bold shadow-xs' 
+                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                }`}
+                            >
+                                {s.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* --- PAINTING MODE ACTION BANNER --- */}
+            {isPaintingMode && (
+                <div className="bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 text-white p-3 shadow-md space-y-2.5 shrink-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Paintbrush className="w-5 h-5 text-amber-200" />
+                            <h3 className="font-black text-xs uppercase tracking-wider text-amber-100">Boyacı Rota & Harita Listesi</h3>
+                        </div>
+                        {canEditPainting ? (
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (selectedPaintingIds.length === tasks.length) {
+                                            setSelectedPaintingIds([]);
+                                        } else {
+                                            setSelectedPaintingIds(tasks.map(t => t.id));
+                                        }
+                                    }}
+                                    className="text-[11px] font-bold bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded-md transition-colors"
+                                >
+                                    {selectedPaintingIds.length === tasks.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
+                                </button>
+                                <span className="text-[11px] font-bold bg-black/30 px-2 py-0.5 rounded-md">
+                                    {getActivePaintingTasks().length} / {tasks.length} Seçili
+                                </span>
+                            </div>
+                        ) : (
+                            <span className="text-[11px] font-bold bg-black/30 px-2 py-0.5 rounded-md">
+                                Toplam {tasks.length} Müşteri
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className={canEditPainting ? "grid grid-cols-2 gap-2" : "w-full"}>
+                        <button
+                            type="button"
+                            onClick={() => setShowPublicMapModal(true)}
+                            className={`bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all border border-amber-300/40 ${canEditPainting ? '' : 'w-full py-3 text-sm'}`}
+                        >
+                            <Map className="w-4 h-4 text-amber-100 shrink-0" />
+                            <span>Harita & Müşteri Listesini Aç</span>
+                        </button>
+                        {canEditPainting && (
+                            <button
+                                type="button"
+                                onClick={handleSendToPainterWhatsApp}
+                                className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow-md shadow-emerald-900/30 flex items-center justify-center gap-1.5 transition-all"
+                            >
+                                <Send className="w-4 h-4 shrink-0" />
+                                <span>WhatsApp İle Gönder</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Editor Toolbar (Only for canEditPainting) */}
+                    {canEditPainting && (
+                        <div className="flex items-center justify-between pt-1 border-t border-white/15 text-[11px] text-amber-100 flex-wrap gap-y-1.5">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPaintingSearchQuery('');
+                                    setSelectorSelectedIds([]);
+                                    setShowPaintingSelectorModal(true);
+                                }}
+                                className="flex items-center gap-1 hover:text-white font-bold bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition-colors"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>+ Kişi Kartı Ekle</span>
+                            </button>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleCopyRouteText}
+                                    className="flex items-center gap-1 hover:text-white underline font-semibold text-[11px]"
+                                >
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>Listeyi Kopyala</span>
+                                </button>
+                                <span>•</span>
+                                <span className="font-semibold text-[10.5px]">
+                                    {getActivePaintingTasks().filter(t => extractCoords(t.locationCoordinates)).length} Konum Haritada
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* --- LIST CONTENT AREA (MATCHING THE SCREENSHOT ERP ROWS) --- */}
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-200 bg-white custom-scrollbar pb-24">
+                {unifiedTaskList.length === 0 ? (
+                    <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
+                        <Search className="w-8 h-8 opacity-30 text-slate-400" />
+                        <span className="text-xs font-medium">Bu kriterlere uygun iş kaydı bulunamadı.</span>
+                        {(searchQuery || selectedDistrict) && (
+                            <button
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setSelectedDistrict('');
+                                }}
+                                className="mt-2 text-xs text-orange-600 font-bold underline"
+                            >
+                                Filtreleri Temizle
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <>
+                    {unifiedTaskList.map(item => {
+                        if (item.type === 'main') {
+                            return renderMainTask(item.data);
+                        } else {
+                            return renderRoutineTask(item.data);
+                        }
+                    })}                </>
             )}
         </div>
 

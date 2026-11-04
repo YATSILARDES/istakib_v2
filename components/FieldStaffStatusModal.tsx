@@ -146,7 +146,14 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
     const safeFormatDate = (date: Date) => {
         try {
             if (isNaN(date.getTime())) return "Tarihsiz";
-            return date.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'numeric' });
+            const base = date.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'numeric' });
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            if (hours >= 8 && hours <= 20) {
+                const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                return `${base} ⏰ ${timeStr}`;
+            }
+            return base;
         } catch (e) {
             return date.toDateString();
         }
@@ -325,8 +332,10 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
         return { main, routine, total: main.length + routine.length };
     }, [mobileSelectedStaffName, mobileSelectedStaffObj, tasks, routineTasks]);
 
+    type UnifiedMobileTaskItem = { type: 'main'; data: Task } | { type: 'routine'; data: RoutineTask };
+
     const filteredMobileTasks = useMemo(() => {
-        if (!mobileSelectedStaffName) return { main: [], routine: [] };
+        if (!mobileSelectedStaffName) return { main: [], routine: [], unified: [] as UnifiedMobileTaskItem[] };
         const q = mobileSearchTerm.trim().toLocaleLowerCase('tr-TR');
 
         let main = mobileSelectedStaffTasks.main;
@@ -354,7 +363,52 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
             );
         }
 
-        return { main, routine };
+        let unified: UnifiedMobileTaskItem[] = [];
+        main.forEach(t => unified.push({ type: 'main', data: t }));
+        routine.forEach(rt => unified.push({ type: 'routine', data: rt }));
+
+        const getTime = (item: UnifiedMobileTaskItem) => {
+            const d = getEffectiveDate(item.data);
+            return isNaN(d.getTime()) ? 0 : d.getTime();
+        };
+
+        unified.sort((a, b) => {
+            // 1. Explicit dailyOrder set in Görev Dağıtımı
+            const orderA = a.data.dailyOrder || 0;
+            const orderB = b.data.dailyOrder || 0;
+            if (orderA !== 0 && orderB !== 0) {
+                if (orderA !== orderB) return orderA - orderB;
+            } else if (orderA !== 0) {
+                return -1;
+            } else if (orderB !== 0) {
+                return 1;
+            }
+
+            // 2. Scheduled Time / Hour from AssignmentView
+            const timeA = getTime(a);
+            const timeB = getTime(b);
+            if (timeA !== timeB && timeA > 0 && timeB > 0) {
+                return timeA - timeB;
+            }
+
+            // 3. Priority
+            const prioA = (a.data as any).isPriority ? 1 : 0;
+            const prioB = (b.data as any).isPriority ? 1 : 0;
+            if (prioA !== prioB) {
+                return prioB - prioA;
+            }
+
+            // 4. Fallback orderNumber
+            const numA = (a.data as any).orderNumber || 0;
+            const numB = (b.data as any).orderNumber || 0;
+            if (numA !== numB && numA > 0 && numB > 0) {
+                return numA - numB;
+            }
+
+            return 0;
+        });
+
+        return { main, routine, unified };
     }, [mobileSelectedStaffTasks, mobileTabFilter, mobileSearchTerm, mobileSelectedStaffName]);
 
     const mobileStaffList = useMemo(() => {
@@ -864,13 +918,13 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                         </div>
 
                         <span className="text-[11px] font-semibold text-slate-300 shrink-0 ml-2">
-                            {filteredMobileTasks.main.length + filteredMobileTasks.routine.length} Kayıt
+                            {filteredMobileTasks.unified.length} Kayıt
                         </span>
                     </div>
 
                     {/* Task List Content */}
                     <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-                        {filteredMobileTasks.main.length === 0 && filteredMobileTasks.routine.length === 0 ? (
+                        {filteredMobileTasks.unified.length === 0 ? (
                             <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 mt-4 shadow-xs">
                                 <AlertCircle className="w-10 h-10 mx-auto mb-2 text-slate-300" />
                                 <p className="font-bold text-sm text-slate-600">Görev Bulunamadı</p>
@@ -879,9 +933,9 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                 </p>
                             </div>
                         ) : (
-                            <>
-                                {/* Main Tasks */}
-                                {filteredMobileTasks.main.map((t, idx) => {
+                            filteredMobileTasks.unified.map((item, idx) => {
+                                if (item.type === 'main') {
+                                    const t = item.data;
                                     const badge = getStatusBadge(t.status);
                                     const taskDate = getTaskDate(t);
                                     const isTaskToday = isToday(taskDate);
@@ -899,6 +953,11 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                             {/* Top Badge Row */}
                                             <div className="flex items-center justify-between gap-2 pl-2 mb-2">
                                                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                                                    {t.dailyOrder ? (
+                                                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-orange-600 text-white shrink-0 shadow-2xs">
+                                                            #{t.dailyOrder}
+                                                        </span>
+                                                    ) : null}
                                                     <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
                                                         #{t.orderNumber}
                                                     </span>
@@ -910,7 +969,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                 <div className="flex items-center gap-1.5 shrink-0">
                                                     {isTaskToday ? (
                                                         <span className="text-[10px] font-black text-[#e65100] bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-md">
-                                                            Bugün
+                                                            Bugün {taskDate.getHours() >= 8 && taskDate.getHours() <= 20 ? `⏰ ${String(taskDate.getHours()).padStart(2, '0')}:${String(taskDate.getMinutes()).padStart(2, '0')}` : ''}
                                                         </span>
                                                     ) : isTaskOverdue ? (
                                                         <span className="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
@@ -974,10 +1033,8 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                             </div>
                                         </div>
                                     );
-                                })}
-
-                                {/* Routine Tasks */}
-                                {filteredMobileTasks.routine.map((rt, idx) => {
+                                } else {
+                                    const rt = item.data;
                                     const rtDate = getTaskDate(rt);
                                     return (
                                         <div
@@ -995,22 +1052,48 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                 </button>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <h4 className="font-bold text-amber-950 text-xs truncate">
-                                                            {rt.customerName || 'Eksik / Rutin Not'}
-                                                        </h4>
-                                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded">
+                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                            {rt.dailyOrder ? (
+                                                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-600 text-white shrink-0 shadow-2xs">
+                                                                    #{rt.dailyOrder}
+                                                                </span>
+                                                            ) : null}
+                                                            <h4 className="font-bold text-amber-950 text-xs truncate">
+                                                                {rt.customerName || 'Eksik / Rutin Not'}
+                                                            </h4>
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded shrink-0">
                                                             {safeFormatDate(rtDate)}
                                                         </span>
                                                     </div>
                                                     <p className="text-xs text-amber-900 mt-1 leading-relaxed">
                                                         {rt.content}
                                                     </p>
+                                                    {(rt.address || rt.phoneNumber) && (
+                                                        <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-amber-200/50">
+                                                            {rt.address ? (
+                                                                <span className="text-amber-800/80 text-[11px] truncate flex items-center gap-1">
+                                                                    <MapPin className="w-3 h-3 shrink-0 opacity-70" />
+                                                                    <span>{rt.address}</span>
+                                                                </span>
+                                                            ) : <span />}
+                                                            {rt.phoneNumber && (
+                                                                <a
+                                                                    href={`tel:${rt.phoneNumber}`}
+                                                                    className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1 shrink-0"
+                                                                >
+                                                                    <Phone className="w-3 h-3" />
+                                                                    <span>Ara</span>
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
                                     );
-                                })}
-                            </>
+                                }
+                            })
                         )}
                     </div>
 
