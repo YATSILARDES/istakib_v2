@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Phone, Navigation, ChevronUp, ChevronDown, List, Layers, CheckCircle2, X } from 'lucide-react';
+import { MapPin, Phone, Navigation, ChevronUp, ChevronDown, List, CheckCircle2, X } from 'lucide-react';
 
 export interface PublicMapCustomer {
     id: string;
@@ -15,27 +15,53 @@ export interface PublicMapCustomer {
     lng: number;
 }
 
+export interface DisplayCustomer extends PublicMapCustomer {
+    displayLat: number;
+    displayLng: number;
+    clusterSize: number;
+    clusterIndex: number;
+}
+
 export interface PublicPaintingMapViewProps {
     initialCustomers?: PublicMapCustomer[];
     onClose?: () => void;
 }
 
-// Custom Marker Icon with Permanent Name & Phone Badge
-const createCustomMarkerIcon = (stopNumber: number, title: string, phone?: string) => {
+// Custom Marker Icon with Permanent Name & Phone Badge + Active/Done Styling
+const createCustomMarkerIcon = (
+    stopNumber: number,
+    title: string,
+    phone?: string,
+    isDone?: boolean,
+    isFocused?: boolean
+) => {
     const safeTitle = (title || 'Müşteri').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const safePhone = phone ? phone.replace(/</g, '&lt;') : '';
+
+    const bgGradient = isDone
+        ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+        : isFocused
+            ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+            : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
+
+    const stemColor = isDone ? '#059669' : (isFocused ? '#d97706' : '#ea580c');
+    const dotColor = isDone ? '#047857' : (isFocused ? '#b45309' : '#c2410c');
+
+    const focusStyles = isFocused
+        ? 'box-shadow: 0 0 0 3px #fef08a, 0 6px 20px rgba(0,0,0,0.5); transform: scale(1.06);'
+        : 'box-shadow: 0 4px 14px rgba(0,0,0,0.35);';
 
     return L.divIcon({
         className: 'custom-paint-pin',
         html: `
-            <div style="position: relative; transform: translate(-50%, -100%); pointer-events: auto; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
-                <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11.5px; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,0.35); border: 2px solid #ffffff; display: flex; align-items: center; gap: 5px; font-family: system-ui, -apple-system, sans-serif;">
-                    <span style="background: white; color: #ea580c; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; shrink: 0;">${stopNumber}</span>
+            <div style="position: relative; transform: translate(-50%, -100%); pointer-events: auto; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s ease;">
+                <div style="background: ${bgGradient}; color: white; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11.5px; white-space: nowrap; ${focusStyles} border: 2px solid #ffffff; display: flex; align-items: center; gap: 5px; font-family: system-ui, -apple-system, sans-serif;">
+                    <span style="background: white; color: ${stemColor}; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; shrink: 0;">${isDone ? '✓' : stopNumber}</span>
                     <span style="letter-spacing: -0.2px;">${safeTitle}</span>
                     ${safePhone ? `<span style="opacity: 0.9; font-weight: 600; font-size: 10px; background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 6px;">📞 ${safePhone}</span>` : ''}
                 </div>
-                <div style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 9px solid #ea580c; margin-top: -1px;"></div>
-                <div style="width: 8px; height: 8px; background: #c2410c; border: 1.5px solid white; border-radius: 50%; margin-top: -3px; box-shadow: 0 2px 4px rgba(0,0,0,0.25);"></div>
+                <div style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 9px solid ${stemColor}; margin-top: -1px;"></div>
+                <div style="width: 8px; height: 8px; background: ${dotColor}; border: 1.5px solid white; border-radius: 50%; margin-top: -3px; box-shadow: 0 2px 4px rgba(0,0,0,0.25);"></div>
             </div>
         `,
         iconSize: [0, 0],
@@ -45,26 +71,36 @@ const createCustomMarkerIcon = (stopNumber: number, title: string, phone?: strin
 
 // Component to auto-fit bounds or pan to target
 const MapController: React.FC<{
-    customers: PublicMapCustomer[];
+    customers: DisplayCustomer[];
     focusedCustomer: PublicMapCustomer | null;
-}> = ({ customers, focusedCustomer }) => {
+    markerRefs: React.MutableRefObject<Record<string, L.Marker | null>>;
+}> = ({ customers, focusedCustomer, markerRefs }) => {
     const map = useMap();
 
     useEffect(() => {
         if (focusedCustomer) {
-            map.flyTo([focusedCustomer.lat, focusedCustomer.lng], 16, { duration: 1.2 });
-            return;
+            const display = customers.find(c => c.id === focusedCustomer.id);
+            const targetLat = display ? display.displayLat : focusedCustomer.lat;
+            const targetLng = display ? display.displayLng : focusedCustomer.lng;
+            map.flyTo([targetLat, targetLng], 17, { duration: 0.8 });
+
+            const timer = setTimeout(() => {
+                if (focusedCustomer && markerRefs.current[focusedCustomer.id]) {
+                    markerRefs.current[focusedCustomer.id]?.openPopup();
+                }
+            }, 300);
+            return () => clearTimeout(timer);
         }
 
         if (customers.length === 0) return;
         if (customers.length === 1) {
-            map.setView([customers[0].lat, customers[0].lng], 15);
+            map.setView([customers[0].displayLat, customers[0].displayLng], 15);
             return;
         }
 
-        const bounds = L.latLngBounds(customers.map(c => [c.lat, c.lng]));
+        const bounds = L.latLngBounds(customers.map(c => [c.displayLat, c.displayLng]));
         map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
-    }, [customers, focusedCustomer, map]);
+    }, [customers, focusedCustomer, map, markerRefs]);
 
     return null;
 };
@@ -73,6 +109,8 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
     const [customers, setCustomers] = useState<PublicMapCustomer[]>(initialCustomers || []);
     const [focusedCustomer, setFocusedCustomer] = useState<PublicMapCustomer | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
+    const markerRefs = useRef<Record<string, L.Marker | null>>({});
+
     const [completedIds, setCompletedIds] = useState<string[]>(() => {
         try {
             const saved = localStorage.getItem('boyaci_completed_tasks');
@@ -117,6 +155,90 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
             console.error('Failed to parse public map data from url', e);
         }
     }, [initialCustomers]);
+
+    // Calculate intelligent offset/staggering for overlapping & close markers
+    const displayCustomers = useMemo<DisplayCustomer[]>(() => {
+        if (!customers || customers.length === 0) return [];
+
+        const clusters: PublicMapCustomer[][] = [];
+        const visited = new Set<string>();
+
+        // Distance threshold: ~32 meters (roughly 0.00030 degrees)
+        const THRESHOLD = 0.00030;
+
+        for (let i = 0; i < customers.length; i++) {
+            const c1 = customers[i];
+            const id1 = c1.id || String(i);
+            if (visited.has(id1)) continue;
+
+            const cluster: PublicMapCustomer[] = [c1];
+            visited.add(id1);
+
+            for (let j = i + 1; j < customers.length; j++) {
+                const c2 = customers[j];
+                const id2 = c2.id || String(j);
+                if (visited.has(id2)) continue;
+
+                const dLat = c1.lat - c2.lat;
+                const dLng = (c1.lng - c2.lng) * Math.cos((c1.lat * Math.PI) / 180);
+                const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+
+                if (dist < THRESHOLD) {
+                    cluster.push(c2);
+                    visited.add(id2);
+                }
+            }
+            clusters.push(cluster);
+        }
+
+        const mapById = new Map<string, DisplayCustomer>();
+
+        clusters.forEach(cluster => {
+            const count = cluster.length;
+            if (count === 1) {
+                const c = cluster[0];
+                mapById.set(c.id, {
+                    ...c,
+                    displayLat: c.lat,
+                    displayLng: c.lng,
+                    clusterSize: 1,
+                    clusterIndex: 0
+                });
+            } else {
+                // Vertical & diagonal staggering
+                // Height of badge is ~32px. In leaflet zoom 16/17, ~0.00028 lat provides ~45px clean separation.
+                const latStep = 0.00028;
+                const lngStep = 0.00015;
+                const centerLat = cluster.reduce((sum, c) => sum + c.lat, 0) / count;
+                const centerLng = cluster.reduce((sum, c) => sum + c.lng, 0) / count;
+
+                cluster.forEach((c, idx) => {
+                    const offsetFactor = idx - (count - 1) / 2;
+                    const lngDirection = (idx % 2 === 0 ? -1 : 1) * (count > 2 ? 1 : 0.6);
+
+                    const displayLat = centerLat + (offsetFactor * latStep);
+                    const displayLng = centerLng + (lngDirection * lngStep);
+
+                    mapById.set(c.id, {
+                        ...c,
+                        displayLat,
+                        displayLng,
+                        clusterSize: count,
+                        clusterIndex: idx
+                    });
+                });
+            }
+        });
+
+        // Maintain original array ordering
+        return customers.map((c, idx) => mapById.get(c.id) || {
+            ...c,
+            displayLat: c.lat,
+            displayLng: c.lng,
+            clusterSize: 1,
+            clusterIndex: 0
+        });
+    }, [customers]);
 
     const initialCenter = useMemo(() => {
         if (customers.length === 0) return { lat: 37.2153, lng: 28.3636 };
@@ -194,15 +316,55 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
 
-                        {customers.map((c, idx) => {
+                        {/* Connecting dashed guide lines & anchor dots for clustered/offset markers */}
+                        {displayCustomers.map((c, idx) => {
+                            if (c.clusterSize <= 1) return null;
+                            return (
+                                <React.Fragment key={`cluster-guide-${c.id || idx}`}>
+                                    <Polyline
+                                        positions={[
+                                            [c.lat, c.lng],
+                                            [c.displayLat, c.displayLng]
+                                        ]}
+                                        pathOptions={{
+                                            color: '#ea580c',
+                                            weight: 2,
+                                            dashArray: '4, 4',
+                                            opacity: 0.7
+                                        }}
+                                    />
+                                    <CircleMarker
+                                        center={[c.lat, c.lng]}
+                                        radius={4}
+                                        pathOptions={{
+                                            fillColor: '#ea580c',
+                                            fillOpacity: 0.9,
+                                            color: '#ffffff',
+                                            weight: 1.5
+                                        }}
+                                    />
+                                </React.Fragment>
+                            );
+                        })}
+
+                        {/* Marker Badges */}
+                        {displayCustomers.map((c, idx) => {
                             const isDone = completedIds.includes(c.id);
-                            const customIcon = createCustomMarkerIcon(idx + 1, (isDone ? '✓ ' : '') + c.n, c.p);
+                            const isFocused = focusedCustomer?.id === c.id;
+                            const customIcon = createCustomMarkerIcon(idx + 1, c.n, c.p, isDone, isFocused);
 
                             return (
                                 <Marker
                                     key={c.id || idx}
-                                    position={[c.lat, c.lng]}
+                                    ref={(ref) => { markerRefs.current[c.id] = ref; }}
+                                    position={[c.displayLat, c.displayLng]}
                                     icon={customIcon}
+                                    zIndexOffset={isFocused ? 10000 : (isDone ? 50 : 200 + idx)}
+                                    eventHandlers={{
+                                        click: () => {
+                                            setFocusedCustomer(c);
+                                        }
+                                    }}
                                 >
                                     <Popup className="custom-popup" closeButton={true}>
                                         <div className="p-1 space-y-2 max-w-[260px] text-slate-800">
@@ -264,7 +426,11 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                             );
                         })}
 
-                        <MapController customers={customers} focusedCustomer={focusedCustomer} />
+                        <MapController
+                            customers={displayCustomers}
+                            focusedCustomer={focusedCustomer}
+                            markerRefs={markerRefs}
+                        />
                     </MapContainer>
                 )}
             </main>
@@ -369,4 +535,3 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
         </div>
     );
 };
-
