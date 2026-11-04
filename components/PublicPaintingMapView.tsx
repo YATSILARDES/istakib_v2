@@ -78,31 +78,50 @@ const MapController: React.FC<{
     markerRefs: React.MutableRefObject<Record<string, L.Marker | null>>;
 }> = ({ customers, focusedCustomer, markerRefs }) => {
     const map = useMap();
+    const hasFittedRef = useRef<boolean>(false);
+    const prevFocusedIdRef = useRef<string | null>(null);
 
+    // Initial bounds fit: only once on mount or when customer count changes
     useEffect(() => {
-        if (focusedCustomer) {
-            const display = customers.find(c => c.id === focusedCustomer.id);
-            const targetLat = display ? display.displayLat : focusedCustomer.lat;
-            const targetLng = display ? display.displayLng : focusedCustomer.lng;
-            map.flyTo([targetLat, targetLng], 17, { duration: 0.8 });
-
-            const timer = setTimeout(() => {
-                if (focusedCustomer && markerRefs.current[focusedCustomer.id]) {
-                    markerRefs.current[focusedCustomer.id]?.openPopup();
-                }
-            }, 300);
-            return () => clearTimeout(timer);
-        }
-
         if (customers.length === 0) return;
-        if (customers.length === 1) {
-            map.setView([customers[0].displayLat, customers[0].displayLng], 15);
+        if (!hasFittedRef.current) {
+            hasFittedRef.current = true;
+            if (customers.length === 1) {
+                map.setView([customers[0].displayLat, customers[0].displayLng], 15);
+            } else {
+                const bounds = L.latLngBounds(customers.map(c => [c.displayLat, c.displayLng]));
+                map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+            }
+        }
+    }, [customers.length, map]);
+
+    // Handle focused customer flyTo & popup open
+    useEffect(() => {
+        if (!focusedCustomer) {
+            prevFocusedIdRef.current = null;
             return;
         }
 
-        const bounds = L.latLngBounds(customers.map(c => [c.displayLat, c.displayLng]));
-        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
-    }, [customers, focusedCustomer, map, markerRefs]);
+        if (prevFocusedIdRef.current === focusedCustomer.id) {
+            return;
+        }
+        prevFocusedIdRef.current = focusedCustomer.id;
+
+        const display = customers.find(c => c.id === focusedCustomer.id);
+        const targetLat = display ? display.displayLat : focusedCustomer.lat;
+        const targetLng = display ? display.displayLng : focusedCustomer.lng;
+
+        map.flyTo([targetLat, targetLng], 17, { duration: 0.8 });
+
+        const timer = setTimeout(() => {
+            const marker = markerRefs.current[focusedCustomer.id];
+            if (marker && !marker.isPopupOpen()) {
+                marker.openPopup();
+            }
+        }, 850);
+
+        return () => clearTimeout(timer);
+    }, [focusedCustomer?.id, map, customers, markerRefs]);
 
     return null;
 };
@@ -371,10 +390,21 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                                     eventHandlers={{
                                         click: () => {
                                             setFocusedCustomer(c);
+                                        },
+                                        popupclose: () => {
+                                            setFocusedCustomer(prev => (prev?.id === c.id ? null : prev));
                                         }
                                     }}
                                 >
-                                    <Popup className="custom-popup" closeButton={true}>
+                                    <Popup
+                                        className="custom-popup"
+                                        closeButton={true}
+                                        eventHandlers={{
+                                            remove: () => {
+                                                setFocusedCustomer(prev => (prev?.id === c.id ? null : prev));
+                                            }
+                                        }}
+                                    >
                                         <div className="p-1 space-y-2 max-w-[260px] text-slate-800">
                                             <div className="flex items-center gap-1.5">
                                                 <span className="bg-orange-600 text-white font-black text-[10.5px] px-2 py-0.5 rounded-full shrink-0">
