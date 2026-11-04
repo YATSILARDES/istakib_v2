@@ -4,7 +4,7 @@ import {
     Plus, Phone, Share2, MapPin, Calendar, Star, X, Flame, 
     CheckCircle2, AlertTriangle, Clock, ChevronRight, Eye, Send, ChevronDown,
     Square, Check, FileText, Paintbrush, ExternalLink, Copy, CheckSquare, Map,
-    Bookmark, Download, Globe
+    Bookmark
 } from 'lucide-react';
 import { Task, TaskStatus, StatusLabels, UserPermission, RoutineTask } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
@@ -155,21 +155,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     const [paintNoteModalTask, setPaintNoteModalTask] = useState<Task | null>(null);
     const [paintNoteInput, setPaintNoteInput] = useState<string>('');
     const [showPublicMapModal, setShowPublicMapModal] = useState<boolean>(false);
-    const [showKmlGuideModal, setShowKmlGuideModal] = useState<boolean>(false);
-    const [savedMyMapsUrl, setSavedMyMapsUrl] = useState<string>(() => {
-        try {
-            return localStorage.getItem('painting_google_my_maps_url') || '';
-        } catch {
-            return '';
-        }
-    });
-    const [myMapsUrlInput, setMyMapsUrlInput] = useState<string>(() => {
-        try {
-            return localStorage.getItem('painting_google_my_maps_url') || '';
-        } catch {
-            return '';
-        }
-    });
+
 
     // Permission checks for Painting Mode
     const isAdmin = userPermissions?.role === 'admin' || userPermissions?.role === 'manager';
@@ -325,132 +311,6 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
         const { fullMsg } = buildPaintingRoute(activeTasks);
         const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(fullMsg)}`;
         window.open(waUrl, '_blank');
-    };
-
-    // Helper: Export KML file for Google My Maps
-    const handleExportKml = () => {
-        const activeTasks = getActivePaintingTasks();
-        const tasksWithCoords = activeTasks.filter(t => extractCoords(t.locationCoordinates));
-
-        if (tasksWithCoords.length === 0) {
-            alert('Haritada gösterilecek koordinatlı müşteri bulunamadı.');
-            return;
-        }
-
-        const dateStr = new Date().toLocaleDateString('tr-TR');
-        const escapeXml = (str: string) => {
-            return (str || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&apos;');
-        };
-
-        const placemarks = tasksWithCoords.map((task, idx) => {
-            const coords = extractCoords(task.locationCoordinates)!;
-            const title = escapeXml(task.title || 'Müşteri');
-            const phone = escapeXml(task.tenantPhone || task.phone || '');
-            const address = escapeXml(task.address || '');
-            const district = escapeXml(task.district || '');
-            const paintNote = escapeXml(task.paintNote || 'Özel not yok');
-
-            return `    <Placemark>
-      <name>#${idx + 1} ${title}</name>
-      <description><![CDATA[
-<b>Telefon:</b> ${phone || 'Yok'}<br/>
-<b>İlçe:</b> ${district || 'Belirtilmemiş'}<br/>
-<b>Adres:</b> ${address || 'Belirtilmemiş'}<br/>
-<b>Boyacı Notu:</b> ${paintNote}
-      ]]></description>
-      <styleUrl>#orangePin</styleUrl>
-      <Point>
-        <coordinates>${coords.lng},${coords.lat},0</coordinates>
-      </Point>
-    </Placemark>`;
-        }).join('\n');
-
-        const kmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>Boya İşleri - ${dateStr}</name>
-    <description>Günlük Boyacı Müşteri ve Konum Listesi</description>
-    <Style id="orangePin">
-      <IconStyle>
-        <scale>1.2</scale>
-        <Icon>
-          <href>https://maps.google.com/mapfiles/ms/icons/orange-dot.png</href>
-        </Icon>
-      </IconStyle>
-    </Style>
-${placemarks}
-  </Document>
-</kml>`;
-
-        const blob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const fileDate = new Date().toISOString().slice(0, 10);
-        a.href = url;
-        a.download = `boya_isleri_${fileDate}.kml`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        setShowKmlGuideModal(true);
-    };
-
-    // Helper: Export CSV file as alternative for Google My Maps
-    const handleExportCsv = () => {
-        const activeTasks = getActivePaintingTasks();
-        const tasksWithCoords = activeTasks.filter(t => extractCoords(t.locationCoordinates));
-
-        if (tasksWithCoords.length === 0) {
-            alert('Haritada gösterilecek koordinatlı müşteri bulunamadı.');
-            return;
-        }
-
-        const headers = ['Sıra', 'Müşteri Adı', 'Telefon', 'İlçe', 'Adres', 'Boyacı Notu', 'Enlem', 'Boylam'];
-        const rows = tasksWithCoords.map((task, idx) => {
-            const coords = extractCoords(task.locationCoordinates)!;
-            return [
-                `#${idx + 1}`,
-                `"${(task.title || '').replace(/"/g, '""')}"`,
-                `"${(task.tenantPhone || task.phone || '').replace(/"/g, '""')}"`,
-                `"${(task.district || '').replace(/"/g, '""')}"`,
-                `"${(task.address || '').replace(/"/g, '""')}"`,
-                `"${(task.paintNote || '').replace(/"/g, '""')}"`,
-                coords.lat,
-                coords.lng
-            ].join(',');
-        });
-
-        const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const fileDate = new Date().toISOString().slice(0, 10);
-        a.href = url;
-        a.download = `boya_isleri_${fileDate}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    const handleSaveMyMapsUrl = (url: string) => {
-        const trimmed = url.trim();
-        setSavedMyMapsUrl(trimmed);
-        try {
-            if (trimmed) {
-                localStorage.setItem('painting_google_my_maps_url', trimmed);
-            } else {
-                localStorage.removeItem('painting_google_my_maps_url');
-            }
-        } catch (e) {
-            console.error('Failed to save Google My Maps url', e);
-        }
     };
 
     const handleCopyRouteText = async () => {
@@ -840,16 +700,6 @@ ${placemarks}
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    onClick={handleExportKml}
-                                    className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white font-bold px-2 py-0.5 rounded text-[11px] transition-all active:scale-95 shadow-xs"
-                                    title="Google Haritam (My Maps) için KML dosyası indir"
-                                >
-                                    <Download className="w-3.5 h-3.5" />
-                                    <span>Google Haritam (KML)</span>
-                                </button>
-                                <span>•</span>
-                                <button
-                                    type="button"
                                     onClick={handleCopyRouteText}
                                     className="flex items-center gap-1 hover:text-white underline font-semibold text-[11px]"
                                 >
@@ -998,8 +848,15 @@ ${placemarks}
                         return (
                             <div
                                 key={task.id}
-                                onClick={() => onTaskClick(task)}
-                                className="px-3.5 py-3 hover:bg-orange-50/30 active:bg-orange-50/60 transition-colors flex items-start gap-3 cursor-pointer group relative"
+                                onClick={() => {
+                                    if (isPaintingMode && !canEditPainting) return;
+                                    onTaskClick(task);
+                                }}
+                                className={`px-3.5 py-3 transition-colors flex items-start gap-3 group relative ${
+                                    isPaintingMode && !canEditPainting
+                                        ? 'cursor-default'
+                                        : 'cursor-pointer hover:bg-orange-50/30 active:bg-orange-50/60'
+                                }`}
                             >
                                 {/* Painting Checkbox in Painting Mode */}
                                 {isPaintingMode && canEditPainting && (
@@ -1068,6 +925,13 @@ ${placemarks}
                                                     · {task.district}
                                                 </span>
                                             )}
+
+                                            {/* Boyandı Rozeti (Boya modunda ve tamamlandıysa) */}
+                                            {isPaintingMode && task.paintStatus === 'completed' && (
+                                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-1.5 py-0.5 rounded border border-emerald-300 shrink-0">
+                                                    ✓ BOYANDI
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Status Tag on Top Right: Shows EKSİK VAR / TEMİZ if available */}
@@ -1079,7 +943,7 @@ ${placemarks}
                                     </div>
 
                                     {/* Line 2: Job description / Address */}
-                                    <p className="text-[11.5px] font-medium text-slate-700 line-clamp-1 leading-snug">
+                                    <p className={`text-[11.5px] font-medium text-slate-700 leading-snug ${isPaintingMode ? 'break-words' : 'line-clamp-1'}`}>
                                         {task.address || task.description || 'Adres bilgisi girilmemiş'}
                                     </p>
 
@@ -1144,7 +1008,7 @@ ${placemarks}
                                             </button>
 
                                             {/* Beklet / Beklemede Butonu (Gaz Açıldı aşamasındaysa) */}
-                                            {onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
+                                            {(!isPaintingMode || canEditPainting) && onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
                                                 <button
                                                     type="button"
                                                     onClick={(e) => {
@@ -1207,12 +1071,15 @@ ${placemarks}
                                             )}
 
                                             {/* Detail Arrow */}
-                                            <button
-                                                onClick={() => onTaskClick(task)}
-                                                className="p-1 text-slate-400 hover:text-slate-600"
-                                            >
-                                                <ChevronRight className="w-4 h-4" />
-                                            </button>
+                                            {(!isPaintingMode || canEditPainting) && (
+                                                <button
+                                                    onClick={() => onTaskClick(task)}
+                                                    className="p-1 text-slate-400 hover:text-slate-600"
+                                                    title="İş Detayı"
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
 
@@ -1300,7 +1167,7 @@ ${placemarks}
         </div>
 
             {/* FAB button */}
-            {canAddTasks && (
+            {canAddTasks && !isPaintingMode && (
                 <button
                     onClick={onAddTask}
                     className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#e65100] via-[#f57c00] to-[#ff9800] text-white shadow-xl shadow-orange-600/40 hover:shadow-orange-600/60 flex items-center justify-center fixed bottom-6 right-4 z-30 active:scale-90 transition-all border-2 border-white/80"
@@ -2249,157 +2116,6 @@ ${placemarks}
                     </div>
                 </div>
             )}
-
-
-            {/* Google My Maps (KML) Guide & Import Modal */}
-            {showKmlGuideModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[300] p-4">
-                    <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-200 flex flex-col max-h-[90vh]">
-                        {/* Header */}
-                        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                                    <Globe className="w-5 h-5 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-sm">Google Haritam (My Maps)</h3>
-                                    <p className="text-[11px] text-blue-100">Tek linkle Google üzerinde harita oluşturma</p>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setShowKmlGuideModal(false)}
-                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-4 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar text-slate-700 text-xs">
-                            {/* Success Notification */}
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-start gap-2.5 text-emerald-900">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="font-black text-xs">KML Harita Dosyası İndirildi!</p>
-                                    <p className="text-[11px] text-emerald-700 mt-0.5 leading-snug">
-                                        Seçili müşterilerin isimleri, telefonları ve konumları hazırlandı.
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Direct Open Button */}
-                            <a
-                                href="https://www.google.com/maps/d/u/0/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black py-2.5 px-4 rounded-xl shadow-md shadow-blue-600/30 flex items-center justify-center gap-2 transition-all text-xs"
-                            >
-                                <ExternalLink className="w-4 h-4" />
-                                <span>Google Haritam'ı Aç (google.com/maps/d/)</span>
-                            </a>
-
-                            {/* Step-by-Step Instructions */}
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                                <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
-                                    <MapPin className="w-4 h-4 text-blue-600" />
-                                    <span>Google'a Yükleme Adımları (30 Saniye):</span>
-                                </h4>
-                                <ol className="list-decimal pl-4 space-y-1.5 text-[11.5px] leading-relaxed text-slate-600 font-medium">
-                                    <li>Açılan Google Haritam sayfasında kırmızı <strong>'+ YENİ HARİTA OLUŞTUR'</strong> butonuna basın.</li>
-                                    <li>Soldaki <em>'Adsız Katman'</em> altındaki mavi <strong>'İçe Aktar' (Import)</strong> yazısına tıklayın.</li>
-                                    <li>Az önce inen <strong>.kml</strong> dosyasını seçin veya sayfaya sürükleyip bırakın.</li>
-                                    <li>Haritanız Google üzerinde anında tüm isimlerle açılır!</li>
-                                    <li>Sağ üstteki <strong>'Paylaş'</strong> butonuna basıp <em>'Bağlantıya sahip herkes görüntüleyebilir'</em> deyin ve linki kopyalayın.</li>
-                                </ol>
-                            </div>
-
-                            {/* Save Link Option */}
-                            <div className="border border-slate-200 rounded-xl p-3 space-y-2 bg-white">
-                                <label className="block font-black text-slate-800 text-[11px]">
-                                    Oluşturduğunuz Google Haritam Linkini Buraya Kaydedin:
-                                </label>
-                                <div className="flex gap-1.5">
-                                    <input
-                                        type="url"
-                                        value={myMapsUrlInput}
-                                        onChange={(e) => setMyMapsUrlInput(e.target.value)}
-                                        placeholder="https://www.google.com/maps/d/..."
-                                        className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            handleSaveMyMapsUrl(myMapsUrlInput);
-                                            alert('Google Haritam linki kaydedildi!');
-                                        }}
-                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs shrink-0"
-                                    >
-                                        Kaydet
-                                    </button>
-                                </div>
-                                {savedMyMapsUrl && (
-                                    <div className="flex items-center justify-between pt-1 text-[11px]">
-                                        <a
-                                            href={savedMyMapsUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-600 font-bold underline flex items-center gap-1"
-                                        >
-                                            <ExternalLink className="w-3 h-3" />
-                                            <span>Kayıtlı Haritayı Aç</span>
-                                        </a>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(savedMyMapsUrl);
-                                                alert('Harita linki panoya kopyalandı!');
-                                            }}
-                                            className="text-slate-600 hover:text-slate-900 font-bold underline"
-                                        >
-                                            Linki Kopyala
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Alternative Downloads */}
-                            <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px] text-slate-500">
-                                <span>Alternatif İndirme:</span>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={handleExportKml}
-                                        className="text-blue-600 hover:underline font-bold"
-                                    >
-                                        KML Tekrar İndir
-                                    </button>
-                                    <span>•</span>
-                                    <button
-                                        type="button"
-                                        onClick={handleExportCsv}
-                                        className="text-blue-600 hover:underline font-bold"
-                                    >
-                                        Excel / CSV İndir
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-end shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => setShowKmlGuideModal(false)}
-                                className="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-xl text-xs active:scale-95 transition-all"
-                            >
-                                Tamam / Kapat
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Public Painting Map & List Modal */}
             {showPublicMapModal && (
                 <div className="fixed inset-0 z-[280]">
@@ -2415,10 +2131,16 @@ ${placemarks}
                                 d: t.district || '',
                                 m: t.paintNote || '',
                                 lat: coords.lat,
-                                lng: coords.lng
+                                lng: coords.lng,
+                                isDone: t.paintStatus === 'completed'
                             };
                         }).filter(Boolean) as PublicMapCustomer[]}
                         onClose={() => setShowPublicMapModal(false)}
+                        onToggleTaskDone={(taskId, isDone) => {
+                            if (onTaskUpdate) {
+                                onTaskUpdate(taskId, { paintStatus: isDone ? 'completed' : 'pending' });
+                            }
+                        }}
                     />
                 </div>
             )}

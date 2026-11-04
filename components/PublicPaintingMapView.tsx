@@ -13,6 +13,7 @@ export interface PublicMapCustomer {
     m?: string; // painter note
     lat: number;
     lng: number;
+    isDone?: boolean;
 }
 
 export interface DisplayCustomer extends PublicMapCustomer {
@@ -25,6 +26,7 @@ export interface DisplayCustomer extends PublicMapCustomer {
 export interface PublicPaintingMapViewProps {
     initialCustomers?: PublicMapCustomer[];
     onClose?: () => void;
+    onToggleTaskDone?: (customerId: string, isDone: boolean) => void;
 }
 
 // Custom Marker Icon with Permanent Name & Phone Badge + Active/Done Styling
@@ -105,27 +107,33 @@ const MapController: React.FC<{
     return null;
 };
 
-export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ initialCustomers, onClose }) => {
+export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ initialCustomers, onClose, onToggleTaskDone }) => {
     const [customers, setCustomers] = useState<PublicMapCustomer[]>(initialCustomers || []);
     const [focusedCustomer, setFocusedCustomer] = useState<PublicMapCustomer | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
     const markerRefs = useRef<Record<string, L.Marker | null>>({});
 
     const [completedIds, setCompletedIds] = useState<string[]>(() => {
+        const fromProps = (initialCustomers || []).filter(c => c.isDone).map(c => c.id);
         try {
             const saved = localStorage.getItem('boyaci_completed_tasks');
-            return saved ? JSON.parse(saved) : [];
+            const savedIds: string[] = saved ? JSON.parse(saved) : [];
+            return Array.from(new Set([...fromProps, ...savedIds]));
         } catch {
-            return [];
+            return fromProps;
         }
     });
 
     const toggleCompleted = (id: string) => {
         setCompletedIds(prev => {
-            const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+            const isCurrentlyDone = prev.includes(id);
+            const next = isCurrentlyDone ? prev.filter(x => x !== id) : [...prev, id];
             try {
                 localStorage.setItem('boyaci_completed_tasks', JSON.stringify(next));
             } catch {}
+            if (onToggleTaskDone) {
+                onToggleTaskDone(id, !isCurrentlyDone);
+            }
             return next;
         });
     };
@@ -479,18 +487,18 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                                         }`}
                                     >
                                         <div className="flex items-start justify-between gap-2">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <span className={`w-6 h-6 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 shadow-2xs ${
+                                            <div className="flex items-start gap-2.5 flex-1 min-w-0 pr-1">
+                                                <span className={`w-6 h-6 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs ${
                                                     isDone ? 'bg-emerald-600' : 'bg-orange-600'
                                                 }`}>
                                                     {isDone ? '✓' : idx + 1}
                                                 </span>
-                                                <div className="min-w-0">
-                                                    <h4 className={`font-black text-xs uppercase truncate ${isDone ? 'line-through text-slate-500' : 'text-slate-900'}`}>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className={`font-black text-xs uppercase leading-tight ${isDone ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                                                         {c.n}
                                                     </h4>
-                                                    <p className="text-[11px] text-slate-500 truncate">
-                                                        {c.d && <strong className="text-slate-700">{c.d} · </strong>}
+                                                    <p className="text-[11.5px] text-slate-600 mt-1 leading-snug break-words">
+                                                        {c.d && <strong className="text-slate-800">{c.d} · </strong>}
                                                         {c.a || 'Adres yok'}
                                                     </p>
                                                 </div>
