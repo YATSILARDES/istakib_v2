@@ -113,6 +113,49 @@ const safeFormatRecheckDate = (date: Date) => {
     } catch { return date.toDateString(); }
 };
 
+const getTaskScheduledTime = (t: any): number => {
+    if (!t) return 0;
+    if (t.scheduledDate) {
+        if (t.scheduledDate.seconds) return t.scheduledDate.seconds * 1000;
+        if (typeof t.scheduledDate.toDate === 'function') return t.scheduledDate.toDate().getTime();
+        const d = new Date(t.scheduledDate);
+        if (!isNaN(d.getTime())) return d.getTime();
+    }
+    return 0;
+};
+
+const getTaskScheduledHour = (t: Task): string | null => {
+    if (!t.scheduledDate) return null;
+    let d: Date | null = null;
+    if (t.scheduledDate.seconds) d = new Date(t.scheduledDate.seconds * 1000);
+    else if (typeof (t.scheduledDate as any).toDate === 'function') d = (t.scheduledDate as any).toDate();
+    else d = new Date(t.scheduledDate);
+
+    if (d && !isNaN(d.getTime())) {
+        const h = d.getHours();
+        if (h >= 8 && h <= 20) {
+            return `${String(h).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+    }
+    return null;
+};
+
+const getRoutineScheduledHour = (rt: RoutineTask): string | null => {
+    if (!rt.scheduledDate) return null;
+    let d: Date | null = null;
+    if (rt.scheduledDate.seconds) d = new Date(rt.scheduledDate.seconds * 1000);
+    else if (typeof (rt.scheduledDate as any).toDate === 'function') d = (rt.scheduledDate as any).toDate();
+    else d = new Date(rt.scheduledDate);
+
+    if (d && !isNaN(d.getTime())) {
+        const h = d.getHours();
+        if (h >= 8 && h <= 20) {
+            return `${String(h).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+    }
+    return null;
+};
+
 export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     title,
     tasks,
@@ -440,7 +483,31 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
             return true;
         }).sort((a, b) => {
-            if (sortBy === 'order_asc') return (a.orderNumber || 0) - (b.orderNumber || 0);
+            if (sortBy === 'order_asc') {
+                // 1. Scheduled Time / Hour set by Admin in Plan
+                const timeA = getTaskScheduledTime(a);
+                const timeB = getTaskScheduledTime(b);
+                if (timeA > 0 && timeB > 0 && timeA !== timeB) return timeA - timeB;
+                if (timeA > 0 && timeB === 0) return -1;
+                if (timeA === 0 && timeB > 0) return 1;
+
+                // 2. Explicit dailyOrder set in Görev Dağıtımı
+                const orderA = a.dailyOrder || 0;
+                const orderB = b.dailyOrder || 0;
+                if (orderA !== 0 && orderB !== 0) {
+                    if (orderA !== orderB) return orderA - orderB;
+                } else if (orderA !== 0) {
+                    return -1;
+                } else if (orderB !== 0) {
+                    return 1;
+                }
+
+                // 3. Priority
+                if (a.isPriority !== b.isPriority) return a.isPriority ? -1 : 1;
+
+                // 4. Fallback orderNumber
+                return (a.orderNumber || 0) - (b.orderNumber || 0);
+            }
             if (sortBy === 'order_desc') return (b.orderNumber || 0) - (a.orderNumber || 0);
             if (sortBy === 'title_asc') return (a.title || '').localeCompare(b.title || '', 'tr-TR');
             if (sortBy === 'date_desc') {
@@ -460,13 +527,9 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
     type UnifiedTaskItem = { type: 'main'; data: Task } | { type: 'routine'; data: RoutineTask };
 
-    // Unified Tasks and Routine Tasks Sorted by Assignment Order (dailyOrder & scheduled hour)
+    // Unified Tasks and Routine Tasks Sorted by Assignment Order (scheduled hour & dailyOrder)
     const unifiedTaskList = useMemo<UnifiedTaskItem[]>(() => {
         let list: UnifiedTaskItem[] = [];
-
-        if (!routineTasks || routineTasks.length === 0) {
-            return filteredTasks.map(t => ({ type: 'main' as const, data: t }));
-        }
 
         if (tabFilter === 'all' || tabFilter === 'main') {
             filteredTasks.forEach(t => list.push({ type: 'main', data: t }));
@@ -475,24 +538,18 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
             filteredRoutineTasks.forEach(rt => list.push({ type: 'routine', data: rt }));
         }
 
-        const getTime = (item: UnifiedTaskItem) => {
-            if (item.type === 'main') {
-                const t = item.data;
-                if (t.scheduledDate?.seconds) return t.scheduledDate.seconds * 1000;
-                if (t.scheduledDate) { const d = new Date(t.scheduledDate); if (!isNaN(d.getTime())) return d.getTime(); }
-                if (t.date) { const d = new Date(t.date); if (!isNaN(d.getTime())) return d.getTime(); }
-                return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
-            } else {
-                const rt = item.data;
-                if (rt.scheduledDate?.seconds) return rt.scheduledDate.seconds * 1000;
-                if (rt.scheduledDate) { const d = new Date(rt.scheduledDate); if (!isNaN(d.getTime())) return d.getTime(); }
-                return rt.createdAt?.seconds ? rt.createdAt.seconds * 1000 : 0;
-            }
-        };
-
         return list.sort((a, b) => {
             if (sortBy === 'order_asc') {
-                // 1. Explicit dailyOrder set in Görev Dağıtımı
+                // 1. Scheduled Time / Hour set by Admin in Plan
+                const timeA = getTaskScheduledTime(a.data);
+                const timeB = getTaskScheduledTime(b.data);
+                if (timeA > 0 && timeB > 0 && timeA !== timeB) {
+                    return timeA - timeB;
+                }
+                if (timeA > 0 && timeB === 0) return -1;
+                if (timeA === 0 && timeB > 0) return 1;
+
+                // 2. Explicit dailyOrder set in Görev Dağıtımı
                 const orderA = a.data.dailyOrder || 0;
                 const orderB = b.data.dailyOrder || 0;
                 if (orderA !== 0 && orderB !== 0) {
@@ -501,13 +558,6 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     return -1;
                 } else if (orderB !== 0) {
                     return 1;
-                }
-
-                // 2. Scheduled Time / Hour from AssignmentView
-                const timeA = getTime(a);
-                const timeB = getTime(b);
-                if (timeA !== timeB && timeA > 0 && timeB > 0) {
-                    return timeA - timeB;
                 }
 
                 // 3. Priority
@@ -538,16 +588,24 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
             }
 
             if (sortBy === 'date_desc') {
+                const getTime = (item: UnifiedTaskItem) => {
+                    const t = item.data as any;
+                    if (t.scheduledDate?.seconds) return t.scheduledDate.seconds * 1000;
+                    if (t.scheduledDate) { const d = new Date(t.scheduledDate); if (!isNaN(d.getTime())) return d.getTime(); }
+                    if (t.date) { const d = new Date(t.date); if (!isNaN(d.getTime())) return d.getTime(); }
+                    return t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+                };
                 return getTime(b) - getTime(a);
             }
 
             return 0;
         });
-    }, [filteredTasks, filteredRoutineTasks, routineTasks, tabFilter, sortBy]);
+    }, [filteredTasks, filteredRoutineTasks, tabFilter, sortBy]);
 
     const renderMainTask = (task: Task) => {
         const statusLabel = StatusLabels[task.status] || task.status;
         const dateText = formatSafeDate(task.scheduledDate || task.date || task.createdAt);
+        const schedHour = getTaskScheduledHour(task);
         const isClean = task.checkStatus === 'clean';
         const isMissing = task.checkStatus === 'missing';
 
@@ -590,7 +648,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                         : isDesktopView 
                             ? 'cursor-pointer border-slate-200 hover:border-slate-400' 
                             : 'cursor-pointer border-slate-200 hover:border-slate-300'
-                } ${isTaskRecheck ? 'border-l-[6px] border-l-emerald-500' : ''}`}
+                }`}
             >
                 {/* Painting Checkbox in Painting Mode */}
                 {isPaintingMode && canEditPainting && (
@@ -638,34 +696,44 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                 {/* Content Details */}
                 <div className="flex-1 min-w-0">
                     
-                    {/* Line 1: Title, District, Badges */}
-                    <div className="flex items-center justify-between gap-1.5 mb-1 flex-wrap">
-                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                            {/* Stop Badge in Painting Mode */}
-                            {isPaintingMode && stopIdx !== -1 && (
-                                <span className={`${isDesktopView ? "bg-blue-600" : "bg-amber-600"} text-white font-black px-1.5 py-0.5 rounded text-[10px] tracking-tight shrink-0 shadow-2xs`}>
-                                    #{stopIdx + 1}
-                                </span>
-                            )}
-
-                            {/* Customer Name (Fully visible) */}
-                            <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight">
-                                {task.title}
+                    {/* Line 1: Customer Name (Own Row, Bold, Uppercase, fully visible) */}
+                    <div className="flex items-center gap-1.5 min-w-0 mb-1">
+                        {/* Stop Badge in Painting Mode */}
+                        {isPaintingMode && stopIdx !== -1 && (
+                            <span className={`${isDesktopView ? "bg-blue-600" : "bg-amber-600"} text-white font-black px-1.5 py-0.5 rounded text-[10px] tracking-tight shrink-0 shadow-2xs`}>
+                                #{stopIdx + 1}
                             </span>
+                        )}
 
-                            {/* District */}
-                            {task.district && (
-                                <span className="text-[11px] font-bold text-slate-500 uppercase shrink-0">
-                                    · {task.district}
-                                </span>
-                            )}
+                        {/* Customer Name */}
+                        <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight break-words">
+                            {task.title}
+                        </span>
+                    </div>
 
-                            {/* Kontrolü Onayla Rozeti */}
+                    {/* Line 2: Fixed Row - District on Left, Status Badges on Right */}
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                        {/* Left: District (Always at the exact same left position) */}
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase shrink-0">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{task.district || 'İlçe Belirtilmemiş'}</span>
+                        </div>
+
+                        {/* Right: Badges (Always at the exact same right position) */}
+                        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                            {/* Kontrolü Onayla / Recheck Rozeti */}
                             {isTaskRecheck && recheckBadge && (
                                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${recheckBadge.bg} ${recheckBadge.text} ${recheckBadge.border}`}>
                                     {recheckBadge.label}
                                 </span>
                             )}
+
+                            {/* Status Tag: EKSİK VAR / TEMİZ */}
+                            {(isMissing || isClean) ? (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 tracking-tight leading-tight ${statusColor}`}>
+                                    {isMissing ? 'EKSİK VAR' : 'TEMİZ'}
+                                </span>
+                            ) : null}
 
                             {/* Boyandı Rozeti */}
                             {isPaintingMode && task.paintStatus === 'completed' && (
@@ -674,32 +742,30 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 </span>
                             )}
                         </div>
-
-                        {/* Status Tag on Top Right */}
-                        {(isMissing || isClean) ? (
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 tracking-tight leading-tight ${statusColor}`}>
-                                {isMissing ? 'EKSİK VAR' : 'TEMİZ'}
-                            </span>
-                        ) : null}
                     </div>
 
-                    {/* Line 2: Address (Strictly 1 line, truncate) */}
+                    {/* Line 3: Address (Strictly 1 line, truncate or break in painting mode) */}
                     <p className={`text-[11.5px] font-medium text-slate-700 leading-snug ${isPaintingMode ? 'break-words' : 'line-clamp-1'}`}>
                         {task.address || task.description || 'Adres bilgisi girilmemiş'}
                     </p>
 
-                    {/* Line 3: Date, Status / Kontrolü Onayla Button, Actions */}
+                    {/* Line 4: Date, Status / Kontrolü Onayla Button, Actions */}
                     <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-slate-100 gap-1.5">
                         <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 font-mono shrink-0">
                             {isTaskRecheck && taskIsToday ? (
-                                <span className="text-[10px] font-black text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded">
-                                    Bugün
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                                    isDesktopView
+                                        ? 'text-blue-700 bg-blue-50 border border-blue-200'
+                                        : 'text-amber-800 bg-amber-50 border border-amber-200'
+                                }`}>
+                                    Bugün {schedHour ? `• ${schedHour}` : ''}
                                 </span>
                             ) : (
                                 dateText && (
                                     <span className="flex items-center gap-1">
                                         <Calendar className="w-3 h-3 text-slate-400" />
-                                        {isTaskRecheck && recheckDate ? safeFormatRecheckDate(recheckDate) : dateText}
+                                        <span>{isTaskRecheck && recheckDate ? safeFormatRecheckDate(recheckDate) : dateText}</span>
+                                        {schedHour && <span className="font-bold text-slate-700 ml-0.5">({schedHour})</span>}
                                     </span>
                                 )
                             )}
@@ -775,7 +841,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                             {(!isPaintingMode || canEditPainting) && (
                                 <button
                                     onClick={(e) => handleShare(task, e)}
-                                    className="p-1 rounded-md text-slate-400 hover:text-orange-600 hover:bg-orange-50 active:scale-95 transition-all"
+                                    className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all"
                                     title="Paylaş"
                                 >
                                     <Share2 className="w-3.5 h-3.5" />
@@ -827,6 +893,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
     const renderRoutineTask = (rt: RoutineTask) => {
         const rtDate = formatSafeDate(rt.scheduledDate || rt.createdAt);
+        const rtSchedHour = getRoutineScheduledHour(rt);
         return (
             <div
                 key={rt.id}
@@ -870,35 +937,37 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
                 {/* Content Details */}
                 <div className="flex-1 min-w-0">
-                    {/* Line 1: Customer Name + Routine Badge */}
-                    <div className="flex items-center justify-between gap-1.5 h-5">
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-                            <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight">
-                                {rt.customerName || 'Müşteri Belirtilmemiş'}
-                            </span>
-                            {rt.district && (
-                                <span className="text-[11px] font-bold text-slate-500 uppercase shrink-0">
-                                    · {rt.district}
-                                </span>
-                            )}
+                    {/* Line 1: Customer Name */}
+                    <div className="flex items-center gap-1.5 min-w-0 mb-1">
+                        <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight break-words">
+                            {rt.customerName || 'Müşteri Belirtilmemiş'}
+                        </span>
+                    </div>
+
+                    {/* Line 2: Fixed Row - District on Left, Routine Badge on Right */}
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase shrink-0">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{rt.district || 'İlçe Belirtilmemiş'}</span>
                         </div>
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border bg-amber-100 text-amber-800 border-amber-200 shrink-0">
                             EKSİK / NOT
                         </span>
                     </div>
 
-                    {/* Line 2: Note Content (Strictly 1 line, truncate) */}
+                    {/* Line 3: Note Content (Readable and expandable) */}
                     <p className="text-[12px] font-medium text-slate-800 leading-snug break-words whitespace-pre-wrap py-1">
                         {rt.content || 'Açıklama belirtilmemiş'}
                     </p>
 
-                    {/* Line 3: Date, Address, Ara */}
+                    {/* Line 4: Date, Address, Ara */}
                     <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-slate-100 gap-1.5">
                         <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 font-mono shrink-0">
                             {rtDate && (
                                 <span className="flex items-center gap-1">
                                     <Calendar className="w-3 h-3 text-slate-400" />
-                                    {rtDate}
+                                    <span>{rtDate}</span>
+                                    {rtSchedHour && <span className="font-bold text-slate-700 ml-0.5">({rtSchedHour})</span>}
                                 </span>
                             )}
                         </div>
