@@ -546,429 +546,383 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     }, [filteredTasks, filteredRoutineTasks, routineTasks, tabFilter, sortBy]);
 
     const renderMainTask = (task: Task) => {
-                        const statusLabel = StatusLabels[task.status] || task.status;
-                        const dateText = formatSafeDate(task.scheduledDate || task.date || task.createdAt);
-                        const isClean = task.checkStatus === 'clean';
-                        const isMissing = task.checkStatus === 'missing';
+        const statusLabel = StatusLabels[task.status] || task.status;
+        const dateText = formatSafeDate(task.scheduledDate || task.date || task.createdAt);
+        const isClean = task.checkStatus === 'clean';
+        const isMissing = task.checkStatus === 'missing';
 
-                        // Status Color Badges
-                        let statusColor = "text-emerald-700 bg-emerald-50 border-emerald-200";
-                        if (isMissing) {
-                            statusColor = "text-rose-700 bg-rose-50 border-rose-200";
-                        } else if (task.isWaiting) {
-                            statusColor = "text-blue-700 bg-blue-50 border-blue-200";
-                        } else if (task.status === TaskStatus.PROJECT_TO_BE_DRAWN) {
-                            statusColor = "text-amber-800 bg-amber-50 border-amber-200";
-                        } else if (task.status === TaskStatus.TO_CHECK) {
-                            statusColor = "text-purple-700 bg-purple-50 border-purple-200";
-                        }
+        // Status Color Badges
+        let statusColor = "text-emerald-700 bg-emerald-50 border-emerald-200";
+        if (isMissing) {
+            statusColor = "text-rose-700 bg-rose-50 border-rose-200";
+        } else if (task.isWaiting) {
+            statusColor = "text-blue-700 bg-blue-50 border-blue-200";
+        } else if (task.status === TaskStatus.PROJECT_TO_BE_DRAWN) {
+            statusColor = "text-amber-800 bg-amber-50 border-amber-200";
+        } else if (task.status === TaskStatus.TO_CHECK) {
+            statusColor = "text-purple-700 bg-purple-50 border-purple-200";
+        }
 
-                        // --- Kontrolü Onayla olan işler → Sadece bir personele atanmış, gazı açılmamış ve önceden kontrol edilmişse ---
-                        const isTaskRecheck = Boolean(
-                            task.isReassignedForCheck &&
-                            task.assignee && task.assignee.trim() !== '' &&
-                            task.status !== TaskStatus.GAS_OPENED &&
-                            (task.checkStatus === "clean" || task.checkStatus === "missing")
-                        );
-                        if (isTaskRecheck) {
-                            const badge = getStatusBadgeForRecheck(task.status);
-                            const taskDate = getRecheckTaskDate(task);
-                            const taskIsToday = isRecheckToday(taskDate);
-                            const taskIsOverdue = isRecheckOverdue(taskDate);
-                            return (
-                                <div
-                                    key={task.id}
-                                    onClick={() => onTaskClick(task)}
-                                    className="px-3.5 py-2.5 bg-white border-l-4 border-emerald-400 hover:bg-emerald-50/20 active:bg-emerald-50/40 transition-colors flex items-start gap-3 cursor-pointer relative"
-                                >
-                                    {/* Left Status Stripe (color dot) */}
-                                    <div className={`w-1 h-1 rounded-full ${badge.stripe} absolute left-1.5 top-1/2 -translate-y-1/2 hidden`} />
+        // --- Kontrolü Onayla olan işler ---
+        const isTaskRecheck = Boolean(
+            task.isReassignedForCheck &&
+            task.assignee && task.assignee.trim() !== '' &&
+            task.status !== TaskStatus.GAS_OPENED &&
+            (task.checkStatus === "clean" || task.checkStatus === "missing")
+        );
+        const recheckBadge = isTaskRecheck ? getStatusBadgeForRecheck(task.status) : null;
+        const recheckDate = isTaskRecheck ? getRecheckTaskDate(task) : null;
+        const taskIsToday = isTaskRecheck ? isRecheckToday(recheckDate) : false;
 
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        {/* Row 1: badges + date */}
-                                        <div className="flex items-center justify-between gap-1.5 mb-1">
-                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
-                                                    #{task.orderNumber}
-                                                </span>
-                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${badge.bg} ${badge.text} ${badge.border}`}>
-                                                    {badge.label}
-                                                </span>
-                                            </div>
-                                            <div className="shrink-0">
-                                                {taskIsToday ? (
-                                                    <span className="text-[10px] font-black text-[#e65100] bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded">Bugün</span>
-                                                ) : (
-                                                    <span className="text-[10px] text-slate-400">{safeFormatRecheckDate(taskDate)}</span>
-                                                )}
-                                            </div>
-                                        </div>
+        const activePaintingTasks = isPaintingMode ? getActivePaintingTasks() : [];
+        const stopIdx = isPaintingMode ? activePaintingTasks.findIndex(t => t.id === task.id) : -1;
 
-                                        {/* Row 2: Title */}
-                                        <p className="font-extrabold text-[13px] text-slate-800 uppercase tracking-tight truncate leading-snug">
-                                            {task.title}
-                                        </p>
-
-                                        {/* Row 3: Address */}
-                                        <p className="text-[11px] font-medium text-slate-500 line-clamp-1 leading-snug">
-                                            {task.district && <span className="text-slate-600 font-bold">{task.district} · </span>}
-                                            {task.address}
-                                        </p>
-
-                                        {/* Row 4: Phone + Kontrolü Onayla */}
-                                        <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-slate-100 gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                            {(task.phone || task.tenantPhone) ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => handleCallClick(task, e)}
-                                                    className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md text-[10.5px] font-bold active:scale-95 transition-all shadow-2xs"
-                                                    title="Arama Yap"
-                                                >
-                                                    <Phone className="w-3 h-3" />
-                                                    <span>{task.phone || task.tenantPhone}</span>
-                                                </button>
-                                            ) : (
-                                                <span />
-                                            )}
-                                            {onTaskUpdate && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onTaskUpdate(task.id, { isReassignedForCheck: false });
-                                                    }}
-                                                    className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-xs active:scale-95 transition-all shrink-0"
-                                                >
-                                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                                    <span>Kontrolü Onayla</span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+        return (
+            <div
+                key={task.id}
+                onClick={() => {
+                    if (isPaintingMode && !canEditPainting) return;
+                    onTaskClick(task);
+                }}
+                className={`h-[98px] px-3.5 py-2.5 bg-white rounded-xl border-2 transition-all flex items-center gap-3 group relative shadow-xs hover:shadow-md ${
+                    isPaintingMode && !canEditPainting
+                        ? 'cursor-default border-slate-200'
+                        : isDesktopView 
+                            ? 'cursor-pointer border-slate-200 hover:border-slate-400' 
+                            : 'cursor-pointer border-slate-200 hover:border-slate-300'
+                } ${isTaskRecheck ? 'border-l-[6px] border-l-emerald-500' : ''}`}
+            >
+                {/* Painting Checkbox in Painting Mode */}
+                {isPaintingMode && canEditPainting && (
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPaintingIds(prev =>
+                                prev.includes(task.id) ? prev.filter(id => id !== task.id) : [...prev, task.id]
                             );
-                        }
+                        }}
+                        className="text-slate-400 hover:text-orange-600 transition-colors shrink-0"
+                    >
+                        {stopIdx !== -1 ? (
+                            <CheckSquare className={`w-5 h-5 ${isDesktopView ? "text-blue-600" : "text-orange-600"}`} />
+                        ) : (
+                            <Square className="w-5 h-5 text-slate-300" />
+                        )}
+                    </button>
+                )}
 
-                        // --- Normal işler → Eski kart stili ---
-                        const activePaintingTasks = isPaintingMode ? getActivePaintingTasks() : [];
-                        const stopIdx = isPaintingMode ? activePaintingTasks.findIndex(t => t.id === task.id) : -1;
+                {/* Left: Box with Order Number & Star */}
+                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200/90 text-slate-700 flex flex-col items-center justify-center shrink-0 shadow-2xs relative">
+                    <span className="text-[10px] font-bold text-slate-500 leading-none">NO</span>
+                    <span className="text-xs font-black leading-none mt-0.5">#{task.orderNumber || 0}</span>
+                    
+                    {/* Clickable Star on top-right */}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (isPaintingMode && !canEditPainting) return;
+                            onTaskUpdate && onTaskUpdate(task.id, { isPriority: !task.isPriority });
+                        }}
+                        disabled={isPaintingMode && !canEditPainting}
+                        className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-slate-200 shadow-2xs flex items-center justify-center transition-all ${
+                            isPaintingMode && !canEditPainting ? 'cursor-default pointer-events-none' : 'active:scale-125'
+                        } z-10`}
+                        title={task.isPriority ? "Önceliği Kaldır" : "Öncelikli İş Yap"}
+                    >
+                        <Star className={`w-3 h-3 ${task.isPriority ? 'fill-amber-400 text-amber-500' : 'text-slate-300 hover:text-amber-400'}`} />
+                    </button>
+                </div>
 
-                        return (
-                            <div
-                                key={task.id}
-                                onClick={() => {
-                                    if (isPaintingMode && !canEditPainting) return;
-                                    onTaskClick(task);
-                                }}
-                                className={`px-3.5 py-3 transition-colors flex items-start gap-3 group relative ${
-                                    isPaintingMode && !canEditPainting
-                                        ? 'cursor-default'
-                                        : isDesktopView ? 'cursor-pointer hover:bg-slate-50 active:bg-slate-100' : 'cursor-pointer hover:bg-orange-50/30 active:bg-orange-50/60'
-                                }`}
-                            >
-                                {/* Painting Checkbox in Painting Mode */}
-                                {isPaintingMode && canEditPainting && (
+                {/* Content Details (Standard 3 horizontal lines) */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between h-full py-0.5">
+                    
+                    {/* Line 1: Title, District, Badges */}
+                    <div className="flex items-center justify-between gap-1.5 h-5">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                            {/* Stop Badge in Painting Mode */}
+                            {isPaintingMode && stopIdx !== -1 && (
+                                <span className={`${isDesktopView ? "bg-blue-600" : "bg-amber-600"} text-white font-black px-1.5 py-0.5 rounded text-[10px] tracking-tight shrink-0 shadow-2xs`}>
+                                    #{stopIdx + 1}
+                                </span>
+                            )}
+
+                            {/* Customer Name */}
+                            <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight truncate">
+                                {task.title}
+                            </span>
+
+                            {/* District */}
+                            {task.district && (
+                                <span className="text-[11px] font-bold text-slate-500 uppercase shrink-0">
+                                    · {task.district}
+                                </span>
+                            )}
+
+                            {/* Kontrolü Onayla Rozeti */}
+                            {isTaskRecheck && recheckBadge && (
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${recheckBadge.bg} ${recheckBadge.text} ${recheckBadge.border}`}>
+                                    {recheckBadge.label}
+                                </span>
+                            )}
+
+                            {/* Boyandı Rozeti */}
+                            {isPaintingMode && task.paintStatus === 'completed' && (
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-1.5 py-0.5 rounded border border-emerald-300 shrink-0">
+                                    ✓ BOYANDI
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Status Tag on Top Right */}
+                        {(isMissing || isClean) ? (
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 tracking-tight leading-tight ${statusColor}`}>
+                                {isMissing ? 'EKSİK VAR' : 'TEMİZ'}
+                            </span>
+                        ) : null}
+                    </div>
+
+                    {/* Line 2: Address (Strictly 1 line, truncate) */}
+                    <p className="text-[11.5px] font-medium text-slate-700 leading-tight truncate h-[18px] flex items-center">
+                        {task.address || task.description || 'Adres bilgisi girilmemiş'}
+                    </p>
+
+                    {/* Line 3: Date, Status / Kontrolü Onayla Button, Actions */}
+                    <div className="flex items-center justify-between pt-1.5 mt-0.5 border-t border-slate-100 gap-1.5 h-7">
+                        <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 font-mono shrink-0">
+                            {isTaskRecheck && taskIsToday ? (
+                                <span className="text-[10px] font-black text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded">
+                                    Bugün
+                                </span>
+                            ) : (
+                                dateText && (
+                                    <span className="flex items-center gap-1">
+                                        <Calendar className="w-3 h-3 text-slate-400" />
+                                        {isTaskRecheck && recheckDate ? safeFormatRecheckDate(recheckDate) : dateText}
+                                    </span>
+                                )
+                            )}
+                            {task.isWaiting && (
+                                <span className="bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded text-[9.5px]">
+                                    BEKLİYOR
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Middle: Clickable Status Button OR Kontrolü Onayla */}
+                        <div className="flex-1 flex items-center justify-center gap-1.5 min-w-0 px-1" onClick={(e) => e.stopPropagation()}>
+                            {isTaskRecheck ? (
+                                onTaskUpdate && (
                                     <button
                                         type="button"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setSelectedPaintingIds(prev =>
-                                                prev.includes(task.id) ? prev.filter(id => id !== task.id) : [...prev, task.id]
-                                            );
+                                            onTaskUpdate(task.id, { isReassignedForCheck: false });
                                         }}
-                                        className="pt-2 text-slate-400 hover:text-orange-600 transition-colors shrink-0"
+                                        className="px-2 py-0.5 rounded-lg text-[10px] font-black border flex items-center gap-1.5 max-w-full truncate transition-all shadow-xs active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 shrink-0"
+                                        title="Kontrolü Onayla"
                                     >
-                                        {stopIdx !== -1 ? (
-                                            <CheckSquare className={`w-5 h-5 ${isDesktopView ? "text-blue-600" : "text-orange-600"}`} />
-                                        ) : (
-                                            <Square className="w-5 h-5 text-slate-300" />
-                                        )}
+                                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                        <span className="truncate">Kontrolü Onayla</span>
                                     </button>
-                                )}
-
-                                {/* Left: Circle Thumbnail / Order Number */}
-                                <div className={`w-11 h-11 rounded-xl ${isDesktopView ? "bg-slate-100 border border-slate-200 text-slate-700" : "bg-gradient-to-br from-orange-50 to-orange-100/60 border border-orange-200 text-orange-700"} flex flex-col items-center justify-center shrink-0 shadow-xs relative`}>
-                                    <span className="text-[10px] font-bold text-slate-500 leading-none">NO</span>
-                                    <span className="text-xs font-black leading-none mt-0.5">#{task.orderNumber || 0}</span>
-                                    
-                                    {/* Clickable Star on top-right of number */}
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (isPaintingMode && !canEditPainting) return;
-                                            onTaskUpdate && onTaskUpdate(task.id, { isPriority: !task.isPriority });
-                                        }}
-                                        disabled={isPaintingMode && !canEditPainting}
-                                        className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-slate-200 shadow-2xs flex items-center justify-center transition-all ${
-                                            isPaintingMode && !canEditPainting ? 'cursor-default pointer-events-none' : 'active:scale-125'
-                                        } z-10`}
-                                        title={task.isPriority ? "Önceliği Kaldır" : "Öncelikli İş Yap"}
-                                    >
-                                        <Star className={`w-3 h-3 ${task.isPriority ? 'fill-amber-400 text-amber-500' : 'text-slate-300 hover:text-amber-400'}`} />
-                                    </button>
-                                </div>
-
-                                {/* Content Details */}
-                                <div className="flex-1 min-w-0">
-                                    
-                                    {/* Line 1: Customer Name (Orange), District, Status Badge */}
-                                    <div className="flex items-center justify-between gap-1.5 mb-1">
-                                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                            {/* Stop Badge in Painting Mode */}
-                                            {isPaintingMode && stopIdx !== -1 && (
-                                                <span className={`${isDesktopView ? "bg-blue-600" : "bg-amber-600"} text-white font-black px-1.5 py-0.5 rounded text-[10px] tracking-tight shrink-0 shadow-2xs`}>
-                                                    #{stopIdx + 1}
-                                                </span>
-                                            )}
-
-                                            {/* Customer Name in Bold Orange (Screenshot Style) */}
-                                            <span className={`font-extrabold text-[13px] ${isDesktopView ? "text-slate-800" : "text-[#e65100]"} uppercase tracking-tight truncate`}>
-                                                {task.title}
-                                            </span>
-
-                                            {/* District / Order Code in Slate */}
-                                            {task.district && (
-                                                <span className="text-[11px] font-bold text-slate-500 uppercase shrink-0">
-                                                    · {task.district}
-                                                </span>
-                                            )}
-
-                                            {/* Boyandı Rozeti (Boya modunda ve tamamlandıysa) */}
-                                            {isPaintingMode && task.paintStatus === 'completed' && (
-                                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-1.5 py-0.5 rounded border border-emerald-300 shrink-0">
-                                                    ✓ BOYANDI
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Status Tag on Top Right: Shows EKSİK VAR / TEMİZ if available */}
-                                        {(isMissing || isClean) ? (
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 tracking-tight leading-tight ${statusColor}`}>
-                                                {isMissing ? 'EKSİK VAR' : 'TEMİZ'}
-                                            </span>
-                                        ) : null}
-                                    </div>
-
-                                    {/* Line 2: Job description / Address */}
-                                    <p className={`text-[11.5px] font-medium text-slate-700 leading-snug ${isPaintingMode ? 'break-words' : 'line-clamp-1'}`}>
-                                        {task.address || task.description || 'Adres bilgisi girilmemiş'}
-                                    </p>
-
-                                    {/* Line 2.5: Painting Note in Painting Mode */}
-                                    {isPaintingMode && (
-                                        <div className="mt-1 text-[11px] text-amber-950 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 flex items-start justify-between gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                            <span className="truncate">
-                                                <strong className="font-bold text-amber-800">Boyacı Notu:</strong> {task.paintNote || 'Özel not yok'}
-                                            </span>
-                                            {canEditPainting && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setPaintNoteModalTask(task);
-                                                        setPaintNoteInput(task.paintNote || '');
-                                                    }}
-                                                    className="text-amber-700 hover:text-amber-900 underline font-bold shrink-0 text-[10px]"
-                                                >
-                                                    {task.paintNote ? 'Düzenle' : '+ Not Ekle'}
-                                                </button>
-                                            )}
-                                        </div>
+                                )
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (isPaintingMode && !canEditPainting) return;
+                                        setStatusModalTask(task);
+                                        setSelectedNewStatus(task.status);
+                                        setModalIsWaiting(task.isWaiting || false);
+                                    }}
+                                    disabled={isPaintingMode && !canEditPainting}
+                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-black border flex items-center gap-1 max-w-full truncate transition-all shadow-2xs ${
+                                        isPaintingMode && !canEditPainting ? 'cursor-default pointer-events-none' : 'active:scale-95 hover:brightness-95'
+                                    } ${statusColor}`}
+                                    title={isPaintingMode && !canEditPainting ? undefined : "Aşamayı Değiştir / Gönder"}
+                                >
+                                    <span className="truncate">{statusLabel}</span>
+                                    {(!isPaintingMode || canEditPainting) && (
+                                        <ChevronDown className="w-3 h-3 shrink-0 opacity-70" />
                                     )}
+                                </button>
+                            )}
 
-                                    {/* Line 3: Date, Interactive Status Button (where red marker was drawn), and Actions */}
-                                    <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-slate-100 gap-1.5">
-                                        <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 font-mono shrink-0">
-                                            {dateText && (
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar className="w-3 h-3 text-slate-400" />
-                                                    {dateText}
-                                                </span>
-                                            )}
-                                            {task.isWaiting && (
-                                                <span className="bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded text-[9.5px]">
-                                                    BEKLİYOR
-                                                </span>
-                                            )}
-                                        </div>
+                            {/* Beklet / Beklemede Butonu */}
+                            {(!isPaintingMode || canEditPainting) && onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onTaskUpdate(task.id, { isWaiting: !task.isWaiting });
+                                    }}
+                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-black border transition-all active:scale-95 shrink-0 flex items-center gap-1 shadow-2xs ${
+                                        task.isWaiting
+                                            ? 'bg-blue-600 text-white border-blue-500 shadow-blue-500/20'
+                                            : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                    }`}
+                                    title={task.isWaiting ? "Beklemeden Çıkar" : "Beklemeye Al"}
+                                >
+                                    <Clock className="w-3 h-3" />
+                                    <span>{task.isWaiting ? 'BEKLEMEDE' : 'BEKLET'}</span>
+                                </button>
+                            )}
+                        </div>
 
-                                        {/* Middle (Red marker spot): Clickable Status Button to change status + Beklet */}
-                                        <div className="flex-1 flex items-center justify-center gap-1.5 min-w-0 px-1" onClick={(e) => e.stopPropagation()}>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (isPaintingMode && !canEditPainting) return;
-                                                    setStatusModalTask(task);
-                                                    setSelectedNewStatus(task.status);
-                                                    setModalIsWaiting(task.isWaiting || false);
-                                                }}
-                                                disabled={isPaintingMode && !canEditPainting}
-                                                className={`px-2 py-0.5 rounded-lg text-[10px] font-black border flex items-center gap-1 max-w-full truncate transition-all shadow-2xs ${
-                                                    isPaintingMode && !canEditPainting ? 'cursor-default pointer-events-none' : 'active:scale-95 hover:brightness-95'
-                                                } ${statusColor}`}
-                                                title={isPaintingMode && !canEditPainting ? undefined : "Aşamayı Değiştir / Gönder"}
-                                            >
-                                                <span className="truncate">{statusLabel}</span>
-                                                {(!isPaintingMode || canEditPainting) && (
-                                                    <ChevronDown className="w-3 h-3 shrink-0 opacity-70" />
-                                                )}
-                                            </button>
+                        {/* Action Icons */}
+                        <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            {(!isPaintingMode || canEditPainting) && (
+                                <button
+                                    onClick={(e) => handleShare(task, e)}
+                                    className="p-1 rounded-md text-slate-400 hover:text-orange-600 hover:bg-orange-50 active:scale-95 transition-all"
+                                    title="Paylaş"
+                                >
+                                    <Share2 className="w-3.5 h-3.5" />
+                                </button>
+                            )}
 
-                                            {/* Beklet / Beklemede Butonu (Gaz Açıldı aşamasındaysa) */}
-                                            {(!isPaintingMode || canEditPainting) && onTaskUpdate && task.status === TaskStatus.GAS_OPENED && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onTaskUpdate(task.id, { isWaiting: !task.isWaiting });
-                                                    }}
-                                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-black border transition-all active:scale-95 shrink-0 flex items-center gap-1 shadow-2xs ${
-                                                        task.isWaiting
-                                                            ? 'bg-blue-600 text-white border-blue-500 shadow-blue-500/20'
-                                                            : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
-                                                    }`}
-                                                    title={task.isWaiting ? "Beklemeden Çıkar" : "Beklemeye Al"}
-                                                >
-                                                    <Clock className="w-3 h-3" />
-                                                    <span>{task.isWaiting ? 'BEKLEMEDE' : 'BEKLET'}</span>
-                                                </button>
-                                            )}
-                                        </div>
+                            {isPaintingMode && canEditPainting && onTaskUpdate && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onTaskUpdate(task.id, { isPaintingTask: false });
+                                    }}
+                                    className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all"
+                                    title="Boya Listesinden Kaldır"
+                                >
+                                    <X className="w-3.5 h-3.5 text-rose-500" />
+                                </button>
+                            )}
 
-                                        {/* Action Icons */}
-                                        <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            {(task.phone || task.tenantPhone) && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => handleCallClick(task, e)}
+                                    className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md text-[10.5px] font-bold active:scale-95 transition-all shadow-2xs"
+                                    title="Arama Yap"
+                                >
+                                    <Phone className="w-3 h-3" />
+                                    <span>Ara</span>
+                                </button>
+                            )}
 
-                                            {/* WhatsApp / Share Button (Boya modunda sadece düzenleme yetkisi olan görür) */}
-                                            {(!isPaintingMode || canEditPainting) && (
-                                                <button
-                                                    onClick={(e) => handleShare(task, e)}
-                                                    className="p-1 rounded-md text-slate-400 hover:text-orange-600 hover:bg-orange-50 active:scale-95 transition-all"
-                                                    title="Paylaş"
-                                                >
-                                                    <Share2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            )}
+                            {(!isPaintingMode || canEditPainting) && (
+                                <button
+                                    onClick={() => onTaskClick(task)}
+                                    className="p-1 text-slate-400 hover:text-slate-600"
+                                    title="İş Detayı"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
-                                            {/* Boya Listesinden Çıkar Butonu (Sadece Boya İşleri Modunda ve Düzenleme Yetkisi Varsa Görünür) */}
-                                            {isPaintingMode && canEditPainting && onTaskUpdate && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onTaskUpdate(task.id, { isPaintingTask: false });
-                                                    }}
-                                                    className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all"
-                                                    title="Boya Listesinden Kaldır"
-                                                >
-                                                    <X className="w-3.5 h-3.5 text-rose-500" />
-                                                </button>
-                                            )}
-
-                                            {/* Phone Call Button */}
-                                            {(task.phone || task.tenantPhone) && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => handleCallClick(task, e)}
-                                                    className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md text-[10.5px] font-bold active:scale-95 transition-all shadow-2xs"
-                                                    title="Arama Yap"
-                                                >
-                                                    <Phone className="w-3 h-3" />
-                                                    <span>Ara</span>
-                                                </button>
-                                            )}
-
-                                            {/* Detail Arrow */}
-                                            {(!isPaintingMode || canEditPainting) && (
-                                                <button
-                                                    onClick={() => onTaskClick(task)}
-                                                    className="p-1 text-slate-400 hover:text-slate-600"
-                                                    title="İş Detayı"
-                                                >
-                                                    <ChevronRight className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        );
+                </div>
+            </div>
+        );
     };
 
     const renderRoutineTask = (rt: RoutineTask) => {
-                        const rtDate = formatSafeDate(rt.scheduledDate || rt.createdAt);
-                        return (
-                            <div
-                                key={rt.id}
-                                className="p-3.5 bg-amber-50/40 hover:bg-amber-50/70 transition-colors border-l-4 border-l-amber-500"
-                            >
-                                <div className="flex items-start gap-3">
-                                    {onToggleRoutineTask && (
-                                        <button
-                                            onClick={() => onToggleRoutineTask(rt.id, rt.isCompleted)}
-                                            className="mt-0.5 w-6 h-6 rounded-lg border-2 border-amber-500 bg-white flex items-center justify-center text-amber-600 active:scale-90 transition-all shrink-0 hover:bg-amber-100"
-                                            title="Tamamla"
-                                        >
-                                            <CheckCircle2 className={`w-4 h-4 ${rt.isCompleted ? 'opacity-100 text-emerald-600' : 'opacity-25'}`} />
-                                        </button>
-                                    )}
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
-                                                    EKSİK / RUTİN
-                                                </span>
-                                                <span className="font-bold text-slate-800 text-xs truncate">
-                                                    {rt.customerName || 'Müşteri Belirtilmemiş'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                {/* Clickable Star for Routine Tasks */}
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onUpdateRoutineTask && onUpdateRoutineTask(rt.id, { isPriority: !rt.isPriority });
-                                                    }}
-                                                    className="w-6 h-6 rounded-full bg-white border border-amber-200 shadow-2xs flex items-center justify-center transition-all active:scale-125"
-                                                    title={rt.isPriority ? "Önceliği Kaldır" : "Öncelikli Yap"}
-                                                >
-                                                    <Star className={`w-3.5 h-3.5 ${rt.isPriority ? 'fill-amber-400 text-amber-500' : 'text-slate-300 hover:text-amber-400'}`} />
-                                                </button>
-                                                {rtDate && (
-                                                    <span className="text-[10px] font-semibold text-slate-400">
-                                                        {rtDate}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-slate-700 mt-1 leading-relaxed">
-                                            {rt.content}
-                                        </p>
-                                        {(rt.address || rt.phoneNumber) && (
-                                            <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-amber-200/60 text-xs">
-                                                {rt.address ? (
-                                                    <span className="text-slate-500 truncate text-[11px]">
-                                                        {rt.address}
-                                                    </span>
-                                                ) : <span />}
-                                                {rt.phoneNumber && (
-                                                    <a
-                                                        href={`tel:${rt.phoneNumber}`}
-                                                        className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10.5px] font-bold shrink-0"
-                                                    >
-                                                        <Phone className="w-3 h-3" />
-                                                        <span>Ara</span>
-                                                    </a>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
+        const rtDate = formatSafeDate(rt.scheduledDate || rt.createdAt);
+        return (
+            <div
+                key={rt.id}
+                className="min-h-[98px] px-3.5 py-2.5 bg-white rounded-xl border-2 border-slate-200 border-l-[6px] border-l-amber-500 shadow-xs hover:shadow-md hover:border-slate-300 transition-all flex items-start gap-3"
+            >
+                {/* Left: Square Box matching w-11 h-11 */}
+                <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex flex-col items-center justify-center shrink-0 shadow-2xs relative mt-0.5">
+                    {onToggleRoutineTask ? (
+                        <button
+                            type="button"
+                            onClick={() => onToggleRoutineTask(rt.id, rt.isCompleted)}
+                            className="flex flex-col items-center justify-center w-full h-full text-amber-700 hover:text-emerald-600 active:scale-95 transition-all"
+                            title={rt.isCompleted ? "Tamamlandı (Geri Al)" : "Tamamla"}
+                        >
+                            {rt.isCompleted ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                            ) : (
+                                <>
+                                    <CheckCircle2 className="w-4 h-4 opacity-40 hover:opacity-100" />
+                                    <span className="text-[8px] font-black leading-none mt-0.5">ONAY</span>
+                                </>
+                            )}
+                        </button>
+                    ) : (
+                        <span className="text-[9px] font-black text-amber-700 leading-none">RUTİN</span>
+                    )}
+
+                    {/* Clickable Star */}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onUpdateRoutineTask && onUpdateRoutineTask(rt.id, { isPriority: !rt.isPriority });
+                        }}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-slate-200 shadow-2xs flex items-center justify-center transition-all active:scale-125 z-10"
+                        title={rt.isPriority ? "Önceliği Kaldır" : "Öncelikli Yap"}
+                    >
+                        <Star className={`w-3 h-3 ${rt.isPriority ? 'fill-amber-400 text-amber-500' : 'text-slate-300 hover:text-amber-400'}`} />
+                    </button>
+                </div>
+
+                {/* Content Details (Standard 3 horizontal lines) */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between h-full py-0.5">
+                    {/* Line 1: Customer Name + Routine Badge */}
+                    <div className="flex items-center justify-between gap-1.5 h-5">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                            <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight truncate">
+                                {rt.customerName || 'Müşteri Belirtilmemiş'}
+                            </span>
+                            {rt.district && (
+                                <span className="text-[11px] font-bold text-slate-500 uppercase shrink-0">
+                                    · {rt.district}
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border bg-amber-100 text-amber-800 border-amber-200 shrink-0">
+                            EKSİK / NOT
+                        </span>
+                    </div>
+
+                    {/* Line 2: Note Content (Strictly 1 line, truncate) */}
+                    <p className="text-[12px] font-medium text-slate-800 leading-snug break-words whitespace-pre-wrap py-1">
+                        {rt.content || 'Açıklama belirtilmemiş'}
+                    </p>
+
+                    {/* Line 3: Date, Address, Ara */}
+                    <div className="flex items-center justify-between pt-1.5 mt-0.5 border-t border-slate-100 gap-1.5 h-7">
+                        <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 font-mono shrink-0">
+                            {rtDate && (
+                                <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3 text-slate-400" />
+                                    {rtDate}
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="flex-1 text-center truncate px-1 text-[11px] text-slate-500 font-medium">
+                            {rt.address || ''}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            {rt.phoneNumber && (
+                                <a
+                                    href={`tel:${rt.phoneNumber}`}
+                                    className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md text-[10.5px] font-bold active:scale-95 transition-all shadow-2xs"
+                                    title="Arama Yap"
+                                >
+                                    <Phone className="w-3 h-3" />
+                                    <span>Ara</span>
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -1232,7 +1186,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
             )}
 
             {/* --- LIST CONTENT AREA (MATCHING THE SCREENSHOT ERP ROWS) --- */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-200 bg-white custom-scrollbar pb-24">
+            <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-2.5 bg-slate-100/70 custom-scrollbar pb-24">
                 {unifiedTaskList.length === 0 ? (
                     <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
                         <Search className="w-8 h-8 opacity-30 text-slate-400" />
@@ -1251,12 +1205,19 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     </div>
                 ) : (
                     <>
-                    {unifiedTaskList.map(item => {
-                        if (item.type === 'main') {
-                            return renderMainTask(item.data);
-                        } else {
-                            return renderRoutineTask(item.data);
-                        }
+                    {unifiedTaskList.map((item, idx) => {
+                        return (
+                            <React.Fragment key={item.data.id}>
+                                {idx > 0 && (
+                                    <div className="flex items-center justify-center py-1 opacity-60 pointer-events-none select-none">
+                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+                                        <div className="mx-2 w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                        <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent via-slate-300 to-transparent" />
+                                    </div>
+                                )}
+                                {item.type === 'main' ? renderMainTask(item.data) : renderRoutineTask(item.data)}
+                            </React.Fragment>
+                        );
                     })}                </>
             )}
         </div>

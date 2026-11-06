@@ -590,7 +590,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                     <div
                                                         key={t.id}
                                                         onClick={() => onTaskClick(t)}
-                                                        className="bg-slate-50 border border-slate-200 p-2 rounded-lg group/task cursor-pointer hover:border-orange-300 hover:shadow-md transition-all active:scale-95"
+                                                        className="bg-white border-2 border-slate-200 p-2.5 rounded-xl group/task cursor-pointer hover:border-blue-400 hover:shadow-md transition-all active:scale-95 shadow-xs"
                                                     >
                                                         <div className="flex justify-between items-start mb-1">
                                                             <div className="flex items-center gap-1">
@@ -615,7 +615,7 @@ const FieldStaffStatusModal: React.FC<FieldStaffModalProps> = ({
                                                                 <div className={`w-1.5 h-1.5 rounded-full ${t.status === TaskStatus.GAS_OPENED ? 'bg-red-500' : 'bg-blue-500'}`} />
                                                             </div>
                                                         </div>
-                                                        <div className="text-[10px] font-bold text-slate-700 mb-1">{t.title}</div>
+                                                        <div className="text-[11px] font-black text-slate-900 mb-1 leading-snug">{t.title}</div>
                                                         <div className="text-[9px] text-slate-500 truncate">{t.district}</div>
                                                     </div>
                                                 );
