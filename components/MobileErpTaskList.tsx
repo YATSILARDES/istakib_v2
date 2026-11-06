@@ -124,38 +124,6 @@ const getTaskScheduledTime = (t: any): number => {
     return 0;
 };
 
-const getTaskScheduledHour = (t: Task): string | null => {
-    if (!t.scheduledDate) return null;
-    let d: Date | null = null;
-    if (t.scheduledDate.seconds) d = new Date(t.scheduledDate.seconds * 1000);
-    else if (typeof (t.scheduledDate as any).toDate === 'function') d = (t.scheduledDate as any).toDate();
-    else d = new Date(t.scheduledDate);
-
-    if (d && !isNaN(d.getTime())) {
-        const h = d.getHours();
-        if (h >= 8 && h <= 20) {
-            return `${String(h).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-        }
-    }
-    return null;
-};
-
-const getRoutineScheduledHour = (rt: RoutineTask): string | null => {
-    if (!rt.scheduledDate) return null;
-    let d: Date | null = null;
-    if (rt.scheduledDate.seconds) d = new Date(rt.scheduledDate.seconds * 1000);
-    else if (typeof (rt.scheduledDate as any).toDate === 'function') d = (rt.scheduledDate as any).toDate();
-    else d = new Date(rt.scheduledDate);
-
-    if (d && !isNaN(d.getTime())) {
-        const h = d.getHours();
-        if (h >= 8 && h <= 20) {
-            return `${String(h).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-        }
-    }
-    return null;
-};
-
 export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     title,
     tasks,
@@ -605,7 +573,6 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     const renderMainTask = (task: Task) => {
         const statusLabel = StatusLabels[task.status] || task.status;
         const dateText = formatSafeDate(task.scheduledDate || task.date || task.createdAt);
-        const schedHour = getTaskScheduledHour(task);
         const isClean = task.checkStatus === 'clean';
         const isMissing = task.checkStatus === 'missing';
 
@@ -758,14 +725,13 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                         ? 'text-blue-700 bg-blue-50 border border-blue-200'
                                         : 'text-amber-800 bg-amber-50 border border-amber-200'
                                 }`}>
-                                    Bugün {schedHour ? `• ${schedHour}` : ''}
+                                    Bugün
                                 </span>
                             ) : (
                                 dateText && (
                                     <span className="flex items-center gap-1">
                                         <Calendar className="w-3 h-3 text-slate-400" />
                                         <span>{isTaskRecheck && recheckDate ? safeFormatRecheckDate(recheckDate) : dateText}</span>
-                                        {schedHour && <span className="font-bold text-slate-700 ml-0.5">({schedHour})</span>}
                                     </span>
                                 )
                             )}
@@ -893,7 +859,6 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
     const renderRoutineTask = (rt: RoutineTask) => {
         const rtDate = formatSafeDate(rt.scheduledDate || rt.createdAt);
-        const rtSchedHour = getRoutineScheduledHour(rt);
         return (
             <div
                 key={rt.id}
@@ -967,7 +932,6 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 <span className="flex items-center gap-1">
                                     <Calendar className="w-3 h-3 text-slate-400" />
                                     <span>{rtDate}</span>
-                                    {rtSchedHour && <span className="font-bold text-slate-700 ml-0.5">({rtSchedHour})</span>}
                                 </span>
                             )}
                         </div>
