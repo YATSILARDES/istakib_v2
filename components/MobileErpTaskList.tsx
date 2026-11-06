@@ -584,7 +584,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     if (isPaintingMode && !canEditPainting) return;
                     onTaskClick(task);
                 }}
-                className={`h-[98px] px-3.5 py-2.5 bg-white rounded-xl border-2 transition-all flex items-center gap-3 group relative shadow-xs hover:shadow-md ${
+                className={`min-h-[98px] px-3.5 py-3 bg-white rounded-xl border-2 transition-all flex items-start gap-3 group relative shadow-xs hover:shadow-md ${
                     isPaintingMode && !canEditPainting
                         ? 'cursor-default border-slate-200'
                         : isDesktopView 
@@ -613,7 +613,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                 )}
 
                 {/* Left: Box with Order Number & Star */}
-                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200/90 text-slate-700 flex flex-col items-center justify-center shrink-0 shadow-2xs relative">
+                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200/90 text-slate-700 flex flex-col items-center justify-center shrink-0 shadow-2xs relative mt-0.5">
                     <span className="text-[10px] font-bold text-slate-500 leading-none">NO</span>
                     <span className="text-xs font-black leading-none mt-0.5">#{task.orderNumber || 0}</span>
                     
@@ -635,12 +635,12 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     </button>
                 </div>
 
-                {/* Content Details (Standard 3 horizontal lines) */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between h-full py-0.5">
+                {/* Content Details */}
+                <div className="flex-1 min-w-0">
                     
                     {/* Line 1: Title, District, Badges */}
-                    <div className="flex items-center justify-between gap-1.5 h-5">
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                    <div className="flex items-center justify-between gap-1.5 mb-1 flex-wrap">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                             {/* Stop Badge in Painting Mode */}
                             {isPaintingMode && stopIdx !== -1 && (
                                 <span className={`${isDesktopView ? "bg-blue-600" : "bg-amber-600"} text-white font-black px-1.5 py-0.5 rounded text-[10px] tracking-tight shrink-0 shadow-2xs`}>
@@ -648,8 +648,8 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 </span>
                             )}
 
-                            {/* Customer Name */}
-                            <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight truncate">
+                            {/* Customer Name (Fully visible) */}
+                            <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight">
                                 {task.title}
                             </span>
 
@@ -684,12 +684,12 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     </div>
 
                     {/* Line 2: Address (Strictly 1 line, truncate) */}
-                    <p className="text-[11.5px] font-medium text-slate-700 leading-tight truncate h-[18px] flex items-center">
+                    <p className={`text-[11.5px] font-medium text-slate-700 leading-snug ${isPaintingMode ? 'break-words' : 'line-clamp-1'}`}>
                         {task.address || task.description || 'Adres bilgisi girilmemiş'}
                     </p>
 
                     {/* Line 3: Date, Status / Kontrolü Onayla Button, Actions */}
-                    <div className="flex items-center justify-between pt-1.5 mt-0.5 border-t border-slate-100 gap-1.5 h-7">
+                    <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-slate-100 gap-1.5">
                         <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 font-mono shrink-0">
                             {isTaskRecheck && taskIsToday ? (
                                 <span className="text-[10px] font-black text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded">
@@ -830,7 +830,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
         return (
             <div
                 key={rt.id}
-                className="min-h-[98px] px-3.5 py-2.5 bg-white rounded-xl border-2 border-slate-200 border-l-[6px] border-l-amber-500 shadow-xs hover:shadow-md hover:border-slate-300 transition-all flex items-start gap-3"
+                className="min-h-[98px] px-3.5 py-3 bg-white rounded-xl border-2 border-slate-200 border-l-[6px] border-l-amber-500 shadow-xs hover:shadow-md hover:border-slate-300 transition-all flex items-start gap-3"
             >
                 {/* Left: Square Box matching w-11 h-11 */}
                 <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex flex-col items-center justify-center shrink-0 shadow-2xs relative mt-0.5">
@@ -868,12 +868,12 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     </button>
                 </div>
 
-                {/* Content Details (Standard 3 horizontal lines) */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between h-full py-0.5">
+                {/* Content Details */}
+                <div className="flex-1 min-w-0">
                     {/* Line 1: Customer Name + Routine Badge */}
                     <div className="flex items-center justify-between gap-1.5 h-5">
                         <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-                            <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight truncate">
+                            <span className="font-black text-[13.5px] text-slate-900 uppercase tracking-tight">
                                 {rt.customerName || 'Müşteri Belirtilmemiş'}
                             </span>
                             {rt.district && (
@@ -893,7 +893,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                     </p>
 
                     {/* Line 3: Date, Address, Ara */}
-                    <div className="flex items-center justify-between pt-1.5 mt-0.5 border-t border-slate-100 gap-1.5 h-7">
+                    <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-slate-100 gap-1.5">
                         <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 font-mono shrink-0">
                             {rtDate && (
                                 <span className="flex items-center gap-1">
