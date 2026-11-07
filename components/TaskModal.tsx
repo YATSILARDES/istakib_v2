@@ -197,6 +197,10 @@ const TaskModal: React.FC<TaskModalProps> = ({
     if (dataToSave.status === TaskStatus.GAS_OPENED && !dataToSave.gasOpeningDate) {
       dataToSave.gasOpeningDate = new Date().toISOString().split('T')[0];
     }
+    // Proje Çizildi tiklendiyse ve kontrolü önceden yapılmışsa durumu CHECK_COMPLETED yap
+    if (dataToSave.isProjectDrawn && dataToSave.checkStatus && dataToSave.status === TaskStatus.PROJECT_TO_BE_DRAWN) {
+      dataToSave.status = TaskStatus.CHECK_COMPLETED;
+    }
     onSave(dataToSave);
     onClose();
   };
@@ -464,7 +468,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       <input
                         type="checkbox"
                         checked={formData.isProjectDrawn || false}
-                        onChange={(e) => setFormData({ ...formData, isProjectDrawn: e.target.checked })}
+                        onChange={(e) => {
+                          const newDrawn = e.target.checked;
+                          let newStatus = formData.status;
+                          if (newDrawn && formData.status === TaskStatus.PROJECT_TO_BE_DRAWN && formData.checkStatus) {
+                            newStatus = TaskStatus.CHECK_COMPLETED;
+                          }
+                          setFormData({ ...formData, isProjectDrawn: newDrawn, status: newStatus });
+                        }}
                         className="w-4 h-4 rounded border-slate-600 text-blue-600 focus:ring-blue-500 bg-slate-700 cursor-pointer"
                         id="projectDrawn"
                       />
@@ -1284,7 +1295,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
                     {/* Proje Çizildi Onay Kutusu */}
                     <div
-                      onClick={() => setFormData({ ...formData, isProjectDrawn: !formData.isProjectDrawn })}
+                      onClick={() => {
+                        const newDrawn = !formData.isProjectDrawn;
+                        let newStatus = formData.status;
+                        if (newDrawn && formData.status === TaskStatus.PROJECT_TO_BE_DRAWN && formData.checkStatus) {
+                          newStatus = TaskStatus.CHECK_COMPLETED;
+                        }
+                        setFormData({ ...formData, isProjectDrawn: newDrawn, status: newStatus });
+                      }}
                       className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer select-none transition-all ${
                         formData.isProjectDrawn
                           ? 'bg-emerald-50 border-emerald-300 text-emerald-800'

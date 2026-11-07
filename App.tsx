@@ -1637,11 +1637,11 @@ function App() {
                           <div className="w-1/2 flex flex-col border-r border-slate-200 bg-emerald-50/30 min-w-0">
                             <div className="px-4 py-2 bg-emerald-100/50 border-b border-emerald-200 font-bold text-emerald-800 flex justify-between">
                               <span>✅ Hazır / Sorunsuz İşler</span>
-                              {/* IF CHECK_COMPLETED: Clean = Clean check AND Project Drawn. ELSE: Clean Check */}
-                              <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn)).length}</span>
+                              {/* IF CHECK_COMPLETED: Clean = Clean check AND Project Drawn */}
+                              <span className="bg-emerald-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || Boolean(t.isProjectDrawn))).length}</span>
                             </div>
                             <KanbanBoard
-                              tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn))}
+                              tasks={visibleTasks.filter(t => (!t.checkStatus || t.checkStatus === 'clean') && (boardFilter !== TaskStatus.CHECK_COMPLETED || Boolean(t.isProjectDrawn)))}
                               routineTasks={[]}
                               myTasks={[]}
                               onTaskClick={handleTaskClick}
@@ -1658,12 +1658,12 @@ function App() {
                           </div>
                           <div className="w-1/2 flex flex-col bg-red-50/30 min-w-0">
                             <div className="px-4 py-2 bg-red-100/50 border-b border-red-200 font-bold text-red-800 flex justify-between">
-                              <span>⚠️ Eksiği Olan İşler {boardFilter === TaskStatus.CHECK_COMPLETED ? '(Proje/Kontrol)' : ''}</span>
-                              {/* IF CHECK_COMPLETED: Missing = Missing Check OR Project NOT Drawn. ELSE: Missing Check */}
-                              <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing' || (boardFilter === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length}</span>
+                              <span>⚠️ Eksiği Olan İşler</span>
+                              {/* IF CHECK_COMPLETED: Missing = Missing Check AND Project Drawn */}
+                              <span className="bg-red-200 px-2 rounded-full text-xs flex items-center">{visibleTasks.filter(t => t.checkStatus === 'missing' && (boardFilter !== TaskStatus.CHECK_COMPLETED || Boolean(t.isProjectDrawn))).length}</span>
                             </div>
                             <KanbanBoard
-                              tasks={visibleTasks.filter(t => t.checkStatus === 'missing' || (boardFilter === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn))}
+                              tasks={visibleTasks.filter(t => t.checkStatus === 'missing' && (boardFilter !== TaskStatus.CHECK_COMPLETED || Boolean(t.isProjectDrawn)))}
                               routineTasks={[]}
                               myTasks={[]}
                               onTaskClick={handleTaskClick}

@@ -201,7 +201,7 @@ export default function MobileLayout({
 
     const filteredMainTasks = myTasks.filter(t => {
         // Filter by Status: Hide CHECK_COMPLETED (Kontrolü Yapılan İşler) unless project is missing OR explicitly reassigned
-        if (t.status === TaskStatus.CHECK_COMPLETED && t.isProjectDrawn !== false && !t.isReassignedForCheck) return false;
+        if (t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn) && !t.isReassignedForCheck) return false;
 
         // Filter by Check Status: Hide logic if check is done (missing or clean), unless explicitly reassigned
         if (t.checkStatus && !t.isReassignedForCheck) return false;
@@ -294,10 +294,15 @@ export default function MobileLayout({
         // Filter by Status Pill
         const statusFiltered = filterStatus === 'ALL'
             ? tasks
-            : tasks.filter(t => filterStatus === TaskStatus.PROJECT_TO_BE_DRAWN
-                ? (t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn))
-                : t.status === filterStatus
-            );
+            : tasks.filter(t => {
+                if (filterStatus === TaskStatus.PROJECT_TO_BE_DRAWN) {
+                    return t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn);
+                }
+                if (filterStatus === TaskStatus.CHECK_COMPLETED) {
+                    return t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn);
+                }
+                return t.status === filterStatus;
+            });
 
         // Apply Search
         displayedTasks = applySearch(statusFiltered);
@@ -333,7 +338,7 @@ export default function MobileLayout({
             // Filter tasks: TO_CHECK, no checkStatus, scheduled for today or past
             const staffTasks = tasks.filter(t => {
                 // Basic filters (status, checkStatus, assignee)
-                const basicMatch = (t.status !== TaskStatus.CHECK_COMPLETED || t.isProjectDrawn === false) &&
+                const basicMatch = (t.status !== TaskStatus.CHECK_COMPLETED || !t.isProjectDrawn) &&
                     !t.checkStatus &&
                     (t.assigneeEmail?.toLowerCase() === staff.email.toLowerCase() || t.assignee === staff.name);
 
@@ -619,10 +624,15 @@ export default function MobileLayout({
 
             const taskSource = filterStatus === 'ALL'
                 ? (isStaff ? tasks.filter(t => allowedCols.includes(t.status)) : tasks)
-                : tasks.filter(t => filterStatus === TaskStatus.PROJECT_TO_BE_DRAWN
-                    ? (t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn))
-                    : t.status === filterStatus
-                );
+                : tasks.filter(t => {
+                    if (filterStatus === TaskStatus.PROJECT_TO_BE_DRAWN) {
+                        return t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn);
+                    }
+                    if (filterStatus === TaskStatus.CHECK_COMPLETED) {
+                        return t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn);
+                    }
+                    return t.status === filterStatus;
+                });
 
             return (
                 <MobileErpTaskList
@@ -860,7 +870,7 @@ export default function MobileLayout({
                                             cardStyle = "bg-orange-950/30 border-orange-500/50";
                                             badgeStyle = "bg-orange-500/20 text-orange-400";
                                             shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
-                                        } else if (task.status === TaskStatus.PROJECT_TO_BE_DRAWN || (task.status === TaskStatus.CHECK_COMPLETED && task.isProjectDrawn === false)) {
+                                        } else if (task.status === TaskStatus.PROJECT_TO_BE_DRAWN || (task.status === TaskStatus.CHECK_COMPLETED && !task.isProjectDrawn)) {
                                             cardStyle = "bg-amber-950/20 border-amber-500/40";
                                             badgeStyle = "bg-amber-500/20 text-amber-400";
                                             shadowStyle = "shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]";
@@ -1059,7 +1069,7 @@ export default function MobileLayout({
                                                     cardStyle = "bg-orange-950/30 border-orange-500/50";
                                                     badgeStyle = "bg-orange-500/20 text-orange-400";
                                                     shadowStyle = "shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]";
-                                                } else if (task.status === TaskStatus.PROJECT_TO_BE_DRAWN || (task.status === TaskStatus.CHECK_COMPLETED && task.isProjectDrawn === false)) {
+                                                } else if (task.status === TaskStatus.PROJECT_TO_BE_DRAWN || (task.status === TaskStatus.CHECK_COMPLETED && !task.isProjectDrawn)) {
                                                     cardStyle = "bg-amber-950/20 border-amber-500/40";
                                                     badgeStyle = "bg-amber-500/20 text-amber-400";
                                                     shadowStyle = "shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]";

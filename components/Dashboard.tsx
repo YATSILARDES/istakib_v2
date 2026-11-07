@@ -106,7 +106,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         {
             title: 'KONTROL EDİLDİ',
             displayName: StatusLabels[TaskStatus.CHECK_COMPLETED],
-            score: getCount(TaskStatus.CHECK_COMPLETED),
+            score: tasks.filter(t => t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn)).length,
             status: TaskStatus.CHECK_COMPLETED,
             color: 'text-blue-500',
             borderColor: 'hover:border-blue-500'

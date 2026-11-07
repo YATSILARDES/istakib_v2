@@ -232,7 +232,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)
       );
     } else if (status === TaskStatus.CHECK_COMPLETED) {
-      columnTasks = tasks.filter(t => t.status === TaskStatus.CHECK_COMPLETED);
+      columnTasks = tasks.filter(t => t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn));
     } else {
       columnTasks = tasks.filter(t => t.status === status);
     }
@@ -368,6 +368,27 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 ))}
               </div>
             </div>
+          )}
+
+          {contextMenuState.taskType === 'main' && (
+            <button
+              onClick={() => {
+                const mainTask = contextMenuState.task as Task;
+                const newDrawn = !mainTask.isProjectDrawn;
+                const updates: Partial<Task> = { isProjectDrawn: newDrawn };
+                if (newDrawn && (mainTask.status === TaskStatus.PROJECT_TO_BE_DRAWN && mainTask.checkStatus)) {
+                  updates.status = TaskStatus.CHECK_COMPLETED;
+                }
+                if (onTaskUpdate) {
+                  onTaskUpdate(mainTask.id, updates);
+                }
+                setContextMenuState(prev => ({ ...prev, visible: false }));
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium border-t border-slate-100"
+            >
+              <CheckSquare className="w-4 h-4 text-emerald-600" />
+              {(contextMenuState.task as Task).isProjectDrawn ? 'Proje Çizilmedi Yap' : 'Proje Çizildi Olarak İşaretle'}
+            </button>
           )}
 
           <button
@@ -594,7 +615,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       ? tasks.length
                       : status === TaskStatus.PROJECT_TO_BE_DRAWN 
                         ? tasks.filter(t => t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)).length 
-                        : tasks.filter(t => t.status === status).length}
+                        : status === TaskStatus.CHECK_COMPLETED
+                          ? tasks.filter(t => t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn)).length
+                          : tasks.filter(t => t.status === status).length}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -630,6 +653,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         .filter(t => {
                           if (status === TaskStatus.PROJECT_TO_BE_DRAWN) {
                             return t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn);
+                          }
+                          if (status === TaskStatus.CHECK_COMPLETED) {
+                            return t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn);
                           }
                           return t.status === status;
                         })

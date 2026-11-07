@@ -208,7 +208,7 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
             const emailMatch = t.assigneeEmail && uEmail && t.assigneeEmail.toLowerCase() === uEmail;
             const nameMatch = uName && t.assignee && t.assignee.trim().toLowerCase() === uName;
             if (!emailMatch && !nameMatch) return false;
-            if (t.status === TaskStatus.CHECK_COMPLETED && t.isProjectDrawn !== false && !t.isReassignedForCheck) return false;
+            if (t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn) && !t.isReassignedForCheck) return false;
             if (t.checkStatus && !t.isReassignedForCheck) return false;
             const taskDate = parseEffectiveDate(t.scheduledDate || t.date || t.createdAt);
             if (taskDate) {
@@ -247,6 +247,12 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
         tasks.forEach(t => {
             counts[t.status] = (counts[t.status] || 0) + 1;
         });
+        counts[TaskStatus.PROJECT_TO_BE_DRAWN] = permittedTasks.filter(t => 
+            t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn)
+        ).length;
+        counts[TaskStatus.CHECK_COMPLETED] = permittedTasks.filter(t => 
+            t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn)
+        ).length;
         return counts;
     }, [tasks, routineTasks, user, userPermissions]);
 
@@ -648,7 +654,10 @@ export const MobileDiaMenu: React.FC<MobileDiaMenuProps> = ({
         Object.values(TaskStatus).forEach(status => {
             const count = matchingTasks.filter(t => {
                 if (status === TaskStatus.PROJECT_TO_BE_DRAWN) {
-                    return t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && t.isProjectDrawn === false);
+                    return t.status === TaskStatus.PROJECT_TO_BE_DRAWN || (t.status === TaskStatus.CHECK_COMPLETED && !t.isProjectDrawn);
+                }
+                if (status === TaskStatus.CHECK_COMPLETED) {
+                    return t.status === TaskStatus.CHECK_COMPLETED && Boolean(t.isProjectDrawn);
                 }
                 return t.status === status;
             }).length;
