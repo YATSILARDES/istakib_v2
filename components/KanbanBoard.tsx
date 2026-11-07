@@ -691,18 +691,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       onClick={() => onTaskClick(task)}
                       onContextMenu={(e) => handleContextMenu(e, task)}
                     className={`
-                      h-28 flex flex-col justify-between px-3.5 py-3 rounded-xl border-2 transition-all cursor-pointer group relative shadow-xs hover:shadow-md hover:-translate-y-0.5
+                      h-28 flex flex-col justify-between px-3 py-3 rounded-xl border transition-all cursor-pointer group relative shadow-md hover:shadow-xl hover:-translate-y-1
                       ${task.isWaiting
-                        ? 'bg-blue-50/50 border-slate-300 border-l-[6px] border-l-blue-600 hover:border-slate-400'
+                        ? 'bg-blue-100 border-l-[8px] border-l-blue-600 border-blue-200 shadow-[0_0_15px_-5px_rgba(37,99,235,0.4)]'
                         : (task.status === TaskStatus.GAS_OPENED && ((Date.now() - (task.updatedAt?.toMillis?.() || task.updatedAt || Date.now())) / (1000 * 60 * 60 * 24)) > 2)
-                        ? 'bg-rose-50/50 border-slate-300 border-l-[6px] border-l-rose-600 hover:border-slate-400'
+                        ? 'bg-rose-100 border-l-[8px] border-l-rose-600 border-rose-300 shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)]'
                         : task.checkStatus === 'missing'
-                        ? 'bg-red-50/50 border-slate-300 border-l-[6px] border-l-red-600 hover:border-slate-400'
+                        ? 'bg-red-100 border-l-[8px] border-l-red-600 border-red-200 shadow-[0_0_15px_-5px_rgba(220,38,38,0.4)]'
                         : task.checkStatus === 'clean'
-                          ? 'bg-emerald-50/40 border-slate-300 border-l-[6px] border-l-emerald-600 hover:border-slate-400'
+                          ? 'bg-green-100 border-l-[8px] border-l-green-600 border-green-200 shadow-[0_0_15px_-5px_rgba(22,163,74,0.4)]'
                           : (!task.isProjectDrawn && task.status === TaskStatus.CHECK_COMPLETED)
-                            ? 'bg-amber-50/40 border-slate-300 border-l-[6px] border-l-amber-500 hover:border-slate-400'
-                            : 'bg-white border-slate-300 border-l-[6px] border-l-slate-400 hover:border-l-blue-500 hover:border-slate-400'
+                            ? 'bg-gradient-to-br from-white to-orange-50 border-l-[6px] border-l-orange-500 border-slate-200 shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]'
+                            : 'bg-gradient-to-br from-white to-slate-50 border-l-[6px] border-l-slate-400 border-slate-200 hover:border-l-blue-500'
                       }
                     `}
                   >
@@ -713,16 +713,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           A
                         </div>
                       )}
-                      <div className={`text-[10.5px] font-mono font-bold ${
-                        task.checkStatus === 'missing' ? 'text-red-700 bg-red-100/90 px-1.5 py-0.5 rounded border border-red-300' :
-                        task.checkStatus === 'clean' ? 'text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded border border-emerald-300' : 'text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200'
+                      <div className={`text-[10px] font-mono font-bold opacity-90 ${
+                        task.checkStatus === 'missing' ? 'text-red-700 bg-red-200 px-1.5 py-0.5 rounded border border-red-300' :
+                        task.checkStatus === 'clean' ? 'text-green-700 bg-green-200 px-1.5 py-0.5 rounded border border-green-300' : 'text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded'
                         }`}>
                         #{task.orderNumber}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 mb-1 pr-8">
-                      <h4 className={`font-black text-sm leading-snug transition-colors line-clamp-1 ${task.checkStatus === 'missing' ? 'text-red-950 group-hover:text-red-700' : task.checkStatus === 'clean' ? 'text-emerald-950 group-hover:text-emerald-700' : 'text-slate-900 group-hover:text-blue-700'}`}>
+                      <h4 className={`font-bold text-sm leading-snug transition-colors line-clamp-1 ${task.checkStatus === 'missing' ? 'text-red-900 group-hover:text-red-700' : task.checkStatus === 'clean' ? 'text-green-900 group-hover:text-green-700' : 'text-slate-800 group-hover:text-blue-700'}`}>
                         {task.title}
                       </h4>
                     </div>
@@ -737,8 +737,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
                     {/* Address - Colorful */}
                     {task.address && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-50/80 px-2 py-0.5 -ml-0.5 rounded-md border border-slate-200/60">
-                        <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+                      <div className="flex items-center gap-1.5 text-xs text-sky-700 font-medium bg-sky-50/50 p-1 -ml-1 rounded-lg">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-sky-500" />
                         <span className="truncate max-w-[200px]">{task.address}</span>
                       </div>
                     )}
