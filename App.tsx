@@ -458,10 +458,17 @@ function App() {
           dataToSave.isReassignedForCheck = selectedTask.isReassignedForCheck ?? false;
         }
 
+        const cleanedUpdate = Object.fromEntries(
+          Object.entries(dataToSave).filter(([key, value]) => key !== 'id' && value !== undefined)
+        );
         const taskRef = doc(db, 'tasks', selectedTask.id);
-        await updateDoc(taskRef, { ...dataToSave, lastUpdatedBy: user?.email });
+        await updateDoc(taskRef, { ...cleanedUpdate, lastUpdatedBy: user?.email || 'System' });
       } else {
+        const cleanedData = Object.fromEntries(
+          Object.entries(dataToSave).filter(([key, value]) => key !== 'id' && value !== undefined)
+        );
         await addDoc(collection(db, 'tasks'), {
+          ...cleanedData,
           orderNumber: nextOrderNumber,
           title: dataToSave.title || 'Yeni Müşteri',
           jobDescription: dataToSave.jobDescription || '',
@@ -473,14 +480,23 @@ function App() {
           city: dataToSave.city || '',
           locationCoordinates: dataToSave.locationCoordinates || '',
           phone: dataToSave.phone || '',
+          tenantName: dataToSave.tenantName || '',
+          tenantPhone: dataToSave.tenantPhone || '',
           generalNote: dataToSave.generalNote || '',
           teamNote: dataToSave.teamNote || '',
           checkStatus: dataToSave.checkStatus || null,
+          isGlazierDirected: dataToSave.isGlazierDirected ?? null,
+          isElectricianDirected: dataToSave.isElectricianDirected ?? null,
+          hasFuse: dataToSave.hasFuse ?? null,
           gasOpeningDate: dataToSave.gasOpeningDate || '',
           gasNote: dataToSave.gasNote || '',
           serviceSerialNumber: dataToSave.serviceSerialNumber || '',
+          serialNumberImage: dataToSave.serialNumberImage || '',
           serviceNote: dataToSave.serviceNote || '',
-          createdBy: user?.email,
+          isProjectDrawn: dataToSave.isProjectDrawn ?? false,
+          isPaintingTask: dataToSave.isPaintingTask ?? false,
+          paintNote: dataToSave.paintNote || '',
+          createdBy: user?.email || 'System',
           createdAt: serverTimestamp()
         });
       }
