@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { 
     ChevronLeft, Search, ArrowUpDown, Filter, SlidersHorizontal, 
-    Plus, Phone, Share2, MapPin, Calendar, Star, X, Flame, 
+    Plus, Phone, Share2, MapPin, MapPinOff, Calendar, Star, X, Flame, 
     CheckCircle2, AlertTriangle, Clock, ChevronRight, Eye, Send, ChevronDown,
     Square, Check, FileText, Paintbrush, ExternalLink, Copy, CheckSquare, Map,
     Bookmark
@@ -151,6 +151,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
         }
     }, [initialSearchQuery]);
     const [selectedDistrict, setSelectedDistrict] = useState<string>('');
+    const [locationFilter, setLocationFilter] = useState<'all' | 'has_location' | 'no_location'>('all');
     const [sortBy, setSortBy] = useState<'order_asc' | 'order_desc' | 'date_desc' | 'title_asc'>('order_asc');
     const [tabFilter, setTabFilter] = useState<'all' | 'main' | 'routine'>('all');
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -424,6 +425,13 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     const filteredTasks = useMemo(() => {
         if (routineTasks && routineTasks.length > 0 && tabFilter === 'routine') return [];
         return tasks.filter(t => {
+            // Location filter (Only in painting mode & desktop view)
+            if (isPaintingMode && isDesktopView && locationFilter !== 'all') {
+                const has = Boolean(extractCoords(t.locationCoordinates));
+                if (locationFilter === 'has_location' && !has) return false;
+                if (locationFilter === 'no_location' && has) return false;
+            }
+
             // Search filter
             if (searchQuery.trim()) {
                 const q = searchQuery.trim().toLocaleLowerCase('tr');
@@ -488,7 +496,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
             }
             return 0;
         });
-    }, [tasks, searchQuery, selectedDistrict, sortBy, routineTasks, tabFilter]);
+    }, [tasks, searchQuery, selectedDistrict, sortBy, routineTasks, tabFilter, locationFilter, isPaintingMode, isDesktopView]);
 
     const canAddTasks = userPermissions?.canAddCustomers || userPermissions?.role === 'admin';
     const displayName = userPermissions?.name || user?.displayName || user?.email?.split('@')[0] || 'Kullanıcı';
@@ -601,6 +609,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
         const activePaintingTasks = isPaintingMode ? getActivePaintingTasks() : [];
         const stopIdx = isPaintingMode ? activePaintingTasks.findIndex(t => t.id === task.id) : -1;
+        const coords = (isPaintingMode && isDesktopView) ? extractCoords(task.locationCoordinates) : null;
 
         return (
             <div
@@ -688,6 +697,32 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
 
                         {/* Right: Badges (Always at the exact same right position) */}
                         <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                            {/* Konum Rozeti (SADECE Boya Modu ve SADECE Bilgisayar Görünümünde) */}
+                            {isPaintingMode && isDesktopView && (
+                                coords ? (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.open(`https://www.google.com/maps?q=${coords.lat},${coords.lng}`, '_blank');
+                                        }}
+                                        className="text-[10px] font-black px-2 py-0.5 rounded border shrink-0 tracking-tight flex items-center gap-1 bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
+                                        title={`Harita Konumu Mevcut (${coords.formatted}) - Google Haritalar'da Açmak İçin Tıklayın`}
+                                    >
+                                        <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                                        <span>KONUMU VAR</span>
+                                    </button>
+                                ) : (
+                                    <span
+                                        className="text-[10px] font-black px-2 py-0.5 rounded border shrink-0 tracking-tight flex items-center gap-1 bg-rose-50 text-rose-700 border-rose-300 shadow-2xs"
+                                        title="Bu müşterinin kayıtlı GPS harita konumu bulunmamaktadır"
+                                    >
+                                        <MapPinOff className="w-3 h-3 text-rose-500 shrink-0" />
+                                        <span>KONUMU YOK</span>
+                                    </span>
+                                )
+                            )}
+
                             {/* Kontrolü Onayla / Recheck Rozeti */}
                             {isTaskRecheck && recheckBadge && (
                                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${recheckBadge.bg} ${recheckBadge.text} ${recheckBadge.border}`}>
@@ -1080,9 +1115,53 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                         </button>
                     </div>
                 ) : (
-                    <span className="text-[11px] font-semibold text-slate-300">
-                        Toplam <strong className={`${isDesktopView ? "text-blue-400" : "text-orange-400"} font-bold`}>{filteredTasks.length}</strong> İş Kaydı
-                    </span>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-[11px] font-semibold text-slate-300">
+                            Toplam <strong className={`${isDesktopView ? "text-blue-400" : "text-orange-400"} font-bold`}>{filteredTasks.length}</strong> İş Kaydı
+                        </span>
+
+                        {isPaintingMode && isDesktopView && (
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setLocationFilter('all')}
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                                        locationFilter === 'all'
+                                            ? 'bg-blue-600 text-white shadow-xs'
+                                            : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+                                    }`}
+                                >
+                                    Tümü ({tasks.length})
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setLocationFilter(locationFilter === 'has_location' ? 'all' : 'has_location')}
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                        locationFilter === 'has_location'
+                                            ? 'bg-emerald-600 text-white shadow-xs'
+                                            : 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60 border border-emerald-700/50'
+                                    }`}
+                                    title="Sadece konumu olan müşterileri filtrele"
+                                >
+                                    <MapPin className="w-3 h-3 text-emerald-400" />
+                                    <span>Konumu Var ({tasks.filter(t => extractCoords(t.locationCoordinates)).length})</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setLocationFilter(locationFilter === 'no_location' ? 'all' : 'no_location')}
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                        locationFilter === 'no_location'
+                                            ? 'bg-rose-600 text-white shadow-xs'
+                                            : 'bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 border border-rose-700/50'
+                                    }`}
+                                    title="Sadece konumu OLMAYAN müşterileri filtrele"
+                                >
+                                    <MapPinOff className="w-3 h-3 text-rose-400" />
+                                    <span>Konumu Yok ({tasks.filter(t => !extractCoords(t.locationCoordinates)).length})</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 <div className="flex items-center gap-2">
