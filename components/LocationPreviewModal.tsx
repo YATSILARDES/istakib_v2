@@ -143,20 +143,17 @@ const LocationPreviewModal: React.FC<LocationPreviewModalProps> = ({ isOpen, onC
                                     </button>
                                 </div>
                             ) : coords ? (
-                                <div className="w-full h-full relative group">
-                                    {/* OpenStreetMap iframe (Read Only Preview) */}
-                                    <iframe
-                                        width="100%"
-                                        height="100%"
-                                        frameBorder="0"
-                                        scrolling="no"
-                                        marginHeight={0}
-                                        marginWidth={0}
-                                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.005}%2C${coords.lat - 0.005}%2C${coords.lng + 0.005}%2C${coords.lat + 0.005}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}`}
-                                        className="w-full h-full bg-slate-200"
+                                <div className="w-full h-full relative">
+                                    <InteractiveMap
+                                        initialCoords={coords}
+                                        onLocationSelect={(lat, lng) => {
+                                            setManualCoords({ lat, lng });
+                                            setMode('manual');
+                                        }}
                                     />
-                                    <div className="absolute top-2 right-2 bg-white/90 text-slate-800 text-[10px] px-2 py-1 rounded shadow pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity">
-                                        {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+                                    <div className="absolute bottom-2 left-2 z-[400] bg-black/75 text-white text-[11px] font-mono px-2.5 py-1 rounded-md shadow pointer-events-none backdrop-blur-xs flex items-center gap-1.5 border border-white/10">
+                                        <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                                        <span>GPS: {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}</span>
                                     </div>
                                 </div>
                             ) : null}

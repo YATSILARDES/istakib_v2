@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Phone, Navigation, ChevronUp, ChevronDown, List, CheckCircle2, X } from 'lucide-react';
+import { MapPin, Phone, Navigation, ChevronUp, ChevronDown, List, CheckCircle2, X, Layers, Map as MapIcon } from 'lucide-react';
 
 export interface PublicMapCustomer {
     id: string;
@@ -130,6 +130,7 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
     const [customers, setCustomers] = useState<PublicMapCustomer[]>(initialCustomers || []);
     const [focusedCustomer, setFocusedCustomer] = useState<PublicMapCustomer | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
+    const [mapType, setMapType] = useState<'streets' | 'hybrid'>('hybrid');
     const markerRefs = useRef<Record<string, L.Marker | null>>({});
 
     const [completedIds, setCompletedIds] = useState<string[]>(() => {
@@ -324,6 +325,36 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
 
             {/* Map Area */}
             <main className="flex-1 relative w-full h-full bg-slate-100">
+                {/* Floating Map View Switcher (Sokak / Uydu) */}
+                {customers.length > 0 && (
+                    <div className="absolute top-3 right-3 z-[400] bg-white/95 backdrop-blur-xs p-1 rounded-xl shadow-lg border border-slate-300 flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setMapType('streets')}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                                mapType === 'streets'
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
+                            <MapIcon className="w-3.5 h-3.5" />
+                            <span>Sokak</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMapType('hybrid')}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                                mapType === 'hybrid'
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
+                            <Layers className="w-3.5 h-3.5" />
+                            <span>Uydu</span>
+                        </button>
+                    </div>
+                )}
+
                 {customers.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-500 z-10 bg-white">
                         <MapPin className="w-16 h-16 text-blue-500 mb-3 animate-bounce" />
@@ -336,12 +367,26 @@ export const PublicPaintingMapView: React.FC<PublicPaintingMapViewProps> = ({ in
                     <MapContainer
                         center={[initialCenter.lat, initialCenter.lng]}
                         zoom={13}
+                        maxZoom={20}
                         style={{ height: '100%', width: '100%', zIndex: 1 }}
                     >
-                        <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
+                        {mapType === 'streets' ? (
+                            <TileLayer
+                                key="streets"
+                                attribution="&copy; Google Maps"
+                                url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                                subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                                maxZoom={20}
+                            />
+                        ) : (
+                            <TileLayer
+                                key="hybrid"
+                                attribution="&copy; Google Maps"
+                                url="https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                                subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                                maxZoom={20}
+                            />
+                        )}
 
                         {/* Connecting dashed guide lines & anchor dots for clustered/offset markers */}
                         {displayCustomers.map((c, idx) => {
