@@ -151,7 +151,7 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
         }
     }, [initialSearchQuery]);
     const [selectedDistrict, setSelectedDistrict] = useState<string>('');
-    const [locationFilter, setLocationFilter] = useState<'all' | 'has_location' | 'no_location'>('all');
+    const [locationFilter, setLocationFilter] = useState<'all' | 'has_location' | 'no_location' | 'painted'>('all');
     const [sortBy, setSortBy] = useState<'order_asc' | 'order_desc' | 'date_desc' | 'title_asc'>('order_asc');
     const [tabFilter, setTabFilter] = useState<'all' | 'main' | 'routine'>('all');
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -425,11 +425,12 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
     const filteredTasks = useMemo(() => {
         if (routineTasks && routineTasks.length > 0 && tabFilter === 'routine') return [];
         return tasks.filter(t => {
-            // Location filter (Only in painting mode & desktop view)
+            // Location & Painting filter (Only in painting mode & desktop view)
             if (isPaintingMode && isDesktopView && locationFilter !== 'all') {
                 const has = Boolean(extractCoords(t.locationCoordinates));
                 if (locationFilter === 'has_location' && !has) return false;
                 if (locationFilter === 'no_location' && has) return false;
+                if (locationFilter === 'painted' && t.paintStatus !== 'completed') return false;
             }
 
             // Search filter
@@ -1158,6 +1159,19 @@ export const MobileErpTaskList: React.FC<MobileErpTaskListProps> = ({
                                 >
                                     <MapPinOff className="w-3 h-3 text-rose-400" />
                                     <span>Konumu Yok ({tasks.filter(t => !extractCoords(t.locationCoordinates)).length})</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setLocationFilter(locationFilter === 'painted' ? 'all' : 'painted')}
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                        locationFilter === 'painted'
+                                            ? 'bg-emerald-600 text-white shadow-xs'
+                                            : 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60 border border-emerald-700/50'
+                                    }`}
+                                    title="Sadece boyanan müşterileri filtrele"
+                                >
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                    <span>Boyandı ({tasks.filter(t => t.paintStatus === 'completed').length})</span>
                                 </button>
                             </div>
                         )}
